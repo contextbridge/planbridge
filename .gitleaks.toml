@@ -1,0 +1,6 @@
+title = "planbridge gitleaks config"
+
+# Extend the upstream default ruleset.
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+[extend]
+useDefault = true
