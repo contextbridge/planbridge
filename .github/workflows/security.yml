@@ -1,0 +1,56 @@
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Re-scan every Monday at 09:00 UTC so newly-disclosed leak signatures
+    # are caught even when no commits land that week.
+    - cron: '0 9 * * 1'
+
+permissions: {}
+
+env:
+  # Bump as needed; latest at https://github.com/gitleaks/gitleaks/releases
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-24.04
+    continue-on-error: true # remove once initial findings are clean
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history is required for a meaningful secret scan.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Run gitleaks (full history, redacted)
+        run: |
+          gitleaks git \
+            --config .gitleaks.toml \
+            --redact \
+            --verbose \
+            --report-format sarif \
+            --report-path gitleaks.sarif \
+            .
+
+      - name: Upload gitleaks SARIF
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gitleaks-sarif
+          path: gitleaks.sarif
+          if-no-files-found: ignore

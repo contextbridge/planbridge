@@ -1,0 +1,49 @@
+name: zizmor
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-24.04
+    continue-on-error: true # remove once initial findings are clean
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Generate ContextBridge app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: contextbridge
+          repositories: |
+            planbridge
+            contextbot-actions
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Run zizmor
+        run: uvx zizmor --format=sarif .github/ > zizmor.sarif
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Upload zizmor SARIF
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zizmor-sarif
+          path: zizmor.sarif
+          if-no-files-found: ignore
