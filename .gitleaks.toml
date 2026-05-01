@@ -1,58 +1,6 @@
 title = "planbridge gitleaks config"
 
-# Extend the upstream default ruleset; everything below is additive.
+# Extend the upstream default ruleset.
 # https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
 [extend]
 useDefault = true
-
-[allowlist]
-description = "Repo-wide allowlist"
-paths = [
-    # Lockfiles produce noisy false positives on hashes/integrity strings.
-    '''(^|/)bun\.lock$''',
-    '''(^|/)package-lock\.json$''',
-    '''(^|/)yarn\.lock$''',
-    '''(^|/)tools/''',
-]
-
-# Allowed package-name regexes: @contextbridge/* is the workspace scope and
-# @contextbridge-ai/* is the public-npm scope for shared tooling. Both are
-# expected throughout source. (The custom rule below restricts the private
-# @contextbridge/projen package separately.)
-regexes = [
-    '''@contextbridge/[a-z][a-z0-9-]*''',
-    '''@contextbridge-ai/[a-z][a-z0-9-]*''',
-]
-
-[[rules]]
-id = "aws-account-id"
-description = "Twelve-digit AWS-style account identifier"
-regex = '''\b[0-9]{12}\b'''
-tags = ["aws", "planbridge-public-readiness"]
-
-[[rules]]
-id = "aws-arn"
-description = "AWS Amazon Resource Name (ARN)"
-regex = '''arn:aws:[a-z0-9-]+:'''
-tags = ["aws", "planbridge-public-readiness"]
-
-[[rules]]
-id = "github-packages-registry"
-description = "Private GitHub Packages npm registry reference"
-regex = '''npm\.pkg\.github\.com'''
-tags = ["github-packages", "planbridge-public-readiness"]
-
-[[rules]]
-id = "github-packages-token"
-description = "Private GitHub Packages auth-token env var"
-regex = '''GITHUB_PACKAGES_AUTH_TOKEN'''
-tags = ["github-packages", "planbridge-public-readiness"]
-
-[[rules]]
-id = "private-projen-out-of-boundary"
-description = "Private @contextbridge/projen reference outside tools/projen/"
-regex = '''@contextbridge/projen'''
-tags = ["maintainer-boundary", "planbridge-public-readiness"]
-[rules.allowlist]
-description = "Private projen is allowed only inside its maintainer-only directory"
-paths = ['''^tools/projen/''']

@@ -7,18 +7,21 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: zizmor-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   zizmor:
     name: zizmor
     runs-on: ubuntu-24.04
-    continue-on-error: true # remove once initial findings are clean
     permissions:
       contents: read
-      actions: read
+      actions: read # zizmor reads workflow run metadata for online audits
     steps:
       - name: Generate ContextBridge app token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
