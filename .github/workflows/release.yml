@@ -43,11 +43,6 @@ jobs:
 
       - uses: ./.github/actions/bootstrap
 
-      - name: Bootstrap private tools
-        uses: ./.github/actions/bootstrap-tools
-        env:
-          GITHUB_PACKAGES_AUTH_TOKEN: ${{ github.token }}
-
       - name: Fetch release secrets
         uses: ./.github/actions/fetch-release-secrets
         with:
