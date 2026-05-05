@@ -1,0 +1,74 @@
+name: Detect Changes
+description: Detects changes in dependency files and the install script, comparing against PR base or last successful main run
+
+inputs:
+  mode:
+    description: 'Mode of operation: "pull_request" or "deploy". In deploy mode, compares against last successful deployment.'
+    required: true
+  workflow_name:
+    description: 'The workflow name to find last successful run for (only used in deploy mode)'
+    required: false
+    default: 'Main Branch'
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+
+outputs:
+  dependencies_changed:
+    description: Did dependency files change?
+    value: ${{ steps.filter.outputs.dependencies }}
+  install_script_changed:
+    description: Did the shell installer script or its tests change?
+    value: ${{ steps.filter.outputs.install_script }}
+  last_successful_sha:
+    description: The SHA of the last successful deployment (only set in deploy mode)
+    value: ${{ steps.find-last-deploy.outputs.sha }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Find last successful deployment
+      id: find-last-deploy
+      if: inputs.mode == 'deploy'
+      shell: bash
+      run: |
+        last_successful=$(gh run list \
+          --branch main \
+          --workflow "${{ inputs.workflow_name }}" \
+          --status success \
+          --limit 50 \
+          --json headSha \
+          --jq '.[0].headSha')
+
+        if [ -z "$last_successful" ] || [ "$last_successful" = "null" ]; then
+          echo "No previous successful deployment found, assuming all files changed"
+          echo "sha=" >> "$GITHUB_OUTPUT"
+        else
+          echo "Last successful deployment SHA: $last_successful"
+          echo "sha=$last_successful" >> "$GITHUB_OUTPUT"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    - uses: dorny/paths-filter@v4
+      id: filter
+      with:
+        # In PR mode, paths-filter auto-detects the base from the PR event.
+        # In deploy mode, we explicitly set the base to the last successful deployment.
+        base: ${{ inputs.mode == 'deploy' && steps.find-last-deploy.outputs.sha || '' }}
+        token: ${{ inputs.github_token }}
+        filters: |
+          _common: &common
+            - '.tool-versions'
+          dependencies:
+            - *common
+            - 'bun.lock'
+            - '**/package.json'
+          install_script:
+            - 'scripts/install.sh'
+            - 'scripts/install.test.sh'
+            - '.github/workflows/test.yml'

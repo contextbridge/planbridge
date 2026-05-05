@@ -1,0 +1,54 @@
+name: Bootstrap
+description: Install Bun via asdf and project dependencies
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup asdf
+      uses: asdf-vm/actions/setup@v4
+      with:
+        asdf_version: "0.18.0"
+
+    - name: Restore asdf cache
+      id: asdf-cache-restore
+      uses: actions/cache/restore@v5
+      with:
+        key: asdf-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.tool-versions') }}
+        path: |
+          ~/.asdf/installs
+          ~/.asdf/plugins
+          ~/.asdf/shims
+        restore-keys: asdf-tools-v1-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install asdf plugins
+      if: ${{ steps.asdf-cache-restore.outputs.cache-hit != 'true' }}
+      uses: asdf-vm/actions/install@v4
+      with:
+        asdf_version: "0.18.0"
+
+    - name: Reshim asdf
+      shell: bash
+      run: asdf reshim
+
+    - name: Save asdf cache
+      if: always() && steps.asdf-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        key: ${{ steps.asdf-cache-restore.outputs.cache-primary-key }}
+        path: |
+          ~/.asdf/installs
+          ~/.asdf/plugins
+          ~/.asdf/shims
+
+    - name: Restore Bun install cache
+      uses: actions/cache@v5
+      with:
+        key: bun-install-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
+        path: ~/.bun/install/cache
+        restore-keys: bun-install-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        GITHUB_PACKAGES_AUTH_TOKEN: ${{ github.token }}
+      run: bun install --frozen-lockfile

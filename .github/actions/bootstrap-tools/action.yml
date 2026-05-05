@@ -1,0 +1,18 @@
+name: Bootstrap private tools
+description: Installs the private tools submodule workspace after checkout initialized it
+
+runs:
+  using: composite
+  steps:
+    - name: Verify private tools submodule
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ ! -f tools/package.json ]; then
+          echo "::error::Private tools submodule is not initialized. Checkout with submodules enabled or run scripts/initToolsSubmodule.sh."
+          exit 1
+        fi
+        : "${GITHUB_PACKAGES_AUTH_TOKEN:?Set GITHUB_PACKAGES_AUTH_TOKEN with private package read access}"
+    - name: Install tools workspace
+      shell: bash
+      run: bun install --cwd tools --frozen-lockfile
