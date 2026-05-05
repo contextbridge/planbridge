@@ -40,7 +40,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
-          submodules: true
 
       - uses: ./.github/actions/bootstrap
 
