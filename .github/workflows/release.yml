@@ -34,9 +34,7 @@ jobs:
           app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
           owner: contextbridge
-          repositories: |
-            planbridge
-            planbridge-private
+          repositories: planbridge
 
       - uses: actions/checkout@v6
         with:
