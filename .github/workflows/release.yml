@@ -97,7 +97,7 @@ jobs:
         shell: bash
         env:
           BUCKET: ${{ env.DOWNLOADS_BUCKET }}
-          DISTRIBUTION_ID: ${{ env.DOWNLOADS_DISTRIBUTION_ID }}
+          DISTRIBUTION_ID: ${{ secrets.DOWNLOADS_DISTRIBUTION_ID }}
           VERSION_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
