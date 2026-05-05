@@ -27,45 +27,12 @@ jobs:
     timeout-minutes: 30
     environment: ci
     steps:
-      # The local fetch-release-secrets composite action can only run after
-      # checkout, but checkout needs an App token (private submodule) and the
-      # App credentials live in SSM. Configure AWS creds and pull just those
-      # two parameters inline so the App token can be minted before checkout.
-      # fetch-release-secrets later re-configures creds and pulls the rest.
-      - name: Configure AWS Credentials (pre-checkout)
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
-          aws-region: us-west-2
-
-      - name: Fetch automation App credentials from SSM
-        shell: bash
-        env:
-          PARAM_PATH: /planbridge/ci/release/env-vars
-        run: |
-          set -euo pipefail
-          for name in CB_PR_AUTOMATION_APP_ID CB_PR_AUTOMATION_APP_PRIVATE_KEY; do
-            value=$(aws ssm get-parameter \
-              --name "${PARAM_PATH}/${name}" \
-              --with-decryption \
-              --query 'Parameter.Value' \
-              --output text)
-            while IFS= read -r line; do
-              [ -n "$line" ] && echo "::add-mask::$line"
-            done <<< "$value"
-            {
-              echo "${name}<<EOF_${name}"
-              echo "$value"
-              echo "EOF_${name}"
-            } >> "$GITHUB_ENV"
-          done
-
       - name: Generate ContextBridge app token
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ env.CB_PR_AUTOMATION_APP_ID }}
-          private-key: ${{ env.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
           owner: contextbridge
           repositories: |
             planbridge
