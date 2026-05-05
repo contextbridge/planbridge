@@ -41,7 +41,7 @@ jobs:
       - name: Fetch automation App credentials from SSM
         shell: bash
         env:
-          PARAM_PATH: /cb-cli/ci/release/env-vars
+          PARAM_PATH: /planbridge/ci/release/env-vars
         run: |
           set -euo pipefail
           for name in CB_PR_AUTOMATION_APP_ID CB_PR_AUTOMATION_APP_PRIVATE_KEY; do

@@ -4,11 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, closed]
     paths:
-      - "packages/plan/**/*.tsx"
-      - "packages/plan/**/*.css"
-      - "packages/ui/**/*.tsx"
-      - "packages/ui/**/*.css"
-      - ".github/workflows/chromatic.yml"
+      - 'packages/plan/**/*.tsx'
+      - 'packages/plan/**/*.css'
+      - 'packages/ui/**/*.tsx'
+      - 'packages/ui/**/*.css'
+      - '.github/workflows/chromatic.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           value=$(aws ssm get-parameter \
-            --name /cb-cli/ci/release/env-vars/CHROMATIC_PROJECT_TOKEN \
+            --name /planbridge/ci/release/env-vars/CHROMATIC_PROJECT_TOKEN \
             --with-decryption \
             --query 'Parameter.Value' \
             --output text)

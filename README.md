@@ -1,4 +1,4 @@
-# cb-cli
+# planbridge
 
 The `contextbridge` CLI.
 
