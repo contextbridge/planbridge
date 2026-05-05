@@ -1,0 +1,34 @@
+{
+  "name": "cb-cli",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd packages/cli dev",
+    "build": "just build",
+    "test": "bun run --cwd packages/shared test && bun run --cwd packages/context test && bun run --cwd packages/server test && bun run --cwd packages/ui test && bun run --cwd packages/cli test && bun run --cwd packages/plan test",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "eslint . --max-warnings 0 --cache --ignore-pattern 'tools/**'",
+    "lint:fix": "eslint . --fix --cache --ignore-pattern 'tools/**'",
+    "format": "prettier --write \"**/*.{ts,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,md,json}\"",
+    "synth:projen": "test -f tools/projen/package.json || (echo 'Private tools submodule is not initialized. Run: just tools-init' >&2; exit 1); bun run --cwd tools/projen synth"
+  },
+  "prettier": "@contextbridge-ai/prettier-config",
+  "devDependencies": {
+    "@contextbridge-ai/eslint-config": "^0.0.0",
+    "@contextbridge-ai/prettier-config": "^0.0.0",
+    "@types/bun": "latest",
+    "@types/semver": "^7.7.0",
+    "eslint": "^10.2.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.2",
+    "semver": "^7.7.4",
+    "typescript": "^6.0.2"
+  }
+}

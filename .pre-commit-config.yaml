@@ -1,0 +1,52 @@
+# Pre-commit hooks configuration using prek (https://prek.j178.dev/)
+# Install: prek install
+# Manual: prek run --all-files
+
+default_stages: [pre-push]
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: local
+    hooks:
+      # Pre-commit stage (auto-fix staged files)
+      - id: prettier
+        name: Prettier
+        entry: bun x prettier --write --ignore-unknown
+        language: system
+        stages: [pre-commit]
+        pass_filenames: true
+        types: [text]
+
+      - id: eslint-fix
+        name: ESLint Fix
+        entry: bun x eslint --fix --no-warn-ignored
+        language: system
+        stages: [pre-commit]
+        pass_filenames: true
+        types_or: [ts, tsx]
+
+      # Pre-push stage (comprehensive checks)
+      - id: eslint
+        name: ESLint
+        entry: bun run lint
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        types_or: [ts, tsx]
+
+      - id: typecheck-typescript
+        name: TypeScript Typecheck
+        entry: bun run typecheck
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        types_or: [ts, tsx]
+
+      # AI agent only (set IS_AI_AGENT=1 to enable)
+      - id: test-typescript
+        name: TypeScript Tests
+        entry: bash -c '[ "$IS_AI_AGENT" = "1" ] && bun test || echo "Skipped (IS_AI_AGENT not set)"'
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        types_or: [ts, tsx]

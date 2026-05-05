@@ -1,0 +1,17 @@
+dist/
+node_modules/
+coverage/
+.claude/
+bun.lock
+tools/
+tools/infrastructure/cdk.out/
+
+# Prettier treats .hbs as HTML and collapses the markdown these templates emit.
+*.hbs
+
+# projen-managed files at the repo root. Projen marks these read-only, so
+# prettier's write pass (e.g. pre-commit hook) fails with EACCES. Projen also
+# has its own formatting conventions we don't want to fight.
+.projen/
+.github/CODEOWNERS
+.github/workflows/auto-approve.yml

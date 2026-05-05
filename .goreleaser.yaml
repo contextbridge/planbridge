@@ -1,0 +1,127 @@
+version: 2
+project_name: contextbridge
+
+before:
+  hooks:
+    # Pre-build the Vite singlefile HTML the CLI embeds. `--bun` overrides
+    # vite's `node` shebang so raw `.ts` workspace imports load.
+    - >-
+      bash -c "__CB_VERSION__={{ .Version }} __CB_ENVIRONMENT__=production
+      __CB_CHANNEL__={{ if .Prerelease }}alpha{{ else }}stable{{ end }}
+      __CB_POSTHOG_KEY__='{{ .Env.__CB_POSTHOG_KEY__ }}'
+      __CB_POSTHOG_HOST__='{{ .Env.__CB_POSTHOG_HOST__ }}'
+      __CB_SENTRY_CLI_DSN__='{{ .Env.__CB_SENTRY_CLI_DSN__ }}'
+      __CB_SENTRY_FRONTEND_DSN__='{{ .Env.__CB_SENTRY_FRONTEND_DSN__ }}'
+      bun run --bun --filter '*' build"
+
+builds:
+  - id: contextbridge
+    builder: bun
+    dir: packages/cli
+    main: ./src/cli.ts
+    binary: contextbridge
+    targets:
+      - bun-darwin-arm64
+      - bun-darwin-x64
+      - bun-linux-x64
+      - bun-linux-arm64
+    flags:
+      - --compile
+      - --minify
+      - --sourcemap
+      - --define
+      - '__CB_VERSION__="{{ .Version }}"'
+      - --define
+      - '__CB_ENVIRONMENT__="production"'
+      - --define
+      - '__CB_CHANNEL__="{{ if .Prerelease }}alpha{{ else }}stable{{ end }}"'
+      - --define
+      - '__CB_POSTHOG_KEY__="{{ .Env.__CB_POSTHOG_KEY__ }}"'
+      - --define
+      - '__CB_POSTHOG_HOST__="{{ .Env.__CB_POSTHOG_HOST__ }}"'
+      - --define
+      - '__CB_SENTRY_CLI_DSN__="{{ .Env.__CB_SENTRY_CLI_DSN__ }}"'
+      - --define
+      - '__CB_SENTRY_FRONTEND_DSN__="{{ .Env.__CB_SENTRY_FRONTEND_DSN__ }}"'
+
+archives:
+  - formats: [tar.gz]
+    name_template: 'contextbridge_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+
+checksum:
+  name_template: checksums.txt
+
+blobs:
+  - provider: s3
+    bucket: '{{ .Env.DOWNLOADS_BUCKET }}'
+    region: us-east-1
+    directory: 'cli/{{ .Version }}'
+
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids:
+        - contextbridge
+      sign:
+        certificate: '{{ .Env.MACOS_SIGN_P12 }}'
+        password: '{{ .Env.MACOS_SIGN_PASSWORD }}'
+        entitlements: ./entitlements.plist
+      notarize:
+        issuer_id: '{{ .Env.MACOS_NOTARY_ISSUER_ID }}'
+        key_id: '{{ .Env.MACOS_NOTARY_KEY_ID }}'
+        key: '{{ .Env.MACOS_NOTARY_KEY }}'
+        wait: true
+        timeout: 20m
+
+homebrew_casks:
+  - name: cli
+    binaries:
+      - contextbridge
+    # `auto` = skip cask upload when the tag is a semver prerelease (e.g. v1.0.0-alpha.1).
+    # Keeps the stable cask frozen on alpha tag pushes.
+    skip_upload: auto
+    url:
+      template: 'https://downloads.contextbridge.ai/cli/{{ .Version }}/{{ .ArtifactName }}'
+      verified: 'downloads.contextbridge.ai/cli/'
+    repository:
+      owner: contextbridge
+      name: homebrew-tap
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+    homepage: 'https://plan.contextbridge.ai'
+    description: 'ContextBridge CLI — human-in-the-loop annotation for AI coding sessions'
+    commit_msg_template: 'cask(contextbridge): update to {{ .Tag }}'
+    caveats: |
+      ContextBridge does its real work by hooking into your AI coding harnesses.
+      Run this once to detect the harnesses on your machine and configure them:
+
+          contextbridge install
+
+      Docs: https://plan.contextbridge.ai
+
+  - name: cli@alpha
+    binaries:
+      - contextbridge
+    # Inverse of `auto` — skip unless the tag has a prerelease identifier.
+    # Keeps the alpha cask frozen on stable tag pushes.
+    skip_upload: '{{ if .Prerelease }}false{{ else }}true{{ end }}'
+    url:
+      template: 'https://downloads.contextbridge.ai/cli/{{ .Version }}/{{ .ArtifactName }}'
+      verified: 'downloads.contextbridge.ai/cli/'
+    repository:
+      owner: contextbridge
+      name: homebrew-tap
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+    homepage: 'https://plan.contextbridge.ai'
+    description: 'ContextBridge CLI (alpha channel) — human-in-the-loop annotation for AI coding sessions'
+    commit_msg_template: 'cask(contextbridge@alpha): update to {{ .Tag }}'
+    caveats: |
+      ContextBridge does its real work by hooking into your AI coding harnesses.
+      Run this once to detect the harnesses on your machine and configure them:
+
+          contextbridge install
+
+      Docs: https://plan.contextbridge.ai
+
+release:
+  draft: false
+  prerelease: auto
