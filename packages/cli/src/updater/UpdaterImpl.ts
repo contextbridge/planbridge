@@ -227,8 +227,7 @@ function buildUpdateCommand(method: Exclude<InstallMethod, 'unknown'>, channel: 
   }
   // --no-brew pins install.sh to the tarball path so a tarball-installed user
   // with brew on PATH isn't silently switched to a brew cask. --no-configure
-  // skips the post-install `contextbridge install` step (it isn't idempotent
-  // and would re-prompt on every update).
+  // avoids re-running the post-install `contextbridge install` step on update.
   const args = ['--no-brew', '--no-configure'];
   if (channel === 'alpha') args.push('--channel', 'alpha');
   return ['/bin/sh', '-c', buildInstallShCommand(args)];

@@ -1,9 +1,11 @@
+import { getErrorMessage } from '@contextbridge/shared/errors';
 import { CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from '#src/harnesses/detect.ts';
-import type { HarnessInstaller, InstallActionOptions } from '#src/harnesses/HarnessInstaller.ts';
+import type { HarnessInstaller, HarnessStatus, InstallActionOptions } from '#src/harnesses/HarnessInstaller.ts';
 import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
 import { PROMPTER_CANCELLED_CODE } from '#src/prompter.ts';
+import { formatStatusLine } from './installStatus.ts';
 
 export type HarnessOperationMode = 'install' | 'uninstall';
 
@@ -15,6 +17,7 @@ interface ModeLabels {
   readonly failureCode: string;
   readonly failureMessagePrefix: string;
   readonly logMessage: string;
+  readonly skippedNote: string;
   readonly run: (installer: HarnessInstaller, ctx: CliContext, options: InstallActionOptions) => Promise<void>;
 }
 
@@ -27,6 +30,7 @@ const MODE_LABELS: Record<HarnessOperationMode, ModeLabels> = {
     failureCode: 'contextbridge.install.partialFailure',
     failureMessagePrefix: 'Install failed for',
     logMessage: 'install failed',
+    skippedNote: 'already installed',
     run: (installer, ctx, options) => installer.install(ctx, options),
   },
   uninstall: {
@@ -37,27 +41,50 @@ const MODE_LABELS: Record<HarnessOperationMode, ModeLabels> = {
     failureCode: 'contextbridge.uninstall.partialFailure',
     failureMessagePrefix: 'Uninstall failed for',
     logMessage: 'uninstall failed',
+    skippedNote: 'not installed',
     run: (installer, ctx, options) => installer.uninstall(ctx, options),
   },
 };
 
+export interface HarnessOperationOptions {
+  readonly yes: boolean;
+  readonly force: boolean;
+}
+
 export async function runHarnessOperation(
   ctx: CliContext,
   mode: HarnessOperationMode,
-  { yes }: { yes: boolean },
+  { yes, force }: HarnessOperationOptions,
 ): Promise<void> {
   const labels = MODE_LABELS[mode];
   const { io, prompter, logger } = ctx;
 
-  const detected: HarnessInstaller[] = [];
+  const detected: Array<{ installer: HarnessInstaller; status?: HarnessStatus }> = [];
+  const failures: string[] = [];
 
   for (const installer of ALL_INSTALLERS) {
-    const { displayName } = installer.descriptor;
-    if (detectHarness(ctx, installer.descriptor).binaryOnPath) {
-      io.stderr.write(`${displayName}: detected\n`);
-      detected.push(installer);
-    } else {
-      io.stderr.write(`${displayName}: not detected\n`);
+    const detection = detectHarness(ctx, installer.descriptor);
+    if (!detection.binaryOnPath) {
+      io.stderr.write(
+        `${formatStatusLine({ descriptor: installer.descriptor, detected: false, installed: false, managed: [] })}\n`,
+      );
+      continue;
+    }
+
+    try {
+      const status = await installer.status(ctx);
+      io.stderr.write(`${formatStatusLine(status)}\n`);
+      if (status.detected) {
+        detected.push({ installer, status });
+      }
+    } catch (err) {
+      const { displayName, id } = installer.descriptor;
+      io.stderr.write(`${formatStatusFailureLine(displayName, err)}\n`);
+      if (!(err instanceof CommanderError)) {
+        logger.error({ err, harness: id }, 'status failed');
+      }
+      failures.push(displayName);
+      detected.push({ installer });
     }
   }
 
@@ -71,10 +98,18 @@ export async function runHarnessOperation(
   }
 
   let completedCount = 0;
-  const failures: string[] = [];
+  let skippedCount = 0;
 
-  for (const installer of detected) {
+  for (const { installer, status } of detected) {
     const { displayName } = installer.descriptor;
+    if (!status) continue;
+
+    const alreadyDone = mode === 'install' ? status.installed : status.managed.length === 0;
+    if (!force && alreadyDone) {
+      skippedCount += 1;
+      continue;
+    }
+
     if (!yes) {
       const proceed = await prompter.confirm({
         message: labels.confirmMessage(displayName),
@@ -100,11 +135,17 @@ export async function runHarnessOperation(
     }
   }
 
-  io.stderr.write(
-    `${labels.pastTense} ${completedCount} of ${detected.length} detected harness${detected.length === 1 ? '' : 'es'}.\n`,
-  );
+  const detectedNoun = `detected harness${detected.length === 1 ? '' : 'es'}`;
+  const skippedSuffix = skippedCount > 0 ? ` (${skippedCount} ${labels.skippedNote}, skipped)` : '';
+  io.stderr.write(`${labels.pastTense} ${completedCount} of ${detected.length} ${detectedNoun}${skippedSuffix}.\n`);
 
   if (failures.length > 0) {
     throw new CommanderError(1, labels.failureCode, `${labels.failureMessagePrefix}: ${failures.join(', ')}`);
   }
+}
+
+function formatStatusFailureLine(displayName: string, err: unknown): string {
+  const detail = getErrorMessage(err).trim();
+  if (detail.length === 0) return `${displayName}: status unavailable`;
+  return `${displayName}: status unavailable (${detail})`;
 }

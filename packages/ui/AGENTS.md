@@ -1,6 +1,6 @@
 # @contextbridge/ui — shared styling foundation
 
-This package holds the styling foundation for every browser UI in planbridge (`packages/plan`, later `packages/review`, …). It exports:
+This package holds the styling foundation for every browser UI in cb-cli (`packages/plan`, later `packages/review`, …). It exports:
 
 - **`./styles.css`** — global stylesheet (Tailwind v4 + fonts + OKLCH color palette + shadcn CSS variables). Consumers import this exactly once from their entry.
 - **`./lib/utils`** — `cn()` helper (clsx + tailwind-merge).
@@ -47,7 +47,7 @@ Three known quirks need cleanup after every run:
    ```
    mv '#src/components/ui/<name>.tsx' src/components/ui/ && rm -rf '#src'
    ```
-2. **Missing `.ts` extension in imports**: shadcn emits `import { cn } from "#src/lib/utils"` (no extension). The planbridge convention (see root `AGENTS.md` → "Imports") uses `#src/context.ts` style with the extension. Rewrite to `#src/lib/utils.ts`.
+2. **Missing `.ts` extension in imports**: shadcn emits `import { cn } from "#src/lib/utils"` (no extension). The cb-cli convention (see root `AGENTS.md` → "Imports") uses `#src/context.ts` style with the extension. Rewrite to `#src/lib/utils.ts`.
 3. **Lint/format drift**: shadcn uses double quotes and its own import order. Run `bun run lint:fix` at the repo root to normalize.
 
 After cleanup, run `bun run typecheck` here and `just verify` at the root.

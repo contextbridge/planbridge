@@ -36,7 +36,7 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     const { binaryName } = this.descriptor;
     const detection = detectHarness(ctx, this.descriptor);
     if (!detection.binaryOnPath) {
-      return { descriptor: this.descriptor, detected: false, managed: [] };
+      return { descriptor: this.descriptor, detected: false, installed: false, managed: [] };
     }
     const managed: ManagedEntry[] = [];
     if (await isMarketplaceConfigured(ctx, binaryName)) {
@@ -46,7 +46,7 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     for (const scope of installedScopes) {
       managed.push({ kind: 'plugin', identifier: PLUGIN_ID, scope });
     }
-    return { descriptor: this.descriptor, detected: true, managed };
+    return { descriptor: this.descriptor, detected: true, installed: installedScopes.length > 0, managed };
   }
 
   protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {

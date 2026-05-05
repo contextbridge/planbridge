@@ -294,6 +294,7 @@ describe('ClaudeInstaller.status', () => {
     const status = await installer.status(context);
 
     expect(status.detected).toBe(false);
+    expect(status.installed).toBe(false);
     expect(status.managed).toEqual([]);
     expect(commandRunner.calls).toEqual([]);
   });
@@ -310,6 +311,7 @@ describe('ClaudeInstaller.status', () => {
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
+    expect(status.installed).toBe(true);
     expect(status.managed).toEqual([
       { kind: 'marketplace', identifier: 'contextbridge' },
       { kind: 'plugin', identifier: 'cli@contextbridge', scope: 'user' },
@@ -325,7 +327,21 @@ describe('ClaudeInstaller.status', () => {
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
+    expect(status.installed).toBe(true);
     expect(status.managed).toEqual([{ kind: 'plugin', identifier: 'cli@contextbridge', scope: 'project' }]);
+  });
+
+  it('reports marketplace-only partial state as managed but not installed', async () => {
+    const installer = new ClaudeInstaller();
+    const { context, commandRunner } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.script(marketplaceListResult([{ name: 'contextbridge' }]), pluginListResult([]));
+
+    const status = await installer.status(context);
+
+    expect(status.detected).toBe(true);
+    expect(status.installed).toBe(false);
+    expect(status.managed).toEqual([{ kind: 'marketplace', identifier: 'contextbridge' }]);
   });
 
   it('reports detected: true with no managed entries when claude is on PATH but PlanBridge is not installed', async () => {
@@ -337,6 +353,7 @@ describe('ClaudeInstaller.status', () => {
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
+    expect(status.installed).toBe(false);
     expect(status.managed).toEqual([]);
   });
 

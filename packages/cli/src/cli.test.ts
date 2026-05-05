@@ -102,7 +102,7 @@ describe('runCli', () => {
   });
 
   it('routes argv into the install codex subcommand with default user scope', async () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'planbridge-codex-test-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
 
@@ -121,7 +121,7 @@ describe('runCli', () => {
   });
 
   it('prints handler CommanderError messages from the install codex subcommand', async () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'planbridge-codex-test-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const configDir = join(tmp, '.codex');
     mkdirSync(configDir, { recursive: true });
     writeFileSync(join(configDir, 'config.toml'), '[features\nbroken');
@@ -165,7 +165,12 @@ describe('runCli', () => {
   it('routes argv into the no-target install orchestrator with --yes', async () => {
     const { context, io, commandRunner, prompter } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' }, { exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.script(
+      { exitCode: 0, stdout: '[]', stderr: '' },
+      { exitCode: 0, stdout: '[]', stderr: '' },
+      { exitCode: 0, stdout: '', stderr: '' },
+      { exitCode: 0, stdout: '', stderr: '' },
+    );
 
     const exitCode = await runCli(context, ['install', '--yes']);
 

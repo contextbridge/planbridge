@@ -33,6 +33,18 @@ describe('runInstallStatus', () => {
     expect(io.stderr.text()).toContain('Claude Code: not installed');
   });
 
+  it('reports partial Claude artifacts without calling them installed', async () => {
+    const { context, io, commandRunner } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.script(marketplaceListResult([{ name: 'contextbridge' }]), pluginListResult([]));
+
+    await runInstallStatus(context);
+
+    const stderr = io.stderr.text();
+    expect(stderr).toContain('Claude Code: not installed (marketplace contextbridge)');
+    expect(stderr).not.toContain('Claude Code: installed');
+  });
+
   it('reports project-scope Claude installs', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
@@ -69,6 +81,7 @@ describe('runInstallStatus', () => {
     expect(payload[0]).toMatchObject({
       descriptor: { id: 'claude' },
       detected: true,
+      installed: true,
       managed: [
         { kind: 'marketplace', identifier: 'contextbridge' },
         { kind: 'plugin', identifier: 'cli@contextbridge', scope: 'user' },
@@ -77,6 +90,7 @@ describe('runInstallStatus', () => {
     expect(payload[1]).toMatchObject({
       descriptor: { id: 'codex' },
       detected: false,
+      installed: false,
       managed: [],
     });
   });

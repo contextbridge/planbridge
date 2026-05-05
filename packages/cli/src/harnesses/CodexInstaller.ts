@@ -35,17 +35,20 @@ export class CodexInstaller extends ScopedHarnessInstaller {
   async status(ctx: CliContext): Promise<HarnessStatus> {
     const detection = detectHarness(ctx, this.descriptor);
     if (!detection.binaryOnPath) {
-      return { descriptor: this.descriptor, detected: false, managed: [] };
+      return { descriptor: this.descriptor, detected: false, installed: false, managed: [] };
     }
 
     const managed: ManagedEntry[] = [];
+    let installed = false;
     for (const scope of INSTALL_SCOPES) {
-      if (await isCodexHookInstalledAtScope(ctx, scope)) {
+      const scopeStatus = await getCodexHookStatusAtScope(ctx, scope);
+      if (scopeStatus.hookInstalled) {
         managed.push({ kind: 'hook', identifier: CODEX_HOOK_COMMAND, scope });
       }
+      installed = installed || scopeStatus.installed;
     }
 
-    return { descriptor: this.descriptor, detected: true, managed };
+    return { descriptor: this.descriptor, detected: true, installed, managed };
   }
 
   protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {
@@ -89,9 +92,12 @@ export function enableCodexHooksFeatureInToml(source: string): string {
   return patchCodexConfigToml(source, parsed);
 }
 
-async function isCodexHookInstalledAtScope(ctx: CliContext, scope: InstallScope): Promise<boolean> {
+async function getCodexHookStatusAtScope(
+  ctx: CliContext,
+  scope: InstallScope,
+): Promise<{ hookInstalled: boolean; installed: boolean }> {
   const configDir = getOptionalCodexConfigDir(ctx, scope);
-  if (!configDir) return false;
+  if (!configDir) return { hookInstalled: false, installed: false };
 
   const hooksPath = join(configDir, 'hooks.json');
   const configPath = join(configDir, 'config.toml');
@@ -100,7 +106,7 @@ async function isCodexHookInstalledAtScope(ctx: CliContext, scope: InstallScope)
     hasCodexHooksFeatureEnabled(configPath),
   ]);
 
-  return hooksInstalled && featureEnabled;
+  return { hookInstalled: hooksInstalled, installed: hooksInstalled && featureEnabled };
 }
 
 function getCodexConfigDir(ctx: CliContext, scope: InstallScope): string {
