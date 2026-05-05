@@ -5,6 +5,7 @@ import type { SupportedHarnessDescriptor } from './types.ts';
 export interface HarnessStatus {
   readonly descriptor: SupportedHarnessDescriptor;
   readonly detected: boolean;
+  readonly installed: boolean;
   readonly managed: readonly ManagedEntry[];
 }
 

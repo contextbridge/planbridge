@@ -22,17 +22,16 @@ export async function runInstallStatus(ctx: CliContext, options: InstallStatusOp
   }
 
   for (const status of statuses) {
-    const { displayName } = status.descriptor;
-    if (!status.detected) {
-      io.stderr.write(`${displayName}: not detected\n`);
-      continue;
-    }
-    if (status.managed.length === 0) {
-      io.stderr.write(`${displayName}: not installed\n`);
-      continue;
-    }
-    io.stderr.write(`${displayName}: installed (${formatManaged(status)})\n`);
+    io.stderr.write(`${formatStatusLine(status)}\n`);
   }
+}
+
+export function formatStatusLine(status: HarnessStatus): string {
+  const { displayName } = status.descriptor;
+  if (!status.detected) return `${displayName}: not detected`;
+  if (status.installed) return `${displayName}: installed (${formatManaged(status)})`;
+  if (status.managed.length === 0) return `${displayName}: not installed`;
+  return `${displayName}: not installed (${formatManaged(status)})`;
 }
 
 export function registerInstallStatus(ctx: CliContext, installCommand: Command): void {

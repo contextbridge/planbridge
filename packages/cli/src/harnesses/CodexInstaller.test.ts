@@ -151,6 +151,7 @@ describe('CodexInstaller', () => {
       expect(status).toMatchObject({
         descriptor: { id: 'codex' },
         detected: false,
+        installed: false,
         managed: [],
       });
     });
@@ -163,11 +164,12 @@ describe('CodexInstaller', () => {
       expect(status).toMatchObject({
         descriptor: { id: 'codex' },
         detected: true,
+        installed: true,
         managed: [{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }],
       });
     });
 
-    it('does not report managed when hooks.json exists but the feature flag is absent', async () => {
+    it('reports hook-only partial state as managed but not installed', async () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writePlanBridgeHooksJson(join(configDir, 'hooks.json'));
@@ -176,7 +178,8 @@ describe('CodexInstaller', () => {
       const status = await installer.status(context);
 
       expect(status.detected).toBe(true);
-      expect(status.managed).toEqual([]);
+      expect(status.installed).toBe(false);
+      expect(status.managed).toEqual([{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }]);
     });
 
     it('does not report managed when the feature flag exists but hooks.json is absent', async () => {
@@ -188,6 +191,7 @@ describe('CodexInstaller', () => {
       const status = await installer.status(context);
 
       expect(status.detected).toBe(true);
+      expect(status.installed).toBe(false);
       expect(status.managed).toEqual([]);
     });
 

@@ -6,11 +6,12 @@ import { registerInstallStatus } from './installStatus.ts';
 
 export interface InstallOptions {
   yes?: boolean;
+  force?: boolean;
 }
 
 export async function runInstall(ctx: CliContext, options: InstallOptions = {}): Promise<void> {
-  const { yes = false } = options;
-  await runHarnessOperation(ctx, 'install', { yes });
+  const { yes = false, force = false } = options;
+  await runHarnessOperation(ctx, 'install', { yes, force });
 }
 
 export function registerInstall(ctx: CliContext, program: Command): void {
@@ -20,6 +21,7 @@ export function registerInstall(ctx: CliContext, program: Command): void {
       'Wire PlanBridge into every detected AI coding harness. Run with no arguments to walk all of them, or pass a harness id to target one.',
     )
     .option('-y, --yes', 'skip confirmation prompts', false)
+    .option('--force', 'reinstall even when PlanBridge is already wired up', false)
     .action(async (opts: InstallOptions) => {
       await runInstall(ctx, opts);
     });
