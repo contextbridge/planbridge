@@ -1,0 +1,37 @@
+{
+  "name": "@contextbridge/instrumentation",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/shared/index.ts",
+    "./frontend": "./src/shared/frontend.tsx",
+    "./node": "./src/node/index.ts",
+    "./browser": "./src/browser/index.tsx",
+    "./testHelpers": "./src/testHelpers/index.ts",
+    "./testHelpers/frontend": "./src/testHelpers/frontend.tsx"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@contextbridge/context": "workspace:*",
+    "@contextbridge/shared": "workspace:*",
+    "@sentry/bun": "^10.50.0",
+    "@sentry/react": "^10.50.0",
+    "neverthrow": "^8.2.0",
+    "pino": "^10.3.1",
+    "posthog-js": "^1.370.0",
+    "posthog-node": "^5.29.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0"
+  },
+  "peerDependencies": {
+    "react": "^19.2.3"
+  }
+}

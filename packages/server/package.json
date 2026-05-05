@@ -1,0 +1,24 @@
+{
+  "name": "@contextbridge/server",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./context": "./src/context.ts",
+    "./planReview": "./src/planReview.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@contextbridge/context": "workspace:*",
+    "@contextbridge/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "bun": ">=1.0.0"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@contextbridge/shared",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./errors": "./src/errors.ts",
+    "./frontendConfigSchema": "./src/frontendConfigSchema.ts",
+    "./json": "./src/json.ts",
+    "./links": "./src/links.ts",
+    "./planReviewSchema": "./src/planReviewSchema.ts",
+    "./testFactories": "./src/testFactories.ts",
+    "./time": "./src/time.ts",
+    "./typeGuards": "./src/typeGuards.ts",
+    "./types": "./src/types.ts",
+    "./updateNoticeSchema": "./src/updateNoticeSchema.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "fishery": "^2.4.0",
+    "neverthrow": "^8.2.0",
+    "zod": "^4.3.6"
+  }
+}

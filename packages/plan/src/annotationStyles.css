@@ -1,0 +1,14 @@
+::highlight(cb-plan-annotations) {
+  background-color: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  color: var(--color-neutral-950);
+}
+
+::highlight(cb-plan-annotation-active) {
+  background-color: var(--color-amber-400);
+  color: var(--color-neutral-950);
+}
+
+::highlight(cb-plan-annotation-draft) {
+  background-color: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  color: var(--color-neutral-950);
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun", "vite/client", "@testing-library/jest-dom"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*", "vite.config.ts", "vitest.config.ts", "vitest.setup.ts", ".storybook/**/*", "scripts/**/*"]
+}
