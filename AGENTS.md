@@ -65,7 +65,7 @@ The website is **not** dispatched by the root `test` script: it lives in a separ
 
 ## Pull requests
 
-Always follow `.github/pull_request_template.md` when opening a PR. The body must include the template's three sections — **Summary**, **Review focus**, **Commits** — populated according to the inline comments in that file (Summary is 2–3 human-oriented sentences; Review focus calls out risks/trade-offs; Commits is a bulleted walkthrough with clickable SHA links to `https://github.com/contextbridge/planbridge/commit/<sha>`). Title is conventional-commit style with no ticket/issue ID. When closing an issue, put `Closes #N` in the Summary section.
+Before opening a PR, read `.github/pull_request_template.md` and follow it exactly — section structure, title rules, and inline-comment guidance.
 
 ## Conventions
 
