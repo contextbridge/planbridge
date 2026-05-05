@@ -1,4 +1,4 @@
-# cb-cli justfile
+# planbridge justfile
 
 mod release 'just/release.just'
 mod infra 'just/infra.just'

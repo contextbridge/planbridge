@@ -15,7 +15,7 @@ The longer arc is a multi-tool CLI. Plan review is feature one; code review (`co
 ## Repository layout
 
 ```
-cb-cli/
+planbridge/
 ├── packages/                  # public bun workspace ("workspaces": ["packages/*"])
 │   ├── cli/                   # @contextbridge/cli — the `contextbridge` binary
 │   ├── context/               # @contextbridge/context — shared BaseContext + FrontendContext
@@ -40,7 +40,7 @@ just install
 just tools-init
 ```
 
-Tools changes are developed in the private repo and then pinned here by updating the submodule pointer. Projen synth may modify both repositories; commit private `tools/` changes in `planbridge-private` and public generated changes in `cb-cli` separately.
+Tools changes are developed in the private repo and then pinned here by updating the submodule pointer. Projen synth may modify both repositories; commit private `tools/` changes in `planbridge-private` and public generated changes in `planbridge` separately.
 
 Package naming: every workspace is `@contextbridge/<short-name>`. Review-experience UIs are named by feature (`plan`, later `review`) — never a generic `-ui` suffix. Future review surfaces (`packages/review` for file-change review, etc.) land as siblings. Libraries that multiple experiences share (shared contracts, context, server) are their own packages.
 

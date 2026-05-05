@@ -4,11 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, labeled, closed]
     paths:
-      - "packages/plan/**/*.tsx"
-      - "packages/plan/**/*.css"
-      - "packages/ui/**/*.tsx"
-      - "packages/ui/**/*.css"
-      - ".github/workflows/chromatic.yml"
+      - 'packages/plan/**/*.tsx'
+      - 'packages/plan/**/*.css'
+      - 'packages/ui/**/*.tsx'
+      - 'packages/ui/**/*.css'
+      - '.github/workflows/chromatic.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -17,7 +17,6 @@ concurrency:
 permissions:
   contents: read
   packages: read
-  id-token: write
 
 jobs:
   chromatic:
@@ -39,24 +38,6 @@ jobs:
           ref: ${{ github.event.pull_request.merged && 'main' || github.event.pull_request.head.ref }}
           fetch-depth: 0 # Required for Chromatic to detect changes
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
-          aws-region: us-west-2
-
-      - name: Fetch Chromatic project token from SSM
-        shell: bash
-        run: |
-          set -euo pipefail
-          value=$(aws ssm get-parameter \
-            --name /cb-cli/ci/release/env-vars/CHROMATIC_PROJECT_TOKEN \
-            --with-decryption \
-            --query 'Parameter.Value' \
-            --output text)
-          echo "::add-mask::$value"
-          echo "CHROMATIC_PROJECT_TOKEN=$value" >> "$GITHUB_ENV"
-
       - name: Bootstrap
         uses: ./.github/actions/bootstrap
 
@@ -71,7 +52,7 @@ jobs:
         working-directory: packages/plan
         run: |
           bun run chromatic -- \
-            --project-token="${{ env.CHROMATIC_PROJECT_TOKEN }}" \
+            --project-token="${{ secrets.CHROMATIC_PROJECT_TOKEN }}" \
             --storybook-build-dir=storybook-static \
             --storybook-base-dir=packages/plan \
             --only-changed \

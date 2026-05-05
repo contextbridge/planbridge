@@ -12,11 +12,11 @@ inputs:
   parameter-path:
     description: 'SSM parameter path prefix'
     required: false
-    default: '/cb-cli/ci/release/env-vars'
+    default: '/planbridge/ci/release/env-vars'
   certificate-secret-id:
     description: 'Secrets Manager secret ID for the signing certificate'
     required: false
-    default: 'cb-cli/ci/release/env-vars/MACOS_SIGN_P12'
+    default: 'planbridge/ci/release/env-vars/MACOS_SIGN_P12'
 
 runs:
   using: 'composite'
