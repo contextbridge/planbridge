@@ -1,0 +1,25 @@
+{
+  "servers": {
+    "coding": {
+      "type": "in-memory",
+      "args": ["--rules-dir", "./.claude/rules"]
+    },
+    "skills": {
+      "type": "in-memory",
+      "args": ["--dir", "./.claude/skills", "--notes-dir", "./.aether/notes"]
+    },
+    "tasks": {
+      "type": "in-memory"
+    },
+    "subagents": {
+      "type": "in-memory"
+    },
+    "survey": {
+      "type": "in-memory"
+    },
+    "plan": {
+      "type": "in-memory",
+      "args": ["contextbridge", "plan"]
+    }
+  }
+}

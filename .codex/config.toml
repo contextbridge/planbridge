@@ -1,0 +1,12 @@
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = ["~/.bun/install/cache"]
+
+[mcp_servers.linear]
+url = "https://mcp.linear.app/mcp"
+
+[mcp_servers.sentry]
+url = "https://mcp.sentry.dev/mcp"

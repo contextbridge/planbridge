@@ -1,0 +1,30 @@
+# Local smoke-test for the customer image.
+#
+# - Stages the worktree into a container-owned volume (host node_modules is excluded — darwin binaries don't run on Linux)
+# - Runs bootstrap.sh then `just verify`
+#
+# Usage:
+#   GITHUB_PACKAGES_AUTH_TOKEN=$(gh auth token) docker compose -f .contextbridge/docker-compose.yml run --rm --build verify
+#   docker compose -f .contextbridge/docker-compose.yml run --rm verify bash   # interactive shell
+
+services:
+  verify:
+    build:
+      context: ..
+      dockerfile: .contextbridge/Dockerfile
+      args:
+        AGENT_UID: ${AGENT_UID:-1000}
+        AGENT_GID: ${AGENT_GID:-1000}
+    working_dir: /workspace/repo
+    environment:
+      GITHUB_PACKAGES_AUTH_TOKEN: ${GITHUB_PACKAGES_AUTH_TOKEN:-}
+    volumes:
+      - ../:/host-repo:ro
+      - /workspace/repo
+    command:
+      - sh
+      - -ceu
+      - |
+        tar --exclude='node_modules' -C /host-repo -cf - . | tar -xf - -C /workspace/repo
+        ./.contextbridge/bootstrap.sh
+        just verify
