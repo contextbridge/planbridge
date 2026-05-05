@@ -63,6 +63,10 @@ Do **not** run `bun test` at the repo root — it walks every `*.test.ts` file w
 
 The website is **not** dispatched by the root `test` script: it lives in a separate bun workspace inside the `tools/` submodule, and not all contributors initialize that submodule. Run its checks via `bun run --cwd tools/website test` (or `just tools-install && just verify` from a tools-initialized checkout) when changing the site.
 
+## Pull requests
+
+Always follow `.github/pull_request_template.md` when opening a PR. The body must include the template's three sections — **Summary**, **Review focus**, **Commits** — populated according to the inline comments in that file (Summary is 2–3 human-oriented sentences; Review focus calls out risks/trade-offs; Commits is a bulleted walkthrough with clickable SHA links to `https://github.com/contextbridge/planbridge/commit/<sha>`). Title is conventional-commit style with no ticket/issue ID. When closing an issue, put `Closes #N` in the Summary section.
+
 ## Conventions
 
 - **Dependency injection is non-negotiable.** Prefer explicit context-object wiring over module-level singletons or global mocking.
