@@ -1,0 +1,46 @@
+# Groups minor/patch updates, isolates major versions, and lets security updates through immediately
+version: 2
+# Dependabot doesn't support GITHUB_TOKEN for private registry auth
+# (https://github.com/dependabot/dependabot-core/issues/8411), so we use a
+# fine-grained PAT (blimmer's account) with Packages: Read permission.
+registries:
+  github-packages:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GH_PACKAGES_TOKEN}}
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    ignore:
+      # Projen manages the `actions/create-github-app-token` SHA pin in its
+      # generated workflows (upgrade_contextbridge-website.yml,
+      # auto-approve.yml). Dependabot can't update those lines without being
+      # overwritten on the next `bun run projen` synth, which hardcodes the
+      # SHA in node_modules/projen/lib/github/github-credentials.js.
+      # Keep projen as the single owner; bump projen itself to pick up new
+      # action versions.  See CON-1099 for context.
+      - dependency-name: "actions/create-github-app-token"
+        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "bun"
+    directory: "/"
+    registries:
+      - github-packages
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+    ignore:
+      - dependency-name: "@types/bun"
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]

@@ -1,0 +1,135 @@
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      install_script_changed:
+        description: Whether to run the install-script job (gated on changes to scripts/install*.sh or test.yml)
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/bootstrap
+      - name: Check formatting
+        run: bun run format:check
+      - name: Restore ESLint cache
+        uses: actions/cache@v5
+        with:
+          path: .eslintcache
+          key: eslint-${{ runner.os }}-${{ github.sha }}
+          restore-keys: eslint-${{ runner.os }}-
+      - name: Run ESLint
+        run: bun run lint
+      - name: Typecheck
+        run: bun run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/bootstrap
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: packages/plan
+        run: echo "version=$(jq -r '.devDependencies.playwright' package.json)" >> $GITHUB_OUTPUT
+      - name: Get Ubuntu version
+        id: ubuntu-version
+        run: echo "version=$(lsb_release -rs)" >> $GITHUB_OUTPUT
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: /home/runner/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}-playwright-browsers-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}-playwright-browsers-
+      - name: Install Playwright browsers
+        working-directory: packages/plan
+        run: bunx playwright install --with-deps chromium
+      - name: Run tests
+        run: bun run test
+
+  install-script:
+    # This runs conditionally, but we push the `if` to the steps so the required checks (branch protection)
+    # work properly. This is funky with matrix jobs.
+    name: Install script (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+        if: inputs.install_script_changed
+      - name: Install shellcheck (macOS)
+        if: inputs.install_script_changed && runner.os == 'macOS'
+        run: brew install shellcheck
+      - name: Lint install.sh
+        if: inputs.install_script_changed
+        run: shellcheck --shell=sh -x scripts/install.sh scripts/install.test.sh
+      - name: Unit tests
+        if: inputs.install_script_changed
+        run: sh scripts/install.test.sh
+      # `--no-brew` because we're explicitly exercising the tarball install path here;
+      # `--no-configure` because the runner has no AI coding harness to configure and
+      # shouldn't try to (configure is exercised separately).
+      - name: End-to-end install — tarball, pinned alpha
+        if: inputs.install_script_changed
+        run: |
+          sh scripts/install.sh --no-brew --no-configure --version v0.0.1-alpha.2 --bin-dir "$RUNNER_TEMP/bin"
+          "$RUNNER_TEMP/bin/contextbridge" --version
+      - name: End-to-end install — tarball, channel auto-resolve
+        if: inputs.install_script_changed
+        run: |
+          sh scripts/install.sh --no-brew --no-configure --channel alpha --bin-dir "$RUNNER_TEMP/bin-auto"
+          "$RUNNER_TEMP/bin-auto/contextbridge" --version
+      # Mirrors the documented one-line invocation:
+      #   /bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)" -- ...
+      # using cat instead of curl so CI tests the checked-out script.
+      - name: End-to-end install — command-substitution one-liner
+        if: inputs.install_script_changed
+        run: |
+          /bin/sh -c "$(cat scripts/install.sh)" -- --no-brew --no-configure --channel alpha --bin-dir "$RUNNER_TEMP/bin-command-substitution"
+          "$RUNNER_TEMP/bin-command-substitution/contextbridge" --version
+      # The brew path is the default for every user with brew installed; exercise it
+      # explicitly. macOS-only because the ubuntu runner doesn't ship brew.
+      - name: End-to-end install — Homebrew (macOS only)
+        if: inputs.install_script_changed && runner.os == 'macOS'
+        run: |
+          sh scripts/install.sh --channel alpha --no-configure
+          contextbridge --version
+          brew uninstall --cask contextbridge/tap/cli@alpha
+      # When brew is on PATH, brew-incompatible flags must hard-error. Verifies the
+      # invariant that protects users from a confusing silent fallback.
+      - name: Brew-incompat flags hard-error (macOS only)
+        if: inputs.install_script_changed && runner.os == 'macOS'
+        run: |
+          if CB_VERSION=v0.0.1-alpha.2 sh scripts/install.sh 2>/dev/null; then
+            echo "expected non-zero exit when brew is available and CB_VERSION is set without --no-brew"
+            exit 1
+          fi
+      # Cheap regression guard — the help text is the public surface of the script.
+      - name: Help output advertises all flags
+        if: inputs.install_script_changed
+        run: |
+          out=$(sh scripts/install.sh --help)
+          for flag in --no-brew --no-configure --channel --version --bin-dir CB_NO_BREW CB_SKIP_CONFIGURE; do
+            echo "$out" | grep -q -- "$flag" || { echo "help text missing: $flag"; exit 1; }
+          done
+          echo "$out" | grep -q -- '/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"' || {
+            echo "help text missing recommended one-line install"
+            exit 1
+          }

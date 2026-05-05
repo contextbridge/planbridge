@@ -18,13 +18,42 @@ jobs:
     permissions:
       contents: read
       actions: read # zizmor reads workflow run metadata for online audits
+      id-token: write # OIDC for AWS role assumption (App credentials live in SSM)
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Fetch automation App credentials from SSM
+        shell: bash
+        env:
+          PARAM_PATH: /cb-cli/ci/release/env-vars
+        run: |
+          set -euo pipefail
+          for name in CB_PR_AUTOMATION_APP_ID CB_PR_AUTOMATION_APP_PRIVATE_KEY; do
+            value=$(aws ssm get-parameter \
+              --name "${PARAM_PATH}/${name}" \
+              --with-decryption \
+              --query 'Parameter.Value' \
+              --output text)
+            while IFS= read -r line; do
+              [ -n "$line" ] && echo "::add-mask::$line"
+            done <<< "$value"
+            {
+              echo "${name}<<EOF_${name}"
+              echo "$value"
+              echo "EOF_${name}"
+            } >> "$GITHUB_ENV"
+          done
+
       - name: Generate ContextBridge app token
         id: app-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
-          app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
-          private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
+          app-id: ${{ env.CB_PR_AUTOMATION_APP_ID }}
+          private-key: ${{ env.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
           owner: contextbridge
           repositories: |
             planbridge

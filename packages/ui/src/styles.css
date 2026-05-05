@@ -1,0 +1,325 @@
+/* ContextBridge UI — shared styles for all cb-cli browser UIs.
+   Mirrors the design system in contextbridge.github.io: OKLCH brand palette,
+   ESBuild (brand wordmark) + IBM Plex Sans (prose + chrome) + IBM Plex Mono
+   (code), shadcn new-york tokens. */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Tailwind auto-detection skips workspace packages resolved through node_modules.
+   Explicitly register this package's components so shadcn utility classes are emitted. */
+@source "./components/**/*.{ts,tsx}";
+
+/* IBM Plex Sans — prose + chrome (loaded via @fontsource, bundled by Vite). */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/400-italic.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+
+/* IBM Plex Mono — code blocks and inline code. */
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-mono/700.css';
+
+/* ESBuild — brand wordmark font. Relative URLs so Vite processes and inlines
+   them for the single-file bundle (public/ dir does not exist inside a lib). */
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-Regular.woff2') format('woff2'),
+    url('./fonts/ESBuild-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-RegularItalic.woff2') format('woff2'),
+    url('./fonts/ESBuild-RegularItalic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-Medium.woff2') format('woff2'),
+    url('./fonts/ESBuild-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-MediumItalic.woff2') format('woff2'),
+    url('./fonts/ESBuild-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-Semibold.woff2') format('woff2'),
+    url('./fonts/ESBuild-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-SemiboldItalic.woff2') format('woff2'),
+    url('./fonts/ESBuild-SemiboldItalic.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-Bold.woff2') format('woff2'),
+    url('./fonts/ESBuild-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('./fonts/ESBuild-BoldItalic.woff2') format('woff2'),
+    url('./fonts/ESBuild-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --cb-font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --cb-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --cb-font-brand: 'ESBuild', system-ui, sans-serif;
+
+  --background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --muted-foreground: var(--color-neutral-600);
+  --border: var(--color-neutral-200);
+
+  --peach: oklch(88.5% 0.075 70);
+  --tangerine: oklch(77% 0.17 55);
+  --coral: oklch(66% 0.22 30);
+  --red: oklch(58% 0.25 27);
+  --violet: oklch(52% 0.29 310);
+  --royal: oklch(48% 0.26 265);
+  --royal-light: oklch(65% 0.24 265);
+  --violet-light: oklch(70% 0.25 310);
+
+  --color-amber-50: oklch(98.5% 0.02 95);
+  --color-amber-100: oklch(96% 0.052 95.5);
+  --color-amber-200: oklch(92% 0.1 96);
+  --color-amber-300: oklch(87.5% 0.15 96.5);
+  --color-amber-400: oklch(81.5% 0.182 97);
+  --color-amber-500: oklch(75.5% 0.19 97.5);
+  --color-amber-600: oklch(66% 0.172 98);
+  --color-amber-700: oklch(55% 0.15 98.5);
+  --color-amber-800: oklch(46.5% 0.122 99);
+  --color-amber-900: oklch(40.5% 0.102 99.5);
+  --color-amber-950: oklch(28% 0.072 100);
+
+  --color-neutral-50: oklch(98.5% 0 0);
+  --color-neutral-100: oklch(96.7% 0 0);
+  --color-neutral-200: oklch(93% 0 0);
+  --color-neutral-300: oklch(87% 0 0);
+  --color-neutral-400: oklch(70.8% 0 0);
+  --color-neutral-500: oklch(55.6% 0 0);
+  --color-neutral-600: oklch(43.9% 0 0);
+  --color-neutral-700: oklch(37.1% 0 0);
+  --color-neutral-800: oklch(26.9% 0 0);
+  --color-neutral-900: oklch(20.5% 0 0);
+  --color-neutral-950: oklch(18% 0 0);
+  --color-neutral-975: oklch(12% 0 0);
+  --color-neutral-990: oklch(8% 0 0);
+
+  --color-green-50: oklch(98.3% 0.018 155);
+  --color-green-100: oklch(96% 0.041 156);
+  --color-green-200: oklch(92% 0.08 157);
+  --color-green-300: oklch(86.5% 0.132 158);
+  --color-green-400: oklch(78.5% 0.184 159);
+  --color-green-500: oklch(72% 0.21 160);
+  --color-green-600: oklch(62.5% 0.186 160.5);
+  --color-green-700: oklch(53% 0.15 161);
+  --color-green-800: oklch(45% 0.118 162);
+  --color-green-900: oklch(38.5% 0.094 162.5);
+  --color-green-950: oklch(28% 0.065 163);
+
+  --color-teal-50: oklch(98% 0.014 180);
+  --color-teal-100: oklch(95.5% 0.034 181);
+  --color-teal-200: oklch(91% 0.064 181.5);
+  --color-teal-300: oklch(85% 0.104 182);
+  --color-teal-400: oklch(77% 0.136 182.5);
+  --color-teal-500: oklch(70.2% 0.151 162.68);
+  --color-teal-600: oklch(60% 0.139 183);
+  --color-teal-700: oklch(51% 0.115 183.5);
+  --color-teal-800: oklch(43% 0.092 184);
+  --color-teal-900: oklch(36.5% 0.075 184.5);
+  --color-teal-950: oklch(28% 0.058 185);
+
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --primary: var(--royal);
+  --primary-foreground: var(--background);
+  --secondary: var(--color-neutral-50);
+  --secondary-foreground: var(--foreground);
+  --accent: var(--color-neutral-50);
+  --accent-foreground: var(--foreground);
+  --muted: var(--color-neutral-50);
+
+  --radius: 0.625rem;
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --destructive: var(--red);
+  --input: var(--color-neutral-200);
+  --ring: var(--color-neutral-400);
+  --chart-1: var(--tangerine);
+  --chart-2: var(--color-teal-500);
+  --chart-3: var(--royal);
+  --chart-4: var(--peach);
+  --chart-5: var(--coral);
+  --sidebar: var(--color-neutral-50);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--foreground);
+  --sidebar-primary-foreground: var(--color-neutral-50);
+  --sidebar-accent: var(--color-neutral-100);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--color-neutral-200);
+  --sidebar-ring: var(--color-neutral-400);
+}
+
+/* Dark mode follows system preference. No toggle, no .dark class.
+   The browser UI is short-lived (one review per spawn), so system pref is the contract. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: var(--color-neutral-990);
+    --foreground: var(--color-neutral-50);
+    --muted-foreground: var(--color-neutral-400);
+    --border: var(--color-neutral-800);
+
+    --card: var(--color-neutral-975);
+    --card-foreground: var(--foreground);
+    --primary: var(--royal-light);
+    --primary-foreground: var(--color-neutral-50);
+    --secondary: var(--color-neutral-900);
+    --secondary-foreground: var(--foreground);
+    --accent: var(--color-neutral-900);
+    --accent-foreground: var(--foreground);
+    --muted: var(--color-neutral-900);
+
+    --popover: var(--color-neutral-975);
+    --popover-foreground: var(--foreground);
+    --input: var(--color-neutral-800);
+    --ring: var(--color-neutral-600);
+    --chart-3: var(--royal-light);
+    --sidebar: var(--color-neutral-950);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--foreground);
+    --sidebar-primary-foreground: var(--color-neutral-950);
+    --sidebar-accent: var(--color-neutral-900);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--color-neutral-800);
+    --sidebar-ring: var(--color-neutral-600);
+  }
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--cb-font-sans);
+}
+
+.font-brand {
+  font-family: var(--cb-font-brand);
+}
+
+.font-mono {
+  font-family: var(--cb-font-mono);
+}
+
+/* Code in the plan body uses Plex Mono. */
+.cb-plan-content :is(pre, code) {
+  font-family: var(--cb-font-mono);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-peach: var(--peach);
+  --color-tangerine: var(--tangerine);
+  --color-coral: var(--coral);
+  --color-red: var(--red);
+  --color-violet: var(--violet);
+  --color-royal: var(--royal);
+  --color-royal-light: var(--royal-light);
+  --color-violet-light: var(--violet-light);
+
+  --color-neutral-975: var(--color-neutral-975);
+  --color-neutral-990: var(--color-neutral-990);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}

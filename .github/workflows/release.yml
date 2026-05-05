@@ -1,0 +1,195 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+  packages: read
+
+jobs:
+  test:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+    with:
+      install_script_changed: false
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit
+
+  release:
+    name: GoReleaser
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ci
+    steps:
+      # The local fetch-release-secrets composite action can only run after
+      # checkout, but checkout needs an App token (private submodule) and the
+      # App credentials live in SSM. Configure AWS creds and pull just those
+      # two parameters inline so the App token can be minted before checkout.
+      # fetch-release-secrets later re-configures creds and pulls the rest.
+      - name: Configure AWS Credentials (pre-checkout)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Fetch automation App credentials from SSM
+        shell: bash
+        env:
+          PARAM_PATH: /cb-cli/ci/release/env-vars
+        run: |
+          set -euo pipefail
+          for name in CB_PR_AUTOMATION_APP_ID CB_PR_AUTOMATION_APP_PRIVATE_KEY; do
+            value=$(aws ssm get-parameter \
+              --name "${PARAM_PATH}/${name}" \
+              --with-decryption \
+              --query 'Parameter.Value' \
+              --output text)
+            while IFS= read -r line; do
+              [ -n "$line" ] && echo "::add-mask::$line"
+            done <<< "$value"
+            {
+              echo "${name}<<EOF_${name}"
+              echo "$value"
+              echo "EOF_${name}"
+            } >> "$GITHUB_ENV"
+          done
+
+      - name: Generate ContextBridge app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ env.CB_PR_AUTOMATION_APP_ID }}
+          private-key: ${{ env.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: contextbridge
+          repositories: |
+            planbridge
+            planbridge-private
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          submodules: true
+
+      - uses: ./.github/actions/bootstrap
+
+      - name: Bootstrap private tools
+        uses: ./.github/actions/bootstrap-tools
+        env:
+          GITHUB_PACKAGES_AUTH_TOKEN: ${{ github.token }}
+
+      - name: Fetch release secrets
+        uses: ./.github/actions/fetch-release-secrets
+        with:
+          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
+
+      - name: Decode Homebrew tap app private key
+        shell: bash
+        run: |
+          set -euo pipefail
+          decoded=$(printf '%s' "$HOMEBREW_TAP_APP_PRIVATE_KEY_B64" | base64 --decode)
+          while IFS= read -r line; do
+            [ -n "$line" ] && echo "::add-mask::$line"
+          done <<< "$decoded"
+          {
+            echo "HOMEBREW_TAP_APP_PRIVATE_KEY<<EOF_HOMEBREW_TAP_APP_PRIVATE_KEY"
+            echo "$decoded"
+            echo "EOF_HOMEBREW_TAP_APP_PRIVATE_KEY"
+          } >> "$GITHUB_ENV"
+
+      - name: Mint Homebrew tap token
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ env.HOMEBREW_TAP_APP_ID }}
+          private-key: ${{ env.HOMEBREW_TAP_APP_PRIVATE_KEY }}
+          owner: contextbridge
+          repositories: homebrew-tap
+
+      - name: Validate telemetry build config
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in __CB_POSTHOG_KEY__ __CB_POSTHOG_HOST__ __CB_SENTRY_CLI_DSN__ __CB_SENTRY_FRONTEND_DSN__; do
+            value="${!name:-}"
+            if [ -z "$value" ]; then
+              echo "::error::$name is required for release builds" >&2
+              exit 1
+            fi
+            echo "::add-mask::$value"
+          done
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7.2.1
+        with:
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.tap-token.outputs.token }}
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
+
+      - name: Mirror release to channel alias
+        shell: bash
+        env:
+          BUCKET: ${{ env.DOWNLOADS_BUCKET }}
+          DISTRIBUTION_ID: ${{ env.DOWNLOADS_DISTRIBUTION_ID }}
+          VERSION_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          VERSION_NO_V="${VERSION_TAG#v}"
+          # Tag shape decides which alias moves: prerelease tags carry a `-`
+          # (e.g. v0.2.0-alpha.1), stable tags don't. Mirrors the
+          # `skip_upload: auto` semantics in .goreleaser.yaml's homebrew_casks.
+          case "$VERSION_TAG" in
+            *-*) ALIAS="latest-alpha" ;;
+            *)   ALIAS="latest" ;;
+          esac
+          SRC="cli/${VERSION_NO_V}"
+          DST="cli/${ALIAS}"
+
+          echo "==> mirroring s3://${BUCKET}/${SRC}/ to s3://${BUCKET}/${DST}/"
+          for os in darwin linux; do
+            for arch in arm64 amd64; do
+              SRC_FILE="contextbridge_${VERSION_NO_V}_${os}_${arch}.tar.gz"
+              DST_FILE="contextbridge_${ALIAS}_${os}_${arch}.tar.gz"
+              echo "    ${SRC_FILE} -> ${DST_FILE}"
+              aws s3 cp \
+                "s3://${BUCKET}/${SRC}/${SRC_FILE}" \
+                "s3://${BUCKET}/${DST}/${DST_FILE}" \
+                --region us-east-1
+            done
+          done
+
+          # Rewrite checksums.txt so its embedded filenames match the mirrored
+          # objects (otherwise install.sh's verify_checksum can't find the line).
+          echo "==> rewriting checksums.txt"
+          tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+          aws s3 cp "s3://${BUCKET}/${SRC}/checksums.txt" "$tmp/checksums.txt" --region us-east-1
+          sed "s/_${VERSION_NO_V}_/_${ALIAS}_/g" "$tmp/checksums.txt" > "$tmp/checksums-aliased.txt"
+          aws s3 cp "$tmp/checksums-aliased.txt" "s3://${BUCKET}/${DST}/checksums.txt" --region us-east-1
+
+          # CloudFront's 1-day min TTL would otherwise serve the previous alias
+          # target after the swap. Versioned paths (cli/${VERSION}/) are
+          # immutable and never need invalidation.
+          echo "==> invalidating /cli/${ALIAS}/*"
+          aws cloudfront create-invalidation \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --paths "/cli/${ALIAS}/*" \
+            --region us-east-1
+
+      - name: Publish install.sh to CloudFront
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 cp scripts/install.sh "s3://${DOWNLOADS_BUCKET}/cli/install.sh" \
+            --region us-east-1 \
+            --content-type 'text/x-shellscript; charset=utf-8' \
+            --cache-control 'public, max-age=300'

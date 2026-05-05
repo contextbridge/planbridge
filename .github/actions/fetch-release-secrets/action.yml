@@ -1,0 +1,81 @@
+name: Fetch Release Secrets
+description: Fetches release environment variables from AWS SSM Parameter Store and Secrets Manager
+
+inputs:
+  aws-region:
+    description: 'AWS region where secrets are stored'
+    required: false
+    default: 'us-west-2'
+  role-to-assume:
+    description: 'IAM role ARN to assume for secrets access'
+    required: true
+  parameter-path:
+    description: 'SSM parameter path prefix'
+    required: false
+    default: '/cb-cli/ci/release/env-vars'
+  certificate-secret-id:
+    description: 'Secrets Manager secret ID for the signing certificate'
+    required: false
+    default: 'cb-cli/ci/release/env-vars/MACOS_SIGN_P12'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Fetch MACOS_SIGN_P12 from Secrets Manager
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        value=$(aws secretsmanager get-secret-value \
+          --secret-id "${{ inputs.certificate-secret-id }}" \
+          --query 'SecretString' \
+          --output text)
+
+        echo "::add-mask::$value"
+
+        {
+          echo "MACOS_SIGN_P12<<EOF_MACOS_SIGN_P12"
+          echo "$value"
+          echo "EOF_MACOS_SIGN_P12"
+        } >> "$GITHUB_ENV"
+
+        echo "Exported: MACOS_SIGN_P12 (from Secrets Manager)"
+
+    - name: Fetch secrets from SSM
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        PARAM_PATH="${{ inputs.parameter-path }}"
+
+        PARAMS=$(aws ssm get-parameters-by-path \
+          --path "$PARAM_PATH" \
+          --recursive \
+          --with-decryption \
+          --query 'Parameters[*].[Name,Value]' \
+          --output text)
+
+        if [ -z "$PARAMS" ]; then
+          echo "::error::No parameters found under path: $PARAM_PATH"
+          exit 1
+        fi
+
+        while IFS=$'\t' read -r name value; do
+          env_var="${name##*/}"
+
+          echo "::add-mask::$value"
+
+          {
+            echo "${env_var}<<EOF_${env_var}"
+            echo "$value"
+            echo "EOF_${env_var}"
+          } >> "$GITHUB_ENV"
+
+          echo "Exported: $env_var"
+        done <<< "$PARAMS"

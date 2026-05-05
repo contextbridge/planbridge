@@ -1,0 +1,43 @@
+name: Main Branch
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: main-release
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      dependencies_changed: ${{ steps.changes.outputs.dependencies_changed }}
+      install_script_changed: ${{ steps.changes.outputs.install_script_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          mode: deploy
+          workflow_name: Main Branch
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Tests
+    needs: detect-changes
+    uses: ./.github/workflows/test.yml
+    with:
+      install_script_changed: ${{ needs.detect-changes.outputs.install_script_changed == 'true' }}
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit

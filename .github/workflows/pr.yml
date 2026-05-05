@@ -1,0 +1,41 @@
+name: PR
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      dependencies_changed: ${{ steps.changes.outputs.dependencies_changed }}
+      install_script_changed: ${{ steps.changes.outputs.install_script_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+        with:
+          mode: pull_request
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Tests
+    needs: detect-changes
+    uses: ./.github/workflows/test.yml
+    with:
+      install_script_changed: ${{ needs.detect-changes.outputs.install_script_changed == 'true' }}
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit

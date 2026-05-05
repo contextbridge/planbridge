@@ -1,0 +1,86 @@
+name: Chromatic
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, closed]
+    paths:
+      - "packages/plan/**/*.tsx"
+      - "packages/plan/**/*.css"
+      - "packages/ui/**/*.tsx"
+      - "packages/ui/**/*.css"
+      - ".github/workflows/chromatic.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+jobs:
+  chromatic:
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Run if PR has 'chromatic' label AND either:
+    # 1. PR is open (opened, synchronize, labeled events), OR
+    # 2. PR was just merged to main (closed event with merged=true)
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'chromatic') &&
+      (github.event.action != 'closed' ||
+       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'))
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # Checkout main when merged, otherwise checkout PR branch (not ephemeral merge commit)
+          ref: ${{ github.event.pull_request.merged && 'main' || github.event.pull_request.head.ref }}
+          fetch-depth: 0 # Required for Chromatic to detect changes
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Fetch Chromatic project token from SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          value=$(aws ssm get-parameter \
+            --name /cb-cli/ci/release/env-vars/CHROMATIC_PROJECT_TOKEN \
+            --with-decryption \
+            --query 'Parameter.Value' \
+            --output text)
+          echo "::add-mask::$value"
+          echo "CHROMATIC_PROJECT_TOKEN=$value" >> "$GITHUB_ENV"
+
+      - name: Bootstrap
+        uses: ./.github/actions/bootstrap
+
+      - name: Build Storybook
+        run: bun run --cwd packages/plan build-storybook
+
+      - name: Deploy to Chromatic
+        # Use CLI directly instead of chromaui/action because the action overwrites
+        # CHROMATIC_SHA/CHROMATIC_BRANCH env vars with GitHub context values, ignoring
+        # user overrides. The CLI respects these env vars properly.
+        # Issue: https://github.com/chromaui/chromatic-cli/issues/1230
+        working-directory: packages/plan
+        run: |
+          bun run chromatic -- \
+            --project-token="${{ env.CHROMATIC_PROJECT_TOKEN }}" \
+            --storybook-build-dir=storybook-static \
+            --storybook-base-dir=packages/plan \
+            --only-changed \
+            --exit-zero-on-changes \
+            ${{ github.event.pull_request.merged && '--auto-accept-changes' || '' }}
+        env:
+          # Override git detection to work around ephemeral merge commits.
+          # For PRs: use the head ref/sha to compare against the correct baseline.
+          # For merged PRs: use 'main' and merge_commit_sha to establish baselines.
+          CHROMATIC_BRANCH: ${{ github.event.pull_request.merged && 'main' || github.event.pull_request.head.ref }}
+          CHROMATIC_SHA: ${{ github.event.pull_request.merged && github.event.pull_request.merge_commit_sha || github.event.pull_request.head.sha }}
+          CHROMATIC_SLUG: ${{ github.repository }}

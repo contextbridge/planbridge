@@ -1,0 +1,6 @@
+[submodule "tools"]
+	path = tools
+	url = git@github.com:contextbridge/planbridge-private.git
+	branch = main
+	update = rebase
+	ignore = all

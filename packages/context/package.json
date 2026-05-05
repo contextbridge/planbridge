@@ -1,0 +1,27 @@
+{
+  "name": "@contextbridge/context",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./frontend": "./src/frontend.ts",
+    "./build": "./src/build.ts",
+    "./testFactories": "./src/testFactories.ts",
+    "./testHelpers": "./src/testHelpers/index.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@contextbridge/instrumentation": "workspace:*",
+    "@contextbridge/shared": "workspace:*",
+    "fishery": "^2.4.0",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3"
+  }
+}
