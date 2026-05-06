@@ -6,11 +6,13 @@ import { useEffect } from 'react';
 import { usePlanAppContext } from './useAppContext.ts';
 
 const UPDATE_COMMAND = 'contextbridge update';
+const RELEASE_URL_BASE = 'https://github.com/contextbridge/planbridge/releases/tag/v';
 
 export const updateNoticeCardTestIds = {
   container: 'update-notice-card',
   copyButton: 'update-notice-card-copy',
   dismissButton: 'update-notice-card-dismiss',
+  changelogLink: 'update-notice-card-changelog',
 };
 
 export interface UpdateNoticeCardProps {
@@ -35,11 +37,27 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
     onDismiss();
   };
 
+  const handleChangelogClick = () => {
+    analytics.capture('update_changelog_clicked', { latest_version: notice.latestVersion });
+  };
+
   return (
     <div className="fixed right-4 bottom-4 z-50 w-[min(20rem,calc(100vw-2rem))]">
       <Alert data-testid={updateNoticeCardTestIds.container} className="relative py-2.5 pr-8 shadow-lg">
         <Sparkles className="size-3.5" />
-        <AlertTitle className="text-xs font-medium">Update available: v{notice.latestVersion}</AlertTitle>
+        <AlertTitle className="text-xs font-medium">
+          Update available:{' '}
+          <a
+            href={`${RELEASE_URL_BASE}${notice.latestVersion}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            onClick={handleChangelogClick}
+            data-testid={updateNoticeCardTestIds.changelogLink}
+            className="underline-offset-2 hover:underline"
+          >
+            v{notice.latestVersion}
+          </a>
+        </AlertTitle>
         <AlertDescription className="text-muted-foreground text-xs">
           You&apos;re on v{notice.currentVersion}. Run to upgrade:
         </AlertDescription>

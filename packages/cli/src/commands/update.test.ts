@@ -133,6 +133,20 @@ describe('runUpdate', () => {
     expect(io.stderr.text()).toContain('update complete');
   });
 
+  it('prints a changelog URL pointing at the per-version GitHub Release page', async () => {
+    const { context, io, updater } = createStubContext();
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+
+    await runUpdate(context);
+
+    expect(io.stderr.text()).toContain('https://github.com/contextbridge/planbridge/releases/tag/v0.2.0');
+  });
+
   it('logger.error + throws CommanderError when the installer exits non-zero', () => {
     const { context, io, logs, updater } = createStubContext();
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });

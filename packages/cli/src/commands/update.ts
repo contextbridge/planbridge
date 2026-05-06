@@ -11,6 +11,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
   }
 
   io.stderr.write(`A new version is available: v${notice.latestVersion} (you're on v${notice.currentVersion}).\n`);
+  io.stderr.write(`What's new: https://github.com/contextbridge/planbridge/releases/tag/v${notice.latestVersion}\n`);
 
   const result = await updater.performUpdate();
   switch (result.status) {
