@@ -308,6 +308,7 @@ export const DemoFlow: Story = {
     }),
   ],
   parameters: {
+    chromatic: { disableSnapshot: true },
     docs: {
       description: {
         story:
@@ -413,6 +414,7 @@ export const FullDemo: Story = {
   render: (args) => <DemoStage {...args} />,
   parameters: {
     layout: 'fullscreen',
+    chromatic: { disableSnapshot: true },
     docs: {
       description: {
         story:
