@@ -63,6 +63,10 @@ Do **not** run `bun test` at the repo root — it walks every `*.test.ts` file w
 
 The website is **not** dispatched by the root `test` script: it lives in a separate bun workspace inside the `tools/` submodule, and not all contributors initialize that submodule. Run its checks via `bun run --cwd tools/website test` (or `just tools-install && just verify` from a tools-initialized checkout) when changing the site.
 
+## Pull requests
+
+Before opening a PR, read `.github/pull_request_template.md` and follow it exactly — section structure, title rules, and inline-comment guidance.
+
 ## Conventions
 
 - **Dependency injection is non-negotiable.** Prefer explicit context-object wiring over module-level singletons or global mocking.

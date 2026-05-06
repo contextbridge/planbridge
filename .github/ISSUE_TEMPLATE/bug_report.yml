@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-issue-forms.json
+name: Bug report
+description: Report a problem with the contextbridge CLI or plan review UI.
+title: 'bug: '
+labels: ['bug']
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Make sure you're on the latest version of `contextbridge` before filing. Quick questions and support belong in the [community Slack](https://go.contextbridge.ai/join-community), not the issue tracker.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear, self-contained description of the problem.
+    validations:
+      required: true
+  - type: input
+    id: cli-version
+    attributes:
+      label: contextbridge version
+      description: Run `contextbridge --version` and paste the output.
+      placeholder: 1.2.3
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: |
+        Need to share more detail? Paste the output of `uname -a` into "Anything else" below.
+      options:
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Run ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or stack trace
+      description: Paste any stderr output, stack traces, or pino log lines. Renders as a code block.
+      render: shell
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: Only fill in for plan review UI bugs.
+      placeholder: Chrome 124, Safari 17.4
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Anything else
+      description: Screenshots, related issues, environment notes, `uname -a` output, etc.
