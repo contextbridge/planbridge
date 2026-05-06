@@ -15,3 +15,6 @@ tools/infrastructure/cdk.out/
 .projen/
 .github/CODEOWNERS
 .github/workflows/auto-approve.yml
+
+# release-please owns CHANGELOG.md formatting; don't fight it.
+CHANGELOG.md
