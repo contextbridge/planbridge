@@ -6,7 +6,7 @@ import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
-import type { PlanReviewDependencies } from '#src/planReview/runPlanReview.ts';
+import { PlanReviewAbandonedError, type PlanReviewDependencies } from '#src/planReview/runPlanReview.ts';
 import { createStubContext, readErrorLogs, readLogs, readWarnLogs } from '#src/testHelpers/index.ts';
 import { runPlan } from './plan.ts';
 
@@ -154,6 +154,21 @@ describe('plan handler', () => {
     expect(reviewPromise).rejects.toBeInstanceOf(CommanderError);
     expect(telemetry.exceptions).toEqual([]);
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
+  });
+
+  it('exits cleanly with no stdout when the browser tab is abandoned', async () => {
+    const { context, io, logs, analytics } = createStubContext();
+    const deps = createPlanDependencies({ result: Promise.reject(new PlanReviewAbandonedError()) });
+    io.stdin.write('# Plan\n');
+    io.stdin.end();
+
+    await runPlan(context, {}, deps);
+
+    expect(io.stdout.text()).toBe('');
+    expect(deps.closed).toBe(true);
+    expect(readLogs(logs).some((r) => r.msg.includes('plan review abandoned'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
+    expect(analytics.captures.some((c) => c.event === 'plan_review_abandoned')).toBe(true);
   });
 });
 

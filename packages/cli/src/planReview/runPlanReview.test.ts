@@ -1,8 +1,9 @@
+import { PlanReviewSessionAbandonedError } from '@contextbridge/server/planReview';
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { createStubContext } from '#src/testHelpers/index.ts';
-import { type PlanReviewDependencies, runPlanReview } from './runPlanReview.ts';
+import { PlanReviewAbandonedError, type PlanReviewDependencies, runPlanReview } from './runPlanReview.ts';
 
 describe('runPlanReview', () => {
   it('opens the browser and returns the submitted review', async () => {
@@ -38,6 +39,17 @@ describe('runPlanReview', () => {
     deps.triggerSigint();
 
     expect(reviewPromise).rejects.toThrow('plan review interrupted by SIGINT');
+    expect(deps.closeCount).toBe(1);
+    expect(deps.sigintHandlerRemoved).toBe(true);
+  });
+
+  it('translates PlanReviewSessionAbandonedError into PlanReviewAbandonedError', () => {
+    const { context } = createStubContext();
+    const deps = createPlanReviewDependencies({
+      result: Promise.reject(new PlanReviewSessionAbandonedError()),
+    });
+
+    expect(runPlanReview(context, { planContent: '# Plan' }, deps)).rejects.toBeInstanceOf(PlanReviewAbandonedError);
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
   });

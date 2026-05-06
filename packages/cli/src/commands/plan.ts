@@ -4,6 +4,7 @@ import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
 import {
+  PlanReviewAbandonedError,
   type PlanReviewDependencies,
   PlanReviewInterruptedError,
   runPlanReview,
@@ -54,6 +55,13 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReview
     if (err instanceof PlanReviewInterruptedError) {
       logger.info('plan review interrupted');
       throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
+    }
+    if (err instanceof PlanReviewAbandonedError) {
+      logger.info('plan review abandoned because the browser tab stopped sending heartbeats');
+      analytics.capture('plan_review_abandoned', {
+        duration_ms: nowInstant().epochMilliseconds - startedAt.epochMilliseconds,
+      });
+      return;
     }
     abort(ctx, 'runtime', getErrorMessage(err));
   }

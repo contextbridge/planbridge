@@ -1,5 +1,5 @@
 import type { ServerContext } from '@contextbridge/server/context';
-import { startServer } from '@contextbridge/server/planReview';
+import { PlanReviewSessionAbandonedError, startServer } from '@contextbridge/server/planReview';
 import type { RunningServer } from '@contextbridge/server/planReview';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
@@ -11,6 +11,13 @@ export class PlanReviewInterruptedError extends Error {
   constructor(message = 'plan review interrupted by SIGINT') {
     super(message);
     this.name = 'PlanReviewInterruptedError';
+  }
+}
+
+export class PlanReviewAbandonedError extends Error {
+  constructor(message = 'plan review abandoned because the browser tab stopped sending heartbeats') {
+    super(message);
+    this.name = 'PlanReviewAbandonedError';
   }
 }
 
@@ -81,6 +88,11 @@ export async function runPlanReview(
     await Promise.race([openUrl(server.url), sigintPromise]);
 
     return await Promise.race([server.result, sigintPromise]);
+  } catch (err) {
+    if (err instanceof PlanReviewSessionAbandonedError) {
+      throw new PlanReviewAbandonedError(err.message);
+    }
+    throw err;
   } finally {
     removeSigintHandler();
     await closeServer();
