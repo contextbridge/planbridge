@@ -8,6 +8,7 @@
     "./frontendConfigSchema": "./src/frontendConfigSchema.ts",
     "./json": "./src/json.ts",
     "./links": "./src/links.ts",
+    "./planReviewApiSchema": "./src/planReviewApiSchema.ts",
     "./planReviewSchema": "./src/planReviewSchema.ts",
     "./testFactories": "./src/testFactories.ts",
     "./time": "./src/time.ts",
