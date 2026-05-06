@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-issue-forms.json
+# Keep `area` options in sync with `subcommand` in bug_report.yml and packages/cli/src/commands/index.ts.
+
+name: Feature request
+description: Suggest a new capability or an enhancement to an existing one.
+title: 'feat: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Big design ideas belong in the [community Slack](https://go.contextbridge.ai/join-community) first — that's where conversations turn into shared direction. File an issue here once the shape is clear.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem?
+      description: Describe the user pain or workflow gap before proposing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
