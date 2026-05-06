@@ -6,6 +6,4 @@ set -eu
 # install.scopes via $GITHUB_PACKAGES_AUTH_TOKEN, forwarded by docker-compose.
 bun install --frozen-lockfile
 
-./scripts/initToolsSubmodule.sh
-
 bunx playwright install chromium
