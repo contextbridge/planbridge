@@ -2,7 +2,7 @@ name: Chromatic
 
 on:
   pull_request:
-    types: [opened, synchronize, labeled, closed]
+    types: [opened, synchronize, reopened, closed]
     paths:
       - 'packages/plan/**/*.tsx'
       - 'packages/plan/**/*.css'
@@ -23,13 +23,12 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Run if PR has 'chromatic' label AND either:
-    # 1. PR is open (opened, synchronize, labeled events), OR
-    # 2. PR was just merged to main (closed event with merged=true)
+    # Triggered by the workflow-level paths filter (UI/CSS changes only). Skip the
+    # closed event unless it's a merge to main — closed-without-merge shouldn't
+    # republish baselines.
     if: |
-      contains(github.event.pull_request.labels.*.name, 'chromatic') &&
-      (github.event.action != 'closed' ||
-       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'))
+      github.event.action != 'closed' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -43,6 +42,8 @@ jobs:
 
       - name: Build Storybook
         run: bun run --cwd packages/plan build-storybook
+        env:
+          SKIP_DEMO_STORIES: 'true'
 
       - name: Deploy to Chromatic
         # Use CLI directly instead of chromaui/action because the action overwrites

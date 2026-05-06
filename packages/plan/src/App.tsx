@@ -1,4 +1,4 @@
-import { DOCS_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { DOCS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import type { CommentThread, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { Header } from '@contextbridge/ui/components/Header';
@@ -80,7 +80,12 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
       <title>{documentTitle}</title>
       {!payload ? (
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
-          <Header docsHref={DOCS_URL} slackHelpHref={SLACK_COMMUNITY_URL} version={buildInfo.version} />
+          <Header
+            docsHref={DOCS_URL}
+            githubRepoHref={GITHUB_REPO_URL}
+            slackHelpHref={SLACK_COMMUNITY_URL}
+            version={buildInfo.version}
+          />
           <div className="mx-auto max-w-4xl px-6 py-16">
             <p className="text-sm text-muted-foreground" data-testid={appTestIds.loading}>
               Loading plan review…
@@ -89,7 +94,12 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
         </main>
       ) : (
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
-          <Header docsHref={DOCS_URL} slackHelpHref={SLACK_COMMUNITY_URL} version={buildInfo.version} />
+          <Header
+            docsHref={DOCS_URL}
+            githubRepoHref={GITHUB_REPO_URL}
+            slackHelpHref={SLACK_COMMUNITY_URL}
+            version={buildInfo.version}
+          />
           <div className="mx-auto max-w-[88rem] px-4 py-4 sm:px-6 sm:py-6">
             {highlightWarning ? (
               <div

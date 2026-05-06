@@ -1,5 +1,7 @@
+import { DOCS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import type { SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import { headerTestIds } from '@contextbridge/ui/components/Header';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -310,6 +312,18 @@ Run \`${longCode}\` now.
 
     await waitFor(() => {
       expectWithinRightBorder(code, container);
+    });
+  });
+
+  describe('header help menu', () => {
+    it('renders documentation, GitHub, and Slack items pointing at the shared link constants', async () => {
+      renderApp({ initialPayload: { content: '# Ready' } });
+
+      await userEvent.click(screen.getByTestId(headerTestIds.helpTrigger));
+
+      expect(await screen.findByTestId(headerTestIds.helpDocsItem)).toHaveAttribute('href', DOCS_URL);
+      expect(screen.getByTestId(headerTestIds.helpGithubItem)).toHaveAttribute('href', GITHUB_REPO_URL);
+      expect(screen.getByTestId(headerTestIds.helpSlackItem)).toHaveAttribute('href', SLACK_COMMUNITY_URL);
     });
   });
 });
