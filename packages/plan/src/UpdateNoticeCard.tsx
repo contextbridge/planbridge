@@ -1,3 +1,4 @@
+import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { Alert, AlertDescription, AlertTitle } from '@contextbridge/ui/components/ui/alert';
 import { Button } from '@contextbridge/ui/components/ui/button';
@@ -6,7 +7,6 @@ import { useEffect } from 'react';
 import { usePlanAppContext } from './useAppContext.ts';
 
 const UPDATE_COMMAND = 'contextbridge update';
-const RELEASE_URL_BASE = 'https://github.com/contextbridge/planbridge/releases/tag/v';
 
 export const updateNoticeCardTestIds = {
   container: 'update-notice-card',
@@ -48,7 +48,7 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
         <AlertTitle className="text-xs font-medium">
           Update available:{' '}
           <a
-            href={`${RELEASE_URL_BASE}${notice.latestVersion}`}
+            href={`${GITHUB_REPO_URL}/releases/tag/v${notice.latestVersion}`}
             target="_blank"
             rel="noreferrer noopener"
             onClick={handleChangelogClick}
