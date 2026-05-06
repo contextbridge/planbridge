@@ -10,7 +10,7 @@ Review your agent's plan the way you review code.
 PlanBridge intercepts your AI coding agent's plan so you can mark up any line and leave precise feedback. The agent adjusts before writing the first line of code. It runs locally, hooks into [Claude Code](https://plan.contextbridge.ai/usage/claude-code/) and [Codex CLI](https://plan.contextbridge.ai/usage/codex/), and sends your plan content nowhere.
 
 <video playsinline preload="metadata" poster="https://plan.contextbridge.ai/demo/plan-review-poster.jpg">
-  <source src="https://plan.contextbridge.ai/demo/plan-review.webm" type="video/webm">
+  <source src="https://plan.contextbridge.ai/demo/plan-review.mp4" type="video/webm">
 </video>
 
 ## Install
