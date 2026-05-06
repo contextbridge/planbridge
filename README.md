@@ -1,10 +1,17 @@
 # PlanBridge
 
+**[Website](https://plan.contextbridge.ai)** | **[Quickstart](https://plan.contextbridge.ai/quickstart)**
+
+[![CI](https://img.shields.io/github/actions/workflow/status/contextbridge/planbridge/main.yml?branch=main&label=CI)](https://github.com/contextbridge/planbridge/actions/workflows/main.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Review your agent's plan the way you review code.
 
 PlanBridge intercepts your AI coding agent's plan so you can mark up any line and leave precise feedback. The agent adjusts before writing the first line of code. It runs locally, hooks into [Claude Code](https://plan.contextbridge.ai/usage/claude-code/) and [Codex CLI](https://plan.contextbridge.ai/usage/codex/), and sends your plan content nowhere.
 
-See the demo on [plan.contextbridge.ai](https://plan.contextbridge.ai/#demo).
+<video playsinline preload="metadata" poster="https://plan.contextbridge.ai/demo/plan-review-poster.jpg">
+  <source src="https://plan.contextbridge.ai/demo/plan-review.webm" type="video/webm">
+</video>
 
 ## Install
 
