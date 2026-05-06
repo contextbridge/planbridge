@@ -1,12 +1,12 @@
 import '@contextbridge/ui/styles.css';
 import '@contextbridge/shared/time';
 import { createFrontendContext } from '@contextbridge/context/frontend';
-import { type FrontendConfig, FrontendConfigSchema } from '@contextbridge/shared/frontendConfigSchema';
-import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
+import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
-import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
+import { startHeartbeat } from './heartbeat.ts';
+import { PlanReviewClient } from './PlanReviewClient.ts';
 import type { PlanAppContext as PlanAppContextValue } from './useAppContext.ts';
 import { PlanAppContext } from './useAppContext.ts';
 
@@ -21,7 +21,9 @@ if (!rootElement) throw new Error('#root not found');
 void bootstrap(rootElement);
 
 async function bootstrap(target: HTMLElement): Promise<void> {
-  const config = (await fetchConfig()) ?? FALLBACK_CONFIG;
+  const client = new PlanReviewClient(fetch);
+
+  const config = (await client.fetchConfig()) ?? FALLBACK_CONFIG;
 
   const base = createFrontendContext({
     config,
@@ -30,9 +32,9 @@ async function bootstrap(target: HTMLElement): Promise<void> {
 
   const context: PlanAppContextValue = {
     ...base,
-    fetchPayload,
-    fetchUpdateNotice: () => fetchUpdateNotice(base.fetcher),
-    submitPlanReview,
+    fetchPayload: () => client.fetchPayload(),
+    fetchUpdateNotice: () => client.fetchUpdateNotice(),
+    submitPlanReview: (submission) => client.submitPlanReview(submission),
     autoCloseDelaySeconds: 3,
   };
 
@@ -47,38 +49,6 @@ async function bootstrap(target: HTMLElement): Promise<void> {
       </ErrorBoundary>
     </StrictMode>,
   );
-}
 
-async function fetchConfig(): Promise<FrontendConfig | null> {
-  try {
-    const response = await fetch('/config');
-    if (!response.ok) return null;
-    return FrontendConfigSchema.parse(await response.json());
-  } catch {
-    return null;
-  }
-}
-
-async function fetchPayload(): Promise<SubmissionPayload> {
-  const response = await fetch('/payload');
-  return (await response.json()) as SubmissionPayload;
-}
-
-async function submitPlanReview(submission: PlanReviewSubmission): Promise<void> {
-  const response = await fetch('/submit', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(submission),
-  });
-
-  if (response.ok) {
-    return;
-  }
-
-  const body = (await response.text()).trim();
-  if (body.length > 0) {
-    throw new Error(body);
-  }
-
-  throw new Error(`submit failed with status ${response.status}`);
+  startHeartbeat(client);
 }
