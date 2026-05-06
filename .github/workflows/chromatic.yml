@@ -42,6 +42,8 @@ jobs:
 
       - name: Build Storybook
         run: bun run --cwd packages/plan build-storybook
+        env:
+          SKIP_DEMO_STORIES: 'true'
 
       - name: Deploy to Chromatic
         # Use CLI directly instead of chromaui/action because the action overwrites
