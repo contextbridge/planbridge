@@ -12,6 +12,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: ['@testing-library/jest-dom/vitest'],
+    entries: ['src/**/*.{ts,tsx}'],
   },
   test: {
     setupFiles: ['./vitest.setup.ts'],
