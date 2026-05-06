@@ -266,6 +266,7 @@ print_done() {
   if [ "$_install_method" = "brew" ]; then
     bold "contextbridge installed via Homebrew."
     printf '\nget started: %shttps://plan.contextbridge.ai/quickstart/%s\n' "$(fmt_code_on)" "$(fmt_code_off)"
+    print_release_notes_link
     return 0
   fi
 
@@ -281,6 +282,12 @@ print_done() {
       printf 'then re-open your shell and visit %shttps://plan.contextbridge.ai/quickstart/%s\n' "$(fmt_code_on)" "$(fmt_code_off)"
       ;;
   esac
+  print_release_notes_link
+}
+
+print_release_notes_link() {
+  printf 'release notes: %shttps://github.com/contextbridge/planbridge/blob/main/CHANGELOG.md%s\n' \
+    "$(fmt_code_on)" "$(fmt_code_off)"
 }
 
 # ---- helpers ----

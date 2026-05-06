@@ -122,6 +122,11 @@ homebrew_casks:
 
       Docs: https://plan.contextbridge.ai
 
+# release-please owns the release body; goreleaser only attaches artifacts.
+changelog:
+  disable: true
+
 release:
   draft: false
   prerelease: auto
+  mode: keep-existing

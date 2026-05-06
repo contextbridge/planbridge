@@ -68,4 +68,23 @@ describe('UpdateNoticeCard', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(analytics.captures.some((c) => c.event === 'update_notice_dismissed')).toBe(true);
   });
+
+  it('renders a "What\'s new" link to the per-version GitHub Release page', () => {
+    renderCard();
+    const link = screen.getByTestId(updateNoticeCardTestIds.changelogLink);
+    expect(link).toHaveAttribute('href', 'https://github.com/contextbridge/planbridge/releases/tag/v0.2.0');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+  });
+
+  it('fires update_changelog_clicked analytics when the link is clicked', async () => {
+    const user = userEvent.setup();
+    const { analytics } = renderCard();
+
+    await user.click(screen.getByTestId(updateNoticeCardTestIds.changelogLink));
+
+    const clicked = analytics.captures.find((c) => c.event === 'update_changelog_clicked');
+    expect(clicked).toBeDefined();
+    expect(clicked?.properties).toMatchObject({ latest_version: '0.2.0' });
+  });
 });

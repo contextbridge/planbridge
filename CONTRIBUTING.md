@@ -50,9 +50,16 @@ See [`AGENTS.md`](./AGENTS.md)
 
 ## Pull requests
 
-1. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.) for PR titles.
+1. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.) for PR titles. The `Lint PR title` check enforces this.
 2. Adhere to the PR template [`.github/pull_request_template.md`](./.github/pull_request_template.md).
 3. Before opening a PR ensure `just verify` runs without errors.
+
+## Releases
+
+Releases are cut by the ContextBridge team. Stable releases are automated by [release-please](https://github.com/googleapis/release-please) feeding into [goreleaser](https://goreleaser.com/):
+
+- On every push to `main`, release-please opens (or updates) a release PR that bumps `CHANGELOG.md` based on conventional-commit titles since the last release. A maintainer merges it to publish — release-please creates the tag and goreleaser ships the binaries. Don't edit `CHANGELOG.md` by hand.
+- Alpha releases are still manual: a maintainer pushes a `v{x.y.z}-alpha.N` tag and goreleaser handles the rest.
 
 ## Code of conduct
 

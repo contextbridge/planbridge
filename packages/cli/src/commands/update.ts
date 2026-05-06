@@ -1,3 +1,4 @@
+import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
 import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 
@@ -11,6 +12,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
   }
 
   io.stderr.write(`A new version is available: v${notice.latestVersion} (you're on v${notice.currentVersion}).\n`);
+  io.stderr.write(`What's new: ${GITHUB_REPO_URL}/releases/tag/v${notice.latestVersion}\n`);
 
   const result = await updater.performUpdate();
   switch (result.status) {
