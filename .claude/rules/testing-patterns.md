@@ -1,0 +1,1 @@
+../../.contextbridge/rules/testing-patterns.md
