@@ -6,6 +6,13 @@
       "package-name": "contextbridge",
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "harnessIntegrations/claude/.claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },
