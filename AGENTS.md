@@ -75,9 +75,6 @@ Before opening a PR, read `.github/pull_request_template.md` and follow it exact
 - **In Zod string schemas, prefer `.nonempty()` over `.min(1)`.** Use `.trim().nonempty()` when surrounding whitespace should not count.
 - **Destructured defaults over `??` fallbacks.** When applying defaults to an options bag or similar object, use a single destructuring assignment with defaults instead of per-field `??`. Write `const { version = '0.0.0-development' } = input;`, not `const version = input.version ?? '0.0.0-development';`. Keeps all the defaults for a function's input surface in one readable place.
 - **Use Temporal for all time handling.** Use `@js-temporal/polyfill` via `@contextbridge/shared/time`, keep in-process values as Temporal objects, serialize only ISO strings at JSON boundaries, prefer `Temporal.Instant` for persisted or wire timestamps, and do not use `Date`.
-- **Test factories use [fishery](https://github.com/thoughtbot/fishery).** Shared factories live in `@contextbridge/shared/testFactories` (see `packages/shared/src/testFactories.ts`). Build fixtures with `commentMessage.build({ body: '…' })`, not hand-rolled `createXxx({ overrides })` helpers. When a package needs package-specific factories, add them under `packages/<pkg>/src/testFactories.ts` following the same `Factory.define<T>(() => ({ … }))` pattern.
-- **Export component test IDs from the component file, not a central registry.** Each component that exposes test selectors declares its own `xxxTestIds` object next to the component definition (e.g. `export const annotationPopoverTestIds = { … }` in `AnnotationPopover.tsx`). Tests import that object directly. This avoids a single bloated `testIds.ts` and keeps ids colocated with the markup that uses them.
-
 ### File naming
 
 - **camelCase** for all `.ts` / `.tsx` files: `planHandler.ts`, not `plan-handler.ts` or `plan_handler.ts`.
@@ -107,3 +104,13 @@ Business output (stdout) and diagnostics (logger → stderr) stay on separate ch
 **Always destructure `ctx` at the point of use.** Pull out the fields you need at the top of the function body (`const { io, logger } = ctx;`) rather than reaching through `ctx.io.stdout` at each call site. This narrows each handler to the surface it actually depends on and keeps test stubs honest.
 
 **`ctx` always comes first in argument ordering.** When a helper takes a context, list it as the first parameter (`fn(ctx, other, args)`) and destructure internally. Uniform ordering keeps call sites predictable and makes the context's role obvious at a glance.
+
+<!--CONTEXTBOT-START-->
+<!-- ContextBridge auto-generated — do not edit. -->
+
+The following files contain team conventions that must be adhered to; ensure you read them:
+
+- [Error Handling Neverthrow](.contextbridge/rules/error-handling-neverthrow.md)
+- [Testing Patterns](.contextbridge/rules/testing-patterns.md)
+
+<!--CONTEXTBOT-END-->
