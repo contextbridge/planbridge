@@ -18,3 +18,7 @@ tools/infrastructure/cdk.out/
 
 # release-please owns CHANGELOG.md formatting; don't fight it.
 CHANGELOG.md
+
+# ContextBot owns formatting of agents and its own rules
+AGENTS.md
+.contextbridge/rules
