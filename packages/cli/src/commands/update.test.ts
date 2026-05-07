@@ -1,7 +1,20 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { createStubContext, readErrorLogs, readWarnLogs } from '#src/testHelpers/index.ts';
+import { getDescriptor } from '#src/harnesses/registry.ts';
+import {
+  createStubContext,
+  marketplaceListResult,
+  pluginListResult,
+  readErrorLogs,
+  readWarnLogs,
+} from '#src/testHelpers/index.ts';
 import { runUpdate } from './update.ts';
+
+const CLAUDE_BINARY = getDescriptor('claude').binaryName;
+const CODEX_BINARY = getDescriptor('codex').binaryName;
 
 describe('runUpdate', () => {
   it('prints "up to date" and exits 0 when there is no notice', async () => {
@@ -188,5 +201,194 @@ describe('runUpdate', () => {
     await runUpdate(context);
     expect(updater.checkForUpdateCalls).toEqual([{ forceRefresh: true }]);
     expect(updater.performUpdateCallCount).toBe(1);
+  });
+
+  it('refreshes Claude after a successful update when the plugin is wired up', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+
+    await runUpdate(context);
+
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    expect(spawnCall).toBeDefined();
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
+  });
+
+  it('refreshes Claude after update when only the legacy cli@contextbridge plugin is installed', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+
+    await runUpdate(context);
+
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    expect(spawnCall).toBeDefined();
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
+  });
+
+  it('refreshes Claude at project scope when the new plugin is installed at project scope', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
+    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+
+    await runUpdate(context);
+
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    expect(spawnCall).toBeDefined();
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
+  });
+
+  it('refreshes Claude at project scope when only the legacy plugin is installed at project scope', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+
+    await runUpdate(context);
+
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    expect(spawnCall).toBeDefined();
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
+  });
+
+  it('refreshes Codex at project scope when the hook is installed at project scope', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-update-codex-project-'));
+    const projectRoot = join(tmp, 'repo');
+    const { context, commandRunner, updater } = createStubContext({ projectRoot });
+    commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+
+    try {
+      const configDir = join(projectRoot, '.codex');
+      mkdirSync(configDir, { recursive: true });
+      writeFileSync(
+        join(configDir, 'hooks.json'),
+        JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'contextbridge hook codex' }] }] } }),
+      );
+      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
+      commandRunner.on(process.execPath, ['install', 'codex']).resolves();
+
+      await runUpdate(context);
+
+      const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+      expect(spawnCall).toBeDefined();
+      expect(spawnCall?.args).toEqual(['install', 'codex', '--scope', 'project']);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('skips refresh for harnesses with no PlanBridge state after update', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
+
+    await runUpdate(context);
+
+    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === process.execPath);
+    expect(spawnCalls).toEqual([]);
+  });
+
+  it('skips refresh for Claude marketplace-only state after update', async () => {
+    const { context, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
+
+    await runUpdate(context);
+
+    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === process.execPath);
+    expect(spawnCalls).toEqual([]);
+  });
+
+  it('logs a warning when post-update refresh exits non-zero but still completes the update', async () => {
+    const { context, io, logs, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+    commandRunner.on(process.execPath, ['install', 'claude']).resolves({ exitCode: 1, stderr: 'install failed' });
+
+    await runUpdate(context);
+
+    expect(io.stderr.text()).toContain('update complete');
+    expect(readWarnLogs(logs).some((r) => r.msg.includes('post-update harness refresh failed'))).toBe(true);
   });
 });

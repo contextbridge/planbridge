@@ -566,11 +566,11 @@ describe('ClaudeInstaller.status', () => {
   });
 });
 
-function stubPluginList(commandRunner: FakeCommandRunner, plugins: readonly PluginFixture[]): void {
+function stubPluginList(commandRunner: FakeCommandRunner, plugins: PluginFixture[]): void {
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult(plugins));
 }
 
-function stubMarketplaceList(commandRunner: FakeCommandRunner, marketplaces: readonly MarketplaceFixture[]): void {
+function stubMarketplaceList(commandRunner: FakeCommandRunner, marketplaces: MarketplaceFixture[]): void {
   commandRunner
     .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
     .resolves(marketplaceListResult(marketplaces));
