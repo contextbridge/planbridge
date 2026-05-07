@@ -3,8 +3,8 @@ import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
-import type { RunPlanReviewArgs } from '#src/planReview/runPlanReview.ts';
-import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { type RunPlanReviewArgs, runPlanReview } from '#src/planReview/runPlanReview.ts';
+import { createPlanReviewDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
@@ -28,7 +28,7 @@ describe('hookClaude handler', () => {
     await runHookClaude(context, deps);
 
     expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, '# Plan\n\nStep 1.\n'))}\n`);
-    expect(deps.calls).toEqual([{ planContent: '# Plan\n\nStep 1.\n' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Plan\n\nStep 1.\n', source: 'hook_claude' }]);
   });
 
   it('emits a deny envelope with the markdown feedback when changes are requested', async () => {
@@ -57,6 +57,38 @@ describe('hookClaude handler', () => {
     expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');
     if (parsed.hookSpecificOutput.decision.behavior !== 'deny') throw new Error('expected deny');
     expect(parsed.hookSpecificOutput.decision.message?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it('captures plan-review lifecycle analytics through the shared runner', async () => {
+    const { context, io, analytics } = createStubContext();
+    const submission = planReviewSubmission.build({ status: 'approved', threads: [] });
+    const deps: HookClaudeDependencies = {
+      runReview: (reviewCtx, args) => runPlanReview(reviewCtx, args, createPlanReviewDependencies({ submission })),
+    };
+    io.stdin.write(
+      JSON.stringify({
+        session_id: 'sess_123',
+        transcript_path: '/tmp/transcript.json',
+        cwd: '/work',
+        permission_mode: 'plan',
+        hook_event_name: 'PermissionRequest',
+        tool_name: 'ExitPlanMode',
+        tool_input: { plan: '# Plan\n\nStep 1.\n' },
+      }),
+    );
+    io.stdin.end();
+
+    await runHookClaude(context, deps);
+
+    const started = analytics.captures.find((c) => c.event === 'plan_review_started');
+    expect(started).toBeDefined();
+    expect(started?.properties).toEqual({ source: 'hook_claude' });
+
+    const submitted = analytics.captures.find((c) => c.event === 'plan_review_submitted');
+    expect(submitted).toBeDefined();
+    expect(submitted?.properties?.['status']).toBe('approved');
+    expect(submitted?.properties?.['threads_count']).toBe(0);
+    expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
   });
 
   it('aborts when hook_event_name is unsupported', () => {

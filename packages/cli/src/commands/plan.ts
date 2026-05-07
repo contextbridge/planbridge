@@ -1,5 +1,4 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { nowInstant } from '@contextbridge/shared/time';
 import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
@@ -15,9 +14,8 @@ export interface PlanArgs {
 }
 
 export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReviewDependencies): Promise<void> {
-  const { io, logger, analytics } = ctx;
+  const { io, logger } = ctx;
   const { path } = args;
-  const startedAt = nowInstant();
 
   if (!path && io.stdin.isTTY === true) {
     abort(
@@ -40,16 +38,10 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReview
   }
 
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
-  analytics.capture('plan_review_started', { source });
 
   try {
-    const submission = await runPlanReview(ctx, { planContent: content }, deps);
+    const submission = await runPlanReview(ctx, { planContent: content, source }, deps);
     io.stdout.write(formatAsMarkdown(submission, content));
-    analytics.capture('plan_review_submitted', {
-      status: submission.status,
-      threads_count: submission.threads.length,
-      duration_ms: nowInstant().epochMilliseconds - startedAt.epochMilliseconds,
-    });
   } catch (err) {
     if (err instanceof PlanReviewInterruptedError) {
       logger.info('plan review interrupted');

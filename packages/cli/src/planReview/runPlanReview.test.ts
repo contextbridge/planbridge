@@ -1,6 +1,7 @@
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
+import { planReviewArgs } from '#src/testFactories.ts';
 import { createStubContext } from '#src/testHelpers/index.ts';
 import { type PlanReviewDependencies, runPlanReview } from './runPlanReview.ts';
 
@@ -10,7 +11,7 @@ describe('runPlanReview', () => {
     const { context } = createStubContext({ openUrl: (url) => (openedUrls.push(url), Promise.resolve()) });
     const deps = createPlanReviewDependencies();
 
-    const submission = await runPlanReview(context, { planContent: '# Plan' }, deps);
+    const submission = await runPlanReview(context, planReviewArgs.build(), deps);
 
     expect(submission).toEqual(deps.submission);
     expect(openedUrls).toEqual(['http://localhost:4312']);
@@ -19,27 +20,46 @@ describe('runPlanReview', () => {
     expect(deps.sigintHandlerRemoved).toBe(true);
   });
 
-  it('closes the server when opening the browser fails', () => {
-    const { context } = createStubContext({ openUrl: () => Promise.reject(new Error('open failed')) });
+  it('captures plan-review lifecycle analytics around a successful review', async () => {
+    const { context, analytics } = createStubContext();
     const deps = createPlanReviewDependencies();
 
-    expect(runPlanReview(context, { planContent: '# Plan' }, deps)).rejects.toThrow('open failed');
+    await runPlanReview(context, planReviewArgs.build(), deps);
+
+    const started = analytics.captures.find((c) => c.event === 'plan_review_started');
+    expect(started).toBeDefined();
+    expect(started?.properties).toEqual({ source: 'stdin' });
+
+    const submitted = analytics.captures.find((c) => c.event === 'plan_review_submitted');
+    expect(submitted).toBeDefined();
+    expect(submitted?.properties?.['status']).toBe(deps.submission.status);
+    expect(submitted?.properties?.['threads_count']).toBe(deps.submission.threads.length);
+    expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
+  });
+
+  it('closes the server when opening the browser fails', () => {
+    const { context, analytics } = createStubContext({ openUrl: () => Promise.reject(new Error('open failed')) });
+    const deps = createPlanReviewDependencies();
+
+    expect(runPlanReview(context, planReviewArgs.build(), deps)).rejects.toThrow('open failed');
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
+    expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
 
   it('closes the server and rejects when SIGINT is received', async () => {
-    const { context } = createStubContext();
+    const { context, analytics } = createStubContext();
     const result = createDeferred<PlanReviewSubmission>();
     const deps = createPlanReviewDependencies({ result: result.promise });
 
-    const reviewPromise = runPlanReview(context, { planContent: '# Plan' }, deps);
+    const reviewPromise = runPlanReview(context, planReviewArgs.build(), deps);
     await deps.sigintHandlerRegistered;
     deps.triggerSigint();
 
     expect(reviewPromise).rejects.toThrow('plan review interrupted by SIGINT');
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
+    expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
 });
 

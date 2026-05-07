@@ -6,4 +6,5 @@ export { FakeUpdater } from './FakeUpdater.ts';
 export { MemoryStream } from './MemoryStream.ts';
 export { type TestContext, createStubContext } from './createStubContext.ts';
 export { parseStdoutJson } from './parseStdoutJson.ts';
+export { createPlanReviewDependencies } from './planReviewFakes.ts';
 export { type LogRecord, readErrorLogs, readLogs, readWarnLogs } from './readLogs.ts';
