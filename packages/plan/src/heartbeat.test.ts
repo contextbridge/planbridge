@@ -1,18 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { ScheduleInterval } from './heartbeat.ts';
 import { startHeartbeat } from './heartbeat.ts';
 
 describe('startHeartbeat', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it('sends an immediate heartbeat on start', () => {
     const client = { sendHeartbeat: vi.fn().mockResolvedValue(undefined) };
-    const stop = startHeartbeat(client, { addPageHideListener: () => () => {} });
+    const stop = startHeartbeat(client, {
+      addPageHideListener: () => () => {},
+      scheduleInterval: () => () => {},
+    });
 
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(1);
     stop();
@@ -20,17 +16,20 @@ describe('startHeartbeat', () => {
 
   it('sends heartbeats at the configured interval', () => {
     const client = { sendHeartbeat: vi.fn().mockResolvedValue(undefined) };
+    const interval = new FakeInterval();
+
     const stop = startHeartbeat(client, {
       intervalMs: 1_000,
       addPageHideListener: () => () => {},
+      scheduleInterval: interval.fn,
     });
 
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(1_000);
+    interval.tick();
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(2);
 
-    vi.advanceTimersByTime(1_000);
+    interval.tick();
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(3);
 
     stop();
@@ -38,14 +37,17 @@ describe('startHeartbeat', () => {
 
   it('stops sending heartbeats when the cleanup function is called', () => {
     const client = { sendHeartbeat: vi.fn().mockResolvedValue(undefined) };
+    const interval = new FakeInterval();
+
     const stop = startHeartbeat(client, {
       intervalMs: 1_000,
       addPageHideListener: () => () => {},
+      scheduleInterval: interval.fn,
     });
 
     stop();
 
-    vi.advanceTimersByTime(5_000);
+    interval.tick();
     // Only the initial immediate heartbeat
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(1);
   });
@@ -55,6 +57,7 @@ describe('startHeartbeat', () => {
     const client = { sendHeartbeat: vi.fn().mockResolvedValue(undefined) };
     const stop = startHeartbeat(client, {
       addPageHideListener: () => removeListener,
+      scheduleInterval: () => () => {},
     });
 
     stop();
@@ -63,6 +66,7 @@ describe('startHeartbeat', () => {
 
   it('clears the interval when the page hide callback fires', () => {
     const client = { sendHeartbeat: vi.fn().mockResolvedValue(undefined) };
+    const interval = new FakeInterval();
     let hideCallback: (() => void) | null = null;
 
     const stop = startHeartbeat(client, {
@@ -71,14 +75,34 @@ describe('startHeartbeat', () => {
         hideCallback = cb;
         return () => {};
       },
+      scheduleInterval: interval.fn,
     });
 
     expect(hideCallback).not.toBeNull();
     hideCallback!();
 
-    vi.advanceTimersByTime(5_000);
+    interval.tick();
     // Only the initial immediate heartbeat — interval was cleared by pagehide
     expect(client.sendHeartbeat).toHaveBeenCalledTimes(1);
     stop();
   });
 });
+
+class FakeInterval {
+  private handler: (() => void) | null = null;
+  private cancelled = false;
+
+  readonly fn: ScheduleInterval = (handler: () => void) => {
+    this.handler = handler;
+    this.cancelled = false;
+    return () => {
+      this.cancelled = true;
+    };
+  };
+
+  tick(): void {
+    if (!this.cancelled && this.handler) {
+      this.handler();
+    }
+  }
+}

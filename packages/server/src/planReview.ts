@@ -5,7 +5,7 @@ import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { ServerContext } from './context.ts';
 
 const UPDATE_NOTICE_TIMEOUT_MS = 3_000;
-const HEARTBEAT_TIMEOUT_MS = 10_000;
+export const DEFAULT_HEARTBEAT_TIMEOUT_MS = 10_000;
 
 export class PlanReviewSessionAbandonedError extends Error {
   constructor(message = 'plan review abandoned because the browser tab stopped sending heartbeats') {
@@ -23,6 +23,7 @@ export interface StartServerOptions {
   readonly config: FrontendConfig;
   readonly port?: number;
   readonly checkForUpdate?: CheckForUpdate;
+  readonly heartbeatTimeoutMs?: number;
 }
 
 export interface RunningServer {
@@ -62,8 +63,8 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
 }
 
 export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerOptions): PlanReviewServerApp {
-  const { html, payload, config, checkForUpdate } = opts;
-  const { logger } = ctx;
+  const { html, payload, config, checkForUpdate, heartbeatTimeoutMs = DEFAULT_HEARTBEAT_TIMEOUT_MS } = opts;
+  const { logger, scheduleTimeout } = ctx;
   const routes = PlanReviewApiRoutes;
 
   let resolveResult!: (r: PlanReviewSubmission) => void;
@@ -74,12 +75,12 @@ export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerO
   });
 
   let settled = false;
-  let heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
+  let cancelHeartbeat: (() => void) | null = null;
 
   return {
     result,
     close: () => {
-      clearHeartbeatTimeout();
+      cancelScheduledHeartbeat();
     },
     fetch: async (req) => {
       const url = new URL(req.url);
@@ -133,27 +134,27 @@ export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerO
 
   function armHeartbeatTimeout(): void {
     if (settled) return;
-    clearHeartbeatTimeout();
-    heartbeatTimeout = setTimeout(() => abandonReview(), HEARTBEAT_TIMEOUT_MS);
+    cancelScheduledHeartbeat();
+    cancelHeartbeat = scheduleTimeout(() => abandonReview(), heartbeatTimeoutMs);
   }
 
-  function clearHeartbeatTimeout(): void {
-    if (!heartbeatTimeout) return;
-    clearTimeout(heartbeatTimeout);
-    heartbeatTimeout = null;
+  function cancelScheduledHeartbeat(): void {
+    if (!cancelHeartbeat) return;
+    cancelHeartbeat();
+    cancelHeartbeat = null;
   }
 
   function settleWithSubmission(submission: PlanReviewSubmission): void {
     if (settled) return;
     settled = true;
-    clearHeartbeatTimeout();
+    cancelScheduledHeartbeat();
     resolveResult(submission);
   }
 
   function abandonReview(): void {
     if (settled) return;
     settled = true;
-    clearHeartbeatTimeout();
+    cancelScheduledHeartbeat();
     logger.info('plan-review heartbeat expired; treating browser session as abandoned');
     rejectResult(new PlanReviewSessionAbandonedError());
   }

@@ -1,14 +1,8 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, parse } from 'node:path';
-import {
-  BUILD_INFO,
-  type BaseContext,
-  FetcherImpl,
-  createBaseContext,
-  createLogger,
-  isTelemetryDisabled,
-} from '@contextbridge/context';
+import { BUILD_INFO, FetcherImpl, createBaseContext, createLogger, isTelemetryDisabled } from '@contextbridge/context';
 import { createNodeInstrumentation, getOrCreateAnonymousId } from '@contextbridge/instrumentation/node';
+import type { ServerContext } from '@contextbridge/server/context';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { Temporal } from '@contextbridge/shared/time';
 import open from 'open';
@@ -18,7 +12,7 @@ import { type Io, IoImpl } from '#src/IoImpl.ts';
 import { type Prompter, createClackPrompter } from '#src/prompter.ts';
 import { type Updater, UpdaterImpl } from '#src/updater/UpdaterImpl.ts';
 
-export interface CliContext extends BaseContext {
+export interface CliContext extends ServerContext {
   readonly env: Environment;
   readonly projectRoot: string;
   readonly io: Io;
@@ -72,11 +66,17 @@ export function createContext(): CliContext {
     commandRunner,
     prompter,
     updater,
+    scheduleTimeout: defaultScheduleTimeout,
   };
 }
 
 async function defaultOpenUrl(url: string): Promise<void> {
   await open(url);
+}
+
+function defaultScheduleTimeout(handler: () => void, delayMs: number): () => void {
+  const id = setTimeout(handler, delayMs);
+  return () => clearTimeout(id);
 }
 
 export function resolveProjectRoot(cwd: string): string {

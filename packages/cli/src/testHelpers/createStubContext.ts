@@ -41,6 +41,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     commandRunner,
     prompter,
     updater,
+    scheduleTimeout: () => () => {},
     ...overrides,
   };
 
