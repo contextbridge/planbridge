@@ -3,6 +3,7 @@ import { startServer } from '@contextbridge/server/planReview';
 import type { RunningServer } from '@contextbridge/server/planReview';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
+import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { CliContext } from '#src/context.ts';
 import { extractPlanTitle } from './extractPlanTitle.ts';
@@ -16,6 +17,7 @@ export class PlanReviewInterruptedError extends Error {
 
 export interface RunPlanReviewArgs {
   planContent: string;
+  source: 'file' | 'hook_claude' | 'hook_codex' | 'stdin';
 }
 
 export interface PlanReviewDependencies {
@@ -37,12 +39,14 @@ export async function runPlanReview(
   args: RunPlanReviewArgs,
   deps: PlanReviewDependencies = defaultPlanReviewDependencies,
 ): Promise<PlanReviewSubmission> {
-  const { logger, openUrl, frontendConfig, updater } = ctx;
+  const { analytics, logger, openUrl, frontendConfig, updater } = ctx;
+  const startedAt = nowInstant();
 
   const payload: SubmissionPayload = {
     content: args.planContent,
     title: extractPlanTitle(args.planContent),
   };
+  analytics.capture('plan_review_started', { source: args.source });
 
   let server: RunningServer | null = null;
   let removeSigintHandler = () => {};
@@ -80,7 +84,13 @@ export async function runPlanReview(
     logger.info({ url: server.url }, 'opening plan-review browser session');
     await Promise.race([openUrl(server.url), sigintPromise]);
 
-    return await Promise.race([server.result, sigintPromise]);
+    const submittedReview = await Promise.race([server.result, sigintPromise]);
+    analytics.capture('plan_review_submitted', {
+      status: submittedReview.status,
+      threads_count: submittedReview.threads.length,
+      duration_ms: nowInstant().epochMilliseconds - startedAt.epochMilliseconds,
+    });
+    return submittedReview;
   } finally {
     removeSigintHandler();
     await closeServer();

@@ -96,7 +96,7 @@ async function handleExitPlanMode(
 
   let submission: PlanReviewSubmission;
   try {
-    submission = await runReview(ctx, { planContent });
+    submission = await runReview(ctx, { planContent, source: 'hook_claude' });
   } catch (err) {
     abort(ctx, 'runtime', getErrorMessage(err));
   }

@@ -6,6 +6,7 @@ import type {
 } from '#src/commands/codexHookSchema.ts';
 import type { Environment } from '#src/environment.ts';
 import type { HarnessDescriptor } from '#src/harnesses/types.ts';
+import type { RunPlanReviewArgs } from '#src/planReview/runPlanReview.ts';
 
 export const codexStopHookPayload = Factory.define<CodexStopHookPayload>(() => ({
   session_id: 'sess_123',
@@ -45,6 +46,11 @@ export const codexTranscriptHookPromptLine = Factory.define<CodexTranscriptHookP
       },
     ],
   },
+}));
+
+export const planReviewArgs = Factory.define<RunPlanReviewArgs>(() => ({
+  planContent: '# Plan',
+  source: 'stdin',
 }));
 
 export const environment = Factory.define<Environment>(() => ({

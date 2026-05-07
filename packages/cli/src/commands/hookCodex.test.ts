@@ -3,9 +3,9 @@ import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import type { CodexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
-import type { RunPlanReviewArgs } from '#src/planReview/runPlanReview.ts';
+import { type RunPlanReviewArgs, runPlanReview } from '#src/planReview/runPlanReview.ts';
 import { codexStopHookPayload, codexTranscriptHookPromptLine, codexTranscriptPlanLine } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createPlanReviewDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import type { CodexStopHookPayload } from './codexHookSchema.ts';
 import { type HookCodexDependencies, extractLatestPlanFromTranscript, runHookCodex } from './hookCodex.ts';
 
@@ -22,7 +22,7 @@ describe('hookCodex handler', () => {
     await runHookCodex(context, deps);
 
     expect(io.stdout.text().trim()).toBe('{}');
-    expect(deps.calls).toEqual([{ planContent: '# Approved Plan\n\nStep 1.' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Approved Plan\n\nStep 1.', source: 'hook_codex' }]);
   });
 
   it('emits a Stop continuation with review feedback when changes are requested', async () => {
@@ -35,6 +35,28 @@ describe('hookCodex handler', () => {
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
     expect(parsed.reason).toContain('Plan review: changes requested');
+  });
+
+  it('captures plan-review lifecycle analytics through the shared runner', async () => {
+    const { context, io, analytics } = createStubContext();
+    const submission = planReviewSubmission.build({ status: 'approved', threads: [] });
+    const deps = createHookDependencies({
+      transcript: transcriptWithPlan('# Approved Plan\n\nStep 1.\n'),
+      runReview: (reviewCtx, args) => runPlanReview(reviewCtx, args, createPlanReviewDependencies({ submission })),
+    });
+    writeStopPayload(io, { transcript_path: '/tmp/codex-transcript.jsonl', last_assistant_message: null });
+
+    await runHookCodex(context, deps);
+
+    const started = analytics.captures.find((c) => c.event === 'plan_review_started');
+    expect(started).toBeDefined();
+    expect(started?.properties).toEqual({ source: 'hook_codex' });
+
+    const submitted = analytics.captures.find((c) => c.event === 'plan_review_submitted');
+    expect(submitted).toBeDefined();
+    expect(submitted?.properties?.['status']).toBe('approved');
+    expect(submitted?.properties?.['threads_count']).toBe(0);
+    expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
   });
 
   it('emits an empty JSON object when transcript_path is null', async () => {
@@ -83,7 +105,7 @@ describe('hookCodex handler', () => {
 
     await runHookCodex(context, deps);
 
-    expect(deps.calls).toEqual([{ planContent: '# Direct Plan\n\n- Step 1' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Direct Plan\n\n- Step 1', source: 'hook_codex' }]);
     expect(deps.transcriptReadCount).toBe(0);
     expect(io.stdout.text().trim()).toBe('{}');
   });
@@ -107,7 +129,7 @@ describe('hookCodex handler', () => {
 
     await runHookCodex(context, deps);
 
-    expect(deps.calls).toEqual([{ planContent: '# Latest Plan' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Latest Plan', source: 'hook_codex' }]);
     expect(deps.transcriptReadCount).toBe(0);
     expect(io.stdout.text().trim()).toBe('{}');
   });
@@ -124,7 +146,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ planContent: '# Current Plan' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Current Plan', source: 'hook_codex' }]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 
@@ -141,7 +163,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ planContent: '# Plan' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Plan', source: 'hook_codex' }]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 
@@ -175,7 +197,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ planContent: '# Revised Plan' }]);
+    expect(deps.calls).toEqual([{ planContent: '# Revised Plan', source: 'hook_codex' }]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 
@@ -281,9 +303,17 @@ interface RecordingHookDependencies extends HookCodexDependencies {
 }
 
 function createHookDependencies(
-  options: { submission?: PlanReviewSubmission; transcript?: string | Error } = {},
+  options: {
+    submission?: PlanReviewSubmission;
+    transcript?: string | Error;
+    runReview?: HookCodexDependencies['runReview'];
+  } = {},
 ): RecordingHookDependencies {
-  const { submission = planReviewSubmission.build(), transcript = transcriptWithPlan('# Plan\n\nStep 1.\n') } = options;
+  const {
+    submission = planReviewSubmission.build(),
+    transcript = transcriptWithPlan('# Plan\n\nStep 1.\n'),
+    runReview,
+  } = options;
 
   const deps: RecordingHookDependencies = {
     calls: [],
@@ -292,10 +322,12 @@ function createHookDependencies(
       deps.transcriptReadCount += 1;
       return transcript instanceof Error ? Promise.reject(transcript) : Promise.resolve(transcript);
     },
-    runReview: (_ctx, args) => {
-      deps.calls.push(args);
-      return Promise.resolve(submission);
-    },
+    runReview:
+      runReview ??
+      ((_ctx, args) => {
+        deps.calls.push(args);
+        return Promise.resolve(submission);
+      }),
   };
   return deps;
 }

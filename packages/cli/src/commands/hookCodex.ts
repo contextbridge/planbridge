@@ -105,7 +105,7 @@ async function handleStop(
 
   logger.info({ bytes: Buffer.byteLength(planContent, 'utf8') }, 'codex hook received');
 
-  return ResultAsync.fromPromise(runReview(ctx, { planContent }), toError).match(
+  return ResultAsync.fromPromise(runReview(ctx, { planContent, source: 'hook_codex' }), toError).match(
     (submission: PlanReviewSubmission) => codexStopResponse(submission, planContent),
     (e) => abort(ctx, 'runtime', getErrorMessage(e)),
   );
