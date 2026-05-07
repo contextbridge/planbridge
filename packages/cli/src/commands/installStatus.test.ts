@@ -14,14 +14,14 @@ describe('runInstallStatus', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
 
     await runInstallStatus(context);
 
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: installed');
     expect(stderr).toContain('marketplace contextbridge');
-    expect(stderr).toContain('plugin cli@contextbridge @ user');
+    expect(stderr).toContain('plugin planbridge@contextbridge @ user');
     expect(io.stdout.text()).toBe('');
   });
 
@@ -57,11 +57,11 @@ describe('runInstallStatus', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
 
     await runInstallStatus(context);
 
-    expect(io.stderr.text()).toContain('plugin cli@contextbridge @ project');
+    expect(io.stderr.text()).toContain('plugin planbridge@contextbridge @ project');
   });
 
   it('reports "not detected" when claude is not on PATH and runs no shellouts', async () => {
@@ -82,7 +82,7 @@ describe('runInstallStatus', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
 
     await runInstallStatus(context, { json: true });
 
@@ -95,7 +95,7 @@ describe('runInstallStatus', () => {
       installed: true,
       managed: [
         { kind: 'marketplace', identifier: 'contextbridge' },
-        { kind: 'plugin', identifier: 'cli@contextbridge', scope: 'user' },
+        { kind: 'plugin', identifier: 'planbridge@contextbridge', scope: 'user' },
       ],
     });
     expect(payload[1]).toMatchObject({

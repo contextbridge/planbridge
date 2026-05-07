@@ -15,7 +15,7 @@ describe('runUninstall', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
@@ -24,7 +24,7 @@ describe('runUninstall', () => {
     const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
     const marketplaceRemoveCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']);
     expect(uninstallCalls).toHaveLength(1);
-    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'user']);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', 'planbridge@contextbridge', '--scope', 'user']);
     expect(marketplaceRemoveCalls).toHaveLength(1);
     expect(marketplaceRemoveCalls[0]?.args).toEqual(['plugin', 'marketplace', 'remove', 'contextbridge']);
     expect(prompter.calls).toEqual([]);
@@ -39,8 +39,7 @@ describe('runUninstall', () => {
 
     await runUninstall(context, { yes: true });
 
-    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
-    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toEqual([]);
+    expect(commandRunner.calls).toHaveLength(2);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: not installed');
@@ -58,8 +57,8 @@ describe('runUninstall', () => {
 
     await runUninstall(context, { yes: true });
 
-    const marketplaceRemoveCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
+    const marketplaceRemoveCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']);
     expect(marketplaceRemoveCalls).toHaveLength(1);
     expect(marketplaceRemoveCalls[0]?.args).toEqual(['plugin', 'marketplace', 'remove', 'contextbridge']);
     expect(prompter.calls).toEqual([]);
@@ -91,7 +90,7 @@ describe('runUninstall', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
     prompter.setConfirm(false);
 
     await runUninstall(context);

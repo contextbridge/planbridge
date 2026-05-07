@@ -34,7 +34,7 @@ describe('runInstall', () => {
       'user',
     ]);
     expect(pluginInstall).toHaveLength(1);
-    expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'cli@contextbridge', '--scope', 'user']);
+    expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user']);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: not installed');
@@ -49,7 +49,7 @@ describe('runInstall', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
 
     await runInstall(context, { yes: true });
 
@@ -57,7 +57,9 @@ describe('runInstall', () => {
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ user)');
+    expect(stderr).toContain(
+      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ user)',
+    );
     expect(stderr).toContain('Installed 0 of 1 detected harness (1 already installed, skipped).');
   });
 
@@ -69,14 +71,14 @@ describe('runInstall', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves();
 
     await runInstall(context, { yes: true, force: true });
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toHaveLength(1);
-    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update'])).toHaveLength(1);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Installed 1 of 1 detected harness');
@@ -91,14 +93,16 @@ describe('runInstall', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
 
     await runInstall(context, { yes: true });
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toEqual([]);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ project)');
+    expect(stderr).toContain(
+      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ project)',
+    );
     expect(stderr).toContain('(1 already installed, skipped)');
   });
 
@@ -155,7 +159,7 @@ describe('runInstall', () => {
         'user',
       ]);
       expect(pluginInstall).toHaveLength(1);
-      expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'cli@contextbridge', '--scope', 'user']);
+      expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user']);
       const stderr = io.stderr.text();
       expect(stderr).toContain('Codex CLI: status unavailable (invalid Codex hooks.json');
       expect(stderr).toContain('Installed 1 of 2 detected harnesses.');

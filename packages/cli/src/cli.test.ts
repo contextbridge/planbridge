@@ -91,6 +91,7 @@ describe('runCli', () => {
   it('routes argv into the install claude subcommand with default user scope', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
@@ -153,7 +154,7 @@ describe('runCli', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
@@ -165,7 +166,7 @@ describe('runCli', () => {
     expect(exitCode).toBe(0);
     const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
     expect(uninstallCalls).toHaveLength(1);
-    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'project']);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', 'planbridge@contextbridge', '--scope', 'project']);
   });
 
   it('routes argv into the no-target install orchestrator with --yes', async () => {
@@ -191,7 +192,7 @@ describe('runCli', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -207,7 +208,7 @@ describe('runCli', () => {
       .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
