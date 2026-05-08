@@ -6,13 +6,7 @@ import { Command } from 'commander';
 import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
-import {
-  createStubContext,
-  primeClaudeShellouts,
-  readErrorLogs,
-  stubMarketplaceList,
-  stubPluginList,
-} from '#src/testHelpers/index.ts';
+import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -154,8 +148,9 @@ describe('runCli', () => {
 
   it('routes argv into the uninstall claude subcommand with --scope project', async () => {
     const { context, commandRunner } = setupClaudeTest();
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     const exitCode = await runCli(context, ['uninstall', 'claude', '--scope', 'project']);
 
@@ -177,8 +172,9 @@ describe('runCli', () => {
 
   it('routes argv into install status with --json and emits to stdout', async () => {
     const { context, io, commandRunner } = setupClaudeTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -188,8 +184,9 @@ describe('runCli', () => {
 
   it('registers cb_command and identifies before parsing for a top-level subcommand', async () => {
     const { context, analytics, commandRunner } = setupClaudeTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 

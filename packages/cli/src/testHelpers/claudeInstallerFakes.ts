@@ -4,6 +4,18 @@ import type { FakeCommandRunner } from './FakeCommandRunner.ts';
 export type PluginFixture = { id: string; scope: string };
 export type MarketplaceFixture = { name: string };
 
+export interface ClaudeStateFixture {
+  marketplaces?: Array<{ name: string; plugins?: PluginFixture[] }>;
+  /**
+   * Plugins listed by `claude plugin list --json` that don't belong to any
+   * fixture marketplace. The CLI's `plugin list` output is `{ id, scope }` —
+   * no marketplace association — so this models tests that exercise code
+   * paths reading only the plugin list (e.g. the "already installed"
+   * early-return) without needing a corresponding marketplace fixture.
+   */
+  unmanagedPlugins?: PluginFixture[];
+}
+
 export function pluginListResult(plugins: PluginFixture[]) {
   return { exitCode: 0, stdout: JSON.stringify(plugins), stderr: '' };
 }
@@ -34,12 +46,17 @@ export function primeClaudeShellouts(commandRunner: FakeCommandRunner): void {
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 }
 
-export function stubPluginList(commandRunner: FakeCommandRunner, plugins: PluginFixture[]): void {
-  commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult(plugins));
-}
-
-export function stubMarketplaceList(commandRunner: FakeCommandRunner, marketplaces: MarketplaceFixture[]): void {
+/**
+ * Stub the two `claude plugin` listing shellouts in one call, encoding which
+ * plugins live in which marketplace. Plugins in `marketplaces[i].plugins` and
+ * any `unmanagedPlugins` are merged into the `plugin list --json` response;
+ * marketplace names go into `plugin marketplace list --json`.
+ */
+export function stubClaudeState(commandRunner: FakeCommandRunner, state: ClaudeStateFixture): void {
+  const { marketplaces = [], unmanagedPlugins = [] } = state;
+  const allPlugins = [...marketplaces.flatMap((m) => m.plugins ?? []), ...unmanagedPlugins];
+  commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult(allPlugins));
   commandRunner
     .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-    .resolves(marketplaceListResult(marketplaces));
+    .resolves(marketplaceListResult(marketplaces.map(({ name }) => ({ name }))));
 }

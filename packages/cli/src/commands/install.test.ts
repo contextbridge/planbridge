@@ -10,12 +10,7 @@ import {
 } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
-import {
-  createStubContext,
-  primeClaudeShellouts,
-  stubMarketplaceList,
-  stubPluginList,
-} from '#src/testHelpers/index.ts';
+import { createStubContext, primeClaudeShellouts, stubClaudeState } from '#src/testHelpers/index.ts';
 import { runInstall } from './install.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -48,8 +43,9 @@ describe('runInstall', () => {
 
   it('skips already-installed harnesses by default and notes them in the summary', async () => {
     const { context, io, commandRunner, prompter } = setupTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
@@ -65,8 +61,9 @@ describe('runInstall', () => {
 
   it('with --force re-runs install over an already-installed harness and drops the skipped suffix', async () => {
     const { context, io, commandRunner, prompter } = setupTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true, force: true });
 
@@ -80,8 +77,9 @@ describe('runInstall', () => {
 
   it('treats an install at a different scope as already installed and skips by default', async () => {
     const { context, io, commandRunner } = setupTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
@@ -96,7 +94,7 @@ describe('runInstall', () => {
 
   it('does not skip Claude when only the marketplace is configured', async () => {
     const { context, io, commandRunner } = setupTest();
-    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
+    stubClaudeState(commandRunner, { marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME }] });
 
     await runInstall(context, { yes: true });
 
