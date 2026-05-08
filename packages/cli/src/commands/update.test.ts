@@ -16,6 +16,9 @@ import { runUpdate } from './update.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
 const CODEX_BINARY = getDescriptor('codex').binaryName;
+// Arbitrary fake path returned from `commandRunner.which('contextbridge')` so tests
+// can stub the refresh-spawn target separately from process.execPath.
+const FAKE_CONTEXTBRIDGE_PATH = '/usr/local/bin/contextbridge';
 
 describe('runUpdate', () => {
   it('prints "up to date" and exits 0 when there is no notice', async () => {
@@ -207,6 +210,7 @@ describe('runUpdate', () => {
   it('refreshes Claude after a successful update when the plugin is wired up', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -219,11 +223,11 @@ describe('runUpdate', () => {
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
-    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+    commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
     await runUpdate(context);
 
-    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
     expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
   });
@@ -231,6 +235,7 @@ describe('runUpdate', () => {
   it('refreshes Claude after update when only the legacy cli@contextbridge plugin is installed', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -243,11 +248,11 @@ describe('runUpdate', () => {
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]));
-    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+    commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
     await runUpdate(context);
 
-    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
     expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
   });
@@ -255,6 +260,7 @@ describe('runUpdate', () => {
   it('refreshes Claude at project scope when the new plugin is installed at project scope', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -267,11 +273,11 @@ describe('runUpdate', () => {
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
-    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+    commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
     await runUpdate(context);
 
-    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
     expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
   });
@@ -279,6 +285,7 @@ describe('runUpdate', () => {
   it('refreshes Claude at project scope when only the legacy plugin is installed at project scope', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -291,11 +298,11 @@ describe('runUpdate', () => {
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }]));
-    commandRunner.on(process.execPath, ['install', 'claude']).resolves();
+    commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
     await runUpdate(context);
 
-    const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+    const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
     expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
   });
@@ -305,6 +312,7 @@ describe('runUpdate', () => {
     const projectRoot = join(tmp, 'repo');
     const { context, commandRunner, updater } = createStubContext({ projectRoot });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -320,11 +328,11 @@ describe('runUpdate', () => {
         JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'contextbridge hook codex' }] }] } }),
       );
       writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
-      commandRunner.on(process.execPath, ['install', 'codex']).resolves();
+      commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'codex']).resolves();
 
       await runUpdate(context);
 
-      const spawnCall = commandRunner.calls.find((c) => c.cmd === process.execPath);
+      const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
       expect(spawnCall).toBeDefined();
       expect(spawnCall?.args).toEqual(['install', 'codex', '--scope', 'project']);
     } finally {
@@ -335,6 +343,7 @@ describe('runUpdate', () => {
   it('skips refresh for harnesses with no PlanBridge state after update', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -346,13 +355,14 @@ describe('runUpdate', () => {
 
     await runUpdate(context);
 
-    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === process.execPath);
+    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCalls).toEqual([]);
   });
 
   it('skips refresh for Claude marketplace-only state after update', async () => {
     const { context, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -366,13 +376,14 @@ describe('runUpdate', () => {
 
     await runUpdate(context);
 
-    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === process.execPath);
+    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCalls).toEqual([]);
   });
 
-  it('logs a warning when post-update refresh exits non-zero but still completes the update', async () => {
+  it('logs an error when post-update refresh exits non-zero but still completes the update', async () => {
     const { context, io, logs, commandRunner, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -385,11 +396,37 @@ describe('runUpdate', () => {
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
-    commandRunner.on(process.execPath, ['install', 'claude']).resolves({ exitCode: 1, stderr: 'install failed' });
+    commandRunner
+      .on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude'])
+      .resolves({ exitCode: 1, stderr: 'install failed' });
 
     await runUpdate(context);
 
     expect(io.stderr.text()).toContain('update complete');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('post-update harness refresh failed'))).toBe(true);
+    expect(readErrorLogs(logs).some((r) => r.msg.includes('post-update harness refresh failed'))).toBe(true);
+  });
+
+  it('logs an error and skips refresh when contextbridge cannot be resolved on PATH', async () => {
+    const { context, io, logs, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    // No setWhich for 'contextbridge' — simulates the binary missing from PATH.
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
+
+    await runUpdate(context);
+
+    expect(io.stderr.text()).toContain('update complete');
+    expect(readErrorLogs(logs).some((r) => r.msg.includes('contextbridge not found on PATH'))).toBe(true);
+    expect(commandRunner.calls.filter((c) => c.cmd === process.execPath)).toEqual([]);
   });
 });
