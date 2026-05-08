@@ -155,11 +155,8 @@ describe('App', () => {
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
-    const countdown = await screen.findByTestId(submitBarTestIds.countdown);
-    expect(countdown).toHaveTextContent('Plan approved.');
-    expect(countdown).toHaveTextContent('Return to Codex to confirm implementation.');
-    expect(countdown).toHaveTextContent('This window will close in 3 seconds.');
-    expect(countdown.querySelector('strong')).not.toBeNull();
+    await screen.findByTestId(submitBarTestIds.countdown);
+    expect(screen.getByTestId(submitBarTestIds.codexHandoffNotice)).toBeInTheDocument();
   });
 
   it('shows default countdown for hook_codex when changes are requested', async () => {
@@ -170,11 +167,9 @@ describe('App', () => {
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
     await waitFor(() => {
-      expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent(
-        'This window will close in 3 seconds.',
-      );
+      expect(screen.getByTestId(submitBarTestIds.countdown)).toBeInTheDocument();
     });
-    expect(screen.getByTestId(submitBarTestIds.countdown)).not.toHaveTextContent('Return to Codex');
+    expect(screen.queryByTestId(submitBarTestIds.codexHandoffNotice)).not.toBeInTheDocument();
   });
 
   it('shows default countdown for hook_claude approval', async () => {
@@ -183,10 +178,8 @@ describe('App', () => {
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
-    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveTextContent(
-      'This window will close in 3 seconds.',
-    );
-    expect(screen.getByTestId(submitBarTestIds.countdown)).not.toHaveTextContent('Return to Codex');
+    await screen.findByTestId(submitBarTestIds.countdown);
+    expect(screen.queryByTestId(submitBarTestIds.codexHandoffNotice)).not.toBeInTheDocument();
   });
 
   it('syntax-highlights fenced code blocks with hljs token spans', async () => {

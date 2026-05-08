@@ -3,6 +3,7 @@ import { Button } from '@contextbridge/ui/components/ui/button';
 
 export const submitBarTestIds = {
   countdown: 'plan-review-submit-countdown',
+  codexHandoffNotice: 'plan-review-submit-codex-handoff',
   error: 'plan-review-submit-error',
   button: 'plan-review-submit-button',
 };
@@ -35,7 +36,9 @@ export function SubmitBar({ submission, source }: SubmitBarProps) {
           {isCodexApproval ? (
             <>
               <span>Plan approved.</span>
-              <strong className="block">Return to Codex to confirm implementation.</strong>
+              <strong className="block" data-testid={submitBarTestIds.codexHandoffNotice}>
+                Return to Codex to confirm implementation.
+              </strong>
               <span>
                 This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.
               </span>
