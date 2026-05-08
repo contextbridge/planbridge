@@ -2,7 +2,7 @@ import type { ServerContext } from '@contextbridge/server/context';
 import { startServer } from '@contextbridge/server/planReview';
 import type { RunningServer } from '@contextbridge/server/planReview';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
-import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
+import type { PlanReviewSource, PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { CliContext } from '#src/context.ts';
@@ -17,7 +17,7 @@ export class PlanReviewInterruptedError extends Error {
 
 export interface RunPlanReviewArgs {
   planContent: string;
-  source: 'file' | 'hook_claude' | 'hook_codex' | 'stdin';
+  source: PlanReviewSource;
 }
 
 export interface PlanReviewDependencies {
@@ -45,6 +45,7 @@ export async function runPlanReview(
   const payload: SubmissionPayload = {
     content: args.planContent,
     title: extractPlanTitle(args.planContent),
+    metadata: { source: args.source },
   };
   analytics.capture('plan_review_started', { source: args.source });
 

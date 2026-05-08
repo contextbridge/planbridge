@@ -127,6 +127,9 @@ export const PlanReviewSubmissionSchema = z.object({
 });
 export type PlanReviewSubmission = z.infer<typeof PlanReviewSubmissionSchema>;
 
+export const PlanReviewSourceSchema = z.enum(['file', 'stdin', 'hook_claude', 'hook_codex']);
+export type PlanReviewSource = z.infer<typeof PlanReviewSourceSchema>;
+
 export const SubmissionPayloadSchema = z.object({
   content: z.string(),
   title: z
@@ -136,7 +139,7 @@ export const SubmissionPayloadSchema = z.object({
     .nullish(),
   metadata: z
     .object({
-      source: z.enum(['file', 'stdin']),
+      source: PlanReviewSourceSchema,
     })
     .optional(),
 });

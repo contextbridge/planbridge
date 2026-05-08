@@ -149,6 +149,44 @@ describe('App', () => {
     expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 2 seconds.');
   });
 
+  it('shows Codex-specific handoff notice on approval when source is hook_codex', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { content: '# Ship it', metadata: { source: 'hook_codex' } } });
+
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveTextContent(
+      'Plan approved. Return to Codex to confirm implementation. This window will close in 3 seconds.',
+    );
+  });
+
+  it('shows default countdown for hook_codex when changes are requested', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { content: '# Ship it', metadata: { source: 'hook_codex' } } });
+
+    await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs work');
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    await waitFor(() => {
+      expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent(
+        'This window will close in 3 seconds.',
+      );
+    });
+    expect(screen.getByTestId(submitBarTestIds.countdown)).not.toHaveTextContent('Return to Codex');
+  });
+
+  it('shows default countdown for hook_claude approval', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { content: '# Ship it', metadata: { source: 'hook_claude' } } });
+
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveTextContent(
+      'This window will close in 3 seconds.',
+    );
+    expect(screen.getByTestId(submitBarTestIds.countdown)).not.toHaveTextContent('Return to Codex');
+  });
+
   it('syntax-highlights fenced code blocks with hljs token spans', async () => {
     renderApp({
       initialPayload: { content: '# Plan\n\n```ts\nconst greeting = "hello";\n```\n' },
