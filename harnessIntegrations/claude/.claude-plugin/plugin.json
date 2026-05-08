@@ -1,12 +1,18 @@
 {
   "name": "planbridge",
   "description": "PlanBridge — opens plan reviews in the browser on ExitPlanMode.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "ContextBridge AI, Inc."
   },
   "homepage": "https://plan.contextbridge.ai",
   "repository": "https://github.com/contextbridge/planbridge",
   "license": "MIT",
-  "keywords": ["contextbridge", "planbridge", "planning", "review", "hooks"]
+  "keywords": [
+    "contextbridge",
+    "planbridge",
+    "planning",
+    "review",
+    "hooks"
+  ]
 }
