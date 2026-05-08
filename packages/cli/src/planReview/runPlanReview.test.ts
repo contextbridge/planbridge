@@ -15,7 +15,7 @@ describe('runPlanReview', () => {
 
     expect(submission).toEqual(deps.submission);
     expect(openedUrls).toEqual(['http://localhost:4312']);
-    expect(deps.payloads).toEqual([{ content: '# Plan', title: 'Plan' }]);
+    expect(deps.payloads).toEqual([{ content: '# Plan', title: 'Plan', metadata: { source: 'stdin' } }]);
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
   });

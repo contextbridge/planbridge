@@ -77,6 +77,22 @@ describe('SubmissionPayloadSchema', () => {
     expect(parsed.metadata?.source).toBe('file');
   });
 
+  it('accepts hook_claude source metadata', () => {
+    const parsed = SubmissionPayloadSchema.parse({
+      content: '# plan',
+      metadata: { source: 'hook_claude' },
+    });
+    expect(parsed.metadata?.source).toBe('hook_claude');
+  });
+
+  it('accepts hook_codex source metadata', () => {
+    const parsed = SubmissionPayloadSchema.parse({
+      content: '# plan',
+      metadata: { source: 'hook_codex' },
+    });
+    expect(parsed.metadata?.source).toBe('hook_codex');
+  });
+
   it('accepts a title', () => {
     const parsed = SubmissionPayloadSchema.parse({ content: '# plan', title: '  plan  ' });
     expect(parsed.title).toBe('plan');

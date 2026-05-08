@@ -136,6 +136,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                 onAnnotationClick={annotationInteractions.focusAnnotationComment}
                 onAnnotationHoverChange={annotationInteractions.setAnnotationHover}
                 onRequestRemove={reviewState.removal.request}
+                source={payload.metadata?.source}
                 submission={reviewState.submission}
               />
             </div>

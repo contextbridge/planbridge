@@ -1,3 +1,4 @@
+import type { PlanReviewSource } from '@contextbridge/shared/planReviewSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
 import { AnnotationCommentCard } from './AnnotationCommentCard.tsx';
 import type { ResolvedAnnotation } from './annotationTypes.ts';
@@ -14,6 +15,7 @@ export interface CommentsSidebarProps {
   activeAnnotationId: string | null;
   globalComment: GlobalCommentState;
   submission: SubmissionState;
+  source?: PlanReviewSource;
   onAnnotationClick: (annotation: ResolvedAnnotation) => void;
   onAnnotationHoverChange: (annotationId: string, hovered: boolean) => void;
   onRequestRemove: (threadId: string) => void;
@@ -24,6 +26,7 @@ export function CommentsSidebar({
   activeAnnotationId,
   globalComment,
   submission,
+  source,
   onAnnotationClick,
   onAnnotationHoverChange,
   onRequestRemove,
@@ -62,7 +65,7 @@ export function CommentsSidebar({
 
         <div className="flex shrink-0 flex-col gap-3 border-t border-border pt-4">
           <GlobalCommentComposer globalComment={globalComment} submitted={submission.submitted} />
-          <SubmitBar submission={submission} />
+          <SubmitBar source={source} submission={submission} />
         </div>
       </section>
     </aside>

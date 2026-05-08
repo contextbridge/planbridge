@@ -1,7 +1,9 @@
+import type { PlanReviewSource } from '@contextbridge/shared/planReviewSchema';
 import { Button } from '@contextbridge/ui/components/ui/button';
 
 export const submitBarTestIds = {
   countdown: 'plan-review-submit-countdown',
+  codexHandoffNotice: 'plan-review-submit-codex-handoff',
   error: 'plan-review-submit-error',
   button: 'plan-review-submit-button',
 };
@@ -18,9 +20,12 @@ export interface SubmissionState {
 
 export interface SubmitBarProps {
   submission: SubmissionState;
+  source?: PlanReviewSource;
 }
 
-export function SubmitBar({ submission }: SubmitBarProps) {
+export function SubmitBar({ submission, source }: SubmitBarProps) {
+  const isCodexApproval = source === 'hook_codex' && submission.feedbackCount === 0;
+
   return (
     <>
       {submission.submitted && submission.closeCountdownSeconds !== null ? (
@@ -28,7 +33,19 @@ export function SubmitBar({ submission }: SubmitBarProps) {
           className="rounded-md border border-border px-3 py-2 text-sm leading-6 text-muted-foreground"
           data-testid={submitBarTestIds.countdown}
         >
-          This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.
+          {isCodexApproval ? (
+            <>
+              <span>Plan approved.</span>
+              <strong className="block" data-testid={submitBarTestIds.codexHandoffNotice}>
+                Return to Codex to confirm implementation.
+              </strong>
+              <span>
+                This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.
+              </span>
+            </>
+          ) : (
+            `This window will close in ${formatCountdownLabel(submission.closeCountdownSeconds)}.`
+          )}
         </div>
       ) : null}
 
