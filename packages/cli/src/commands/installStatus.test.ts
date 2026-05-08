@@ -9,10 +9,12 @@ describe('runInstallStatus', () => {
   it('writes prose to stderr and leaves stdout empty by default when PlanBridge is fully wired', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]),
-    );
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
 
     await runInstallStatus(context);
 
@@ -26,7 +28,8 @@ describe('runInstallStatus', () => {
   it('reports "not installed" when claude is on PATH but PlanBridge is absent', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(marketplaceListResult([]), pluginListResult([]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
     await runInstallStatus(context);
 
@@ -36,7 +39,10 @@ describe('runInstallStatus', () => {
   it('reports partial Claude artifacts without calling them installed', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(marketplaceListResult([{ name: 'contextbridge' }]), pluginListResult([]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
     await runInstallStatus(context);
 
@@ -48,7 +54,10 @@ describe('runInstallStatus', () => {
   it('reports project-scope Claude installs', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(marketplaceListResult([]), pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
 
     await runInstallStatus(context);
 
@@ -68,10 +77,12 @@ describe('runInstallStatus', () => {
   it('with --json writes machine-readable JSON to stdout and leaves stderr empty', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]),
-    );
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
 
     await runInstallStatus(context, { json: true });
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createStubContext, marketplaceListResult, pluginListResult, readErrorLogs } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -91,13 +91,15 @@ describe('runCli', () => {
   it('routes argv into the install claude subcommand with default user scope', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' }, { exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
     const exitCode = await runCli(context, ['install', 'claude']);
 
     expect(exitCode).toBe(0);
-    expect(commandRunner.calls[0]?.args).toContain('--scope');
-    expect(commandRunner.calls[0]?.args).toContain('user');
+    const marketplaceAdd = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']);
+    expect(marketplaceAdd[0]?.args).toContain('--scope');
+    expect(marketplaceAdd[0]?.args).toContain('user');
     expect(io.stderr.text()).toContain('scope: user');
   });
 
@@ -149,28 +151,30 @@ describe('runCli', () => {
   it('routes argv into the uninstall claude subcommand with --scope project', async () => {
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'project' }]), stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     const exitCode = await runCli(context, ['uninstall', 'claude', '--scope', 'project']);
 
     expect(exitCode).toBe(0);
-    expect(commandRunner.calls[1]?.args).toEqual(['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'project']);
+    const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
+    expect(uninstallCalls).toHaveLength(1);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'project']);
   });
 
   it('routes argv into the no-target install orchestrator with --yes', async () => {
     const { context, io, commandRunner, prompter } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: '[]', stderr: '' },
-      { exitCode: 0, stdout: '[]', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
     const exitCode = await runCli(context, ['install', '--yes']);
 
@@ -182,10 +186,12 @@ describe('runCli', () => {
   it('routes argv into install status with --json and emits to stdout', async () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'user' }]), stderr: '' },
-    );
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -196,10 +202,12 @@ describe('runCli', () => {
   it('registers cb_command and identifies before parsing for a top-level subcommand', async () => {
     const { context, analytics, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'user' }]), stderr: '' },
-    );
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
+      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+    commandRunner
+      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
+      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
