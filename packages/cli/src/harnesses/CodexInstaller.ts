@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { getErrorMessage, hasErrorCode } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
 import { isRecord } from '@contextbridge/shared/typeGuards';
-import { parse as parseToml, patch as patchToml } from '@decimalturn/toml-patch';
 import { CommanderError } from 'commander';
+import semver from 'semver';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from './detect.ts';
 import { type HarnessStatus, type ManagedEntry } from './HarnessInstaller.ts';
@@ -15,6 +15,7 @@ import type { SupportedHarnessDescriptor } from './types.ts';
 const CODEX_HOOK_COMMAND = 'contextbridge hook codex';
 const CODEX_HOOK_TIMEOUT_SECONDS = 345600;
 const CODEX_HOOK_STATUS_MESSAGE = 'Opening PlanBridge';
+const MINIMUM_CODEX_VERSION = '0.129.0';
 
 const STOP_HOOK_KEY = 'Stop';
 
@@ -38,14 +39,16 @@ export class CodexInstaller extends ScopedHarnessInstaller {
       return { descriptor: this.descriptor, detected: false, installed: false, managed: [] };
     }
 
+    await requireSupportedCodexVersion(ctx, this.descriptor.binaryName);
+
     const managed: ManagedEntry[] = [];
     let installed = false;
     for (const scope of INSTALL_SCOPES) {
-      const scopeStatus = await getCodexHookStatusAtScope(ctx, scope);
-      if (scopeStatus.hookInstalled) {
+      const hookInstalled = await getCodexHookStatusAtScope(ctx, scope);
+      if (hookInstalled) {
         managed.push({ kind: 'hook', identifier: CODEX_HOOK_COMMAND, scope });
       }
-      installed = installed || scopeStatus.installed;
+      installed = installed || hookInstalled;
     }
 
     return { descriptor: this.descriptor, detected: true, installed, managed };
@@ -53,18 +56,22 @@ export class CodexInstaller extends ScopedHarnessInstaller {
 
   protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io } = ctx;
+    await requireSupportedCodexVersion(ctx, this.descriptor.binaryName);
+
     const configDir = getCodexConfigDir(ctx, scope);
     const hooksPath = join(configDir, 'hooks.json');
-    const configPath = join(configDir, 'config.toml');
 
     await mkdir(configDir, { recursive: true });
-    const [hooksSource, configSource] = await Promise.all([readOptionalText(hooksPath), readOptionalText(configPath)]);
+    const hooksSource = await readOptionalText(hooksPath);
     const nextHooks = upsertPlanBridgeHookJson(hooksSource);
-    const nextConfig = enableCodexHooksFeatureInToml(configSource);
-    await Promise.all([writeFile(hooksPath, nextHooks), writeFile(configPath, nextConfig)]);
+    await writeFile(hooksPath, nextHooks);
+    await enableCodexHookFeatureFlags(ctx, this.descriptor.binaryName);
 
     io.stderr.write(`✓ PlanBridge hook installed for Codex CLI (scope: ${scope}).\n`);
     io.stderr.write(`Restart Codex CLI for the hook to load.\n`);
+    io.stderr.write(
+      `Then open /hooks, verify the Stop hook runs \`${CODEX_HOOK_COMMAND}\`, and press t to trust it.\n`,
+    );
   }
 
   protected async runUninstall(ctx: CliContext, scope: InstallScope): Promise<void> {
@@ -79,34 +86,12 @@ export class CodexInstaller extends ScopedHarnessInstaller {
   }
 }
 
-export function enableCodexHooksFeatureInToml(source: string): string {
-  if (source.length === 0) {
-    return '[features]\ncodex_hooks = true\n';
-  }
-
-  const parsed = parseCodexConfigToml(source);
-  const features = isRecord(parsed['features']) ? parsed['features'] : {};
-  features['codex_hooks'] = true;
-  parsed['features'] = features;
-
-  return patchCodexConfigToml(source, parsed);
-}
-
-async function getCodexHookStatusAtScope(
-  ctx: CliContext,
-  scope: InstallScope,
-): Promise<{ hookInstalled: boolean; installed: boolean }> {
+async function getCodexHookStatusAtScope(ctx: CliContext, scope: InstallScope): Promise<boolean> {
   const configDir = getOptionalCodexConfigDir(ctx, scope);
-  if (!configDir) return { hookInstalled: false, installed: false };
+  if (!configDir) return false;
 
   const hooksPath = join(configDir, 'hooks.json');
-  const configPath = join(configDir, 'config.toml');
-  const [hooksInstalled, featureEnabled] = await Promise.all([
-    hasPlanBridgeHookInFile(hooksPath),
-    hasCodexHooksFeatureEnabled(configPath),
-  ]);
-
-  return { hookInstalled: hooksInstalled, installed: hooksInstalled && featureEnabled };
+  return hasPlanBridgeHookInFile(hooksPath);
 }
 
 function getCodexConfigDir(ctx: CliContext, scope: InstallScope): string {
@@ -166,15 +151,6 @@ async function hasPlanBridgeHookInFile(path: string): Promise<boolean> {
   const source = await readOptionalText(path);
   if (source.trim().length === 0) return false;
   return hasPlanBridgeHook(parseHooksJson(source));
-}
-
-async function hasCodexHooksFeatureEnabled(path: string): Promise<boolean> {
-  const source = await readOptionalText(path);
-  if (source.trim().length === 0) return false;
-
-  const parsed = parseCodexConfigToml(source);
-  const features = parsed['features'];
-  return isRecord(features) && features['codex_hooks'] === true;
 }
 
 function parseHooksFileOrDefault(source: string): Record<string, unknown> {
@@ -305,28 +281,60 @@ function isPlanBridgeHook(value: unknown): boolean {
   return isRecord(value) && value['type'] === 'command' && value['command'] === CODEX_HOOK_COMMAND;
 }
 
-function parseCodexConfigToml(source: string): Record<string, unknown> {
-  try {
-    const parsed = parseToml(source) as unknown;
-    if (isRecord(parsed)) return parsed;
-    throw new Error('Codex config.toml must contain an object');
-  } catch (err) {
+async function requireSupportedCodexVersion(ctx: CliContext, binaryName: string): Promise<void> {
+  const result = await runCodexCommand(ctx, binaryName, ['--version'], 'version check');
+  const parsed = parseCodexVersion(result.stdout);
+  if (!parsed) {
     throw new CommanderError(
       1,
-      'contextbridge.codexInstaller.invalidConfigToml',
-      `invalid Codex config.toml: ${getErrorMessage(err)}`,
+      'contextbridge.codexInstaller.unsupportedVersion',
+      `Could not determine Codex CLI version from \`${binaryName} --version\`. Update Codex CLI to ${MINIMUM_CODEX_VERSION} or newer, then re-run install.`,
+    );
+  }
+
+  if (!semver.gte(parsed, MINIMUM_CODEX_VERSION)) {
+    throw new CommanderError(
+      1,
+      'contextbridge.codexInstaller.unsupportedVersion',
+      `Codex CLI ${parsed} is installed, but PlanBridge requires Codex CLI ${MINIMUM_CODEX_VERSION} or newer. Update Codex CLI, then re-run install.`,
     );
   }
 }
 
-function patchCodexConfigToml(source: string, value: Record<string, unknown>): string {
-  try {
-    return patchToml(source, value);
-  } catch (err) {
-    throw new CommanderError(
-      1,
-      'contextbridge.codexInstaller.invalidConfigToml',
-      `failed to update Codex config.toml: ${getErrorMessage(err)}`,
-    );
+async function enableCodexHookFeatureFlags(ctx: CliContext, binaryName: string): Promise<void> {
+  await runCodexCommand(ctx, binaryName, ['features', 'enable', 'hooks'], 'features enable hooks');
+  await runCodexCommand(ctx, binaryName, ['features', 'disable', 'codex_hooks'], 'features disable codex_hooks');
+}
+
+async function runCodexCommand(
+  ctx: CliContext,
+  binaryName: string,
+  args: readonly string[],
+  label: string,
+): Promise<{ stdout: string; stderr: string }> {
+  const { commandRunner, logger } = ctx;
+  const result = await commandRunner.run(binaryName, args);
+
+  logger.debug(
+    { args, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr },
+    `${binaryName} ${label}`,
+  );
+
+  if (result.exitCode !== 0) {
+    const detail = result.stderr.trim() || `${binaryName} ${label} exited ${result.exitCode}`;
+    logger.error(detail);
+    throw new CommanderError(result.exitCode, 'contextbridge.codexInstaller.shellFailure', detail);
   }
+
+  return result;
+}
+
+function parseCodexVersion(source: string): string | null {
+  for (const line of source.split(/\r?\n/)) {
+    const match = /^codex(?:-cli)?\s+v?(\d+\.\d+\.\d+(?:[-+][^\s]+)?)\s*$/.exec(line.trim());
+    if (match) {
+      return match[1] ?? null;
+    }
+  }
+  return null;
 }
