@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "contextbridge hook claude",
+            "timeout": 345600
+          }
+        ]
+      }
+    ]
+  }
+}

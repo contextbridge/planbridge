@@ -1,6 +1,8 @@
 import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
 import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
+import type { HarnessInstaller, ManagedEntry } from '#src/harnesses/HarnessInstaller.ts';
+import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
 
 export async function runUpdate(ctx: CliContext): Promise<void> {
   const { io, logger, updater } = ctx;
@@ -33,6 +35,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
       return;
 
     case 'executed':
+      await refreshInstalledHarnesses(ctx);
       io.stderr.write('✓ update complete.\n');
       return;
 
@@ -55,6 +58,56 @@ export function registerUpdate(ctx: CliContext, program: Command): void {
     .action(async () => {
       await runUpdate(ctx);
     });
+}
+
+// After the binary has been swapped, re-run the new binary's per-harness install
+// for any harness with existing PlanBridge state. Keeps installed plugins in
+// sync with the binary across renames and hook-contract changes. Skips harnesses
+// the user never wired up; never blocks update success on a refresh failure.
+async function refreshInstalledHarnesses(ctx: CliContext): Promise<void> {
+  for (const installer of ALL_INSTALLERS) {
+    for (const scope of await getInstallerRefreshScopes(ctx, installer)) {
+      await refreshInstallerScope(ctx, installer, scope);
+    }
+  }
+}
+
+async function getInstallerRefreshScopes(ctx: CliContext, installer: HarnessInstaller): Promise<string[]> {
+  try {
+    const status = await installer.status(ctx);
+    return getRefreshScopes(status.managed);
+  } catch (err) {
+    ctx.logger.warn({ err, harness: installer.descriptor.id }, 'post-update harness refresh failed');
+    return [];
+  }
+}
+
+async function refreshInstallerScope(ctx: CliContext, installer: HarnessInstaller, scope: string): Promise<void> {
+  const { commandRunner, logger } = ctx;
+  try {
+    const result = await commandRunner.run(process.execPath, ['install', installer.descriptor.id, '--scope', scope], {
+      stdio: 'inherit',
+    });
+    if (result.exitCode !== 0) {
+      logger.warn(
+        { exitCode: result.exitCode, harness: installer.descriptor.id, scope },
+        'post-update harness refresh failed',
+      );
+    }
+  } catch (err) {
+    logger.warn({ err, harness: installer.descriptor.id, scope }, 'post-update harness refresh failed');
+  }
+}
+
+function getRefreshScopes(managed: readonly ManagedEntry[]): string[] {
+  return [
+    ...new Set(
+      managed.flatMap((entry) => {
+        if ((entry.kind !== 'plugin' && entry.kind !== 'hook') || !entry.scope) return [];
+        return [entry.scope];
+      }),
+    ),
+  ];
 }
 
 function assertNever(value: never): never {

@@ -3,6 +3,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
+import {
+  CLAUDE_MARKETPLACE_NAME,
+  CLAUDE_MARKETPLACE_SOURCE,
+  CLAUDE_PLUGIN_ID,
+} from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, marketplaceListResult, pluginListResult } from '#src/testHelpers/index.ts';
@@ -29,12 +34,12 @@ describe('runInstall', () => {
       'plugin',
       'marketplace',
       'add',
-      'contextbridge/claude-plugin',
+      CLAUDE_MARKETPLACE_SOURCE,
       '--scope',
       'user',
     ]);
     expect(pluginInstall).toHaveLength(1);
-    expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'cli@contextbridge', '--scope', 'user']);
+    expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user']);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: not installed');
@@ -46,10 +51,10 @@ describe('runInstall', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
     await runInstall(context, { yes: true });
 
@@ -57,7 +62,9 @@ describe('runInstall', () => {
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ user)');
+    expect(stderr).toContain(
+      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ user)',
+    );
     expect(stderr).toContain('Installed 0 of 1 detected harness (1 already installed, skipped).');
   });
 
@@ -66,17 +73,17 @@ describe('runInstall', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves();
 
     await runInstall(context, { yes: true, force: true });
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toHaveLength(1);
-    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update'])).toHaveLength(1);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Installed 1 of 1 detected harness');
@@ -88,17 +95,19 @@ describe('runInstall', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
 
     await runInstall(context, { yes: true });
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toEqual([]);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ project)');
+    expect(stderr).toContain(
+      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ project)',
+    );
     expect(stderr).toContain('(1 already installed, skipped)');
   });
 
@@ -107,7 +116,7 @@ describe('runInstall', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
@@ -150,12 +159,12 @@ describe('runInstall', () => {
         'plugin',
         'marketplace',
         'add',
-        'contextbridge/claude-plugin',
+        CLAUDE_MARKETPLACE_SOURCE,
         '--scope',
         'user',
       ]);
       expect(pluginInstall).toHaveLength(1);
-      expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', 'cli@contextbridge', '--scope', 'user']);
+      expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user']);
       const stderr = io.stderr.text();
       expect(stderr).toContain('Codex CLI: status unavailable (invalid Codex hooks.json');
       expect(stderr).toContain('Installed 1 of 2 detected harnesses.');

@@ -7,9 +7,10 @@ import { getSupportedDescriptor } from './registry.ts';
 import { INSTALL_SCOPES, type InstallScope, ScopedHarnessInstaller } from './ScopedHarnessInstaller.ts';
 import type { SupportedHarnessDescriptor } from './types.ts';
 
-const PLUGIN_ID = 'cli@contextbridge';
-const MARKETPLACE_SOURCE = 'contextbridge/claude-plugin';
-const MARKETPLACE_NAME = 'contextbridge';
+export const CLAUDE_PLUGIN_ID = 'planbridge@contextbridge';
+export const CLAUDE_LEGACY_PLUGIN_ID = 'cli@contextbridge';
+export const CLAUDE_MARKETPLACE_SOURCE = 'contextbridge/claude-plugin';
+export const CLAUDE_MARKETPLACE_NAME = 'contextbridge';
 
 const InstalledPluginSchema = z.object({
   id: z.string().trim().nonempty(),
@@ -40,27 +41,52 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     }
     const managed: ManagedEntry[] = [];
     if (await isMarketplaceConfigured(ctx, binaryName)) {
-      managed.push({ kind: 'marketplace', identifier: MARKETPLACE_NAME });
+      managed.push({ kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME });
     }
-    const installedScopes = await getInstalledPluginScopes(ctx, binaryName, INSTALL_SCOPES);
-    for (const scope of installedScopes) {
-      managed.push({ kind: 'plugin', identifier: PLUGIN_ID, scope });
+    const plugins = await listPlugins(ctx, binaryName);
+    const newScopes = filterPluginScopes(plugins, CLAUDE_PLUGIN_ID, INSTALL_SCOPES);
+    const legacyScopes = filterPluginScopes(plugins, CLAUDE_LEGACY_PLUGIN_ID, INSTALL_SCOPES);
+    for (const scope of newScopes) {
+      managed.push({ kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope });
     }
-    return { descriptor: this.descriptor, detected: true, installed: installedScopes.length > 0, managed };
+    for (const scope of legacyScopes) {
+      managed.push({ kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope });
+    }
+    return { descriptor: this.descriptor, detected: true, installed: newScopes.length > 0, managed };
   }
 
   protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io } = ctx;
     const { binaryName } = this.descriptor;
 
+    const plugins = await listPlugins(ctx, binaryName);
+    const hasCurrentAtScope = hasPluginAtScope(plugins, CLAUDE_PLUGIN_ID, scope);
+    const hasLegacyAtScope = hasPluginAtScope(plugins, CLAUDE_LEGACY_PLUGIN_ID, scope);
+
     await runPluginCommand(ctx, binaryName, 'marketplace add', [
       'marketplace',
       'add',
-      MARKETPLACE_SOURCE,
+      CLAUDE_MARKETPLACE_SOURCE,
       '--scope',
       scope,
     ]);
-    await runPluginCommand(ctx, binaryName, 'install', ['install', PLUGIN_ID, '--scope', scope]);
+    if (hasCurrentAtScope) {
+      await runPluginCommand(ctx, binaryName, 'update', ['update', CLAUDE_PLUGIN_ID, '--scope', scope]);
+    } else {
+      await runPluginCommand(ctx, binaryName, 'install', ['install', CLAUDE_PLUGIN_ID, '--scope', scope]);
+    }
+
+    if (hasLegacyAtScope) {
+      await runPluginCommand(ctx, binaryName, 'uninstall legacy', [
+        'uninstall',
+        CLAUDE_LEGACY_PLUGIN_ID,
+        '--scope',
+        scope,
+      ]);
+      io.stderr.write(
+        `PlanBridge plugin renamed from ${CLAUDE_LEGACY_PLUGIN_ID} to ${CLAUDE_PLUGIN_ID} — migrated automatically.\n`,
+      );
+    }
 
     io.stderr.write(`✓ PlanBridge plugin installed for Claude Code (scope: ${scope}).\n`);
     io.stderr.write(`Restart Claude Code for the plugin to load.\n`);
@@ -70,39 +96,48 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     const { io, logger } = ctx;
     const { binaryName } = this.descriptor;
 
-    if (await isPluginInstalledAtScope(ctx, binaryName, scope)) {
-      await runPluginCommand(ctx, binaryName, 'uninstall', ['uninstall', PLUGIN_ID, '--scope', scope]);
+    const plugins = await listPlugins(ctx, binaryName);
+
+    if (hasPluginAtScope(plugins, CLAUDE_PLUGIN_ID, scope)) {
+      await runPluginCommand(ctx, binaryName, 'uninstall', ['uninstall', CLAUDE_PLUGIN_ID, '--scope', scope]);
     } else {
-      logger.info(`${PLUGIN_ID} is not installed at scope ${scope}; skipping plugin uninstall`);
+      logger.info(`${CLAUDE_PLUGIN_ID} is not installed at scope ${scope}; skipping plugin uninstall`);
+    }
+
+    if (hasPluginAtScope(plugins, CLAUDE_LEGACY_PLUGIN_ID, scope)) {
+      await runPluginCommand(ctx, binaryName, 'uninstall legacy', [
+        'uninstall',
+        CLAUDE_LEGACY_PLUGIN_ID,
+        '--scope',
+        scope,
+      ]);
     }
 
     if (await isMarketplaceConfigured(ctx, binaryName)) {
-      await runPluginCommand(ctx, binaryName, 'marketplace remove', ['marketplace', 'remove', MARKETPLACE_NAME]);
+      await runPluginCommand(ctx, binaryName, 'marketplace remove', ['marketplace', 'remove', CLAUDE_MARKETPLACE_NAME]);
     } else {
-      logger.info(`${MARKETPLACE_NAME} marketplace is not configured; skipping marketplace remove`);
+      logger.info(`${CLAUDE_MARKETPLACE_NAME} marketplace is not configured; skipping marketplace remove`);
     }
 
     io.stderr.write(`✓ PlanBridge plugin removed from Claude Code (scope: ${scope}).\n`);
   }
 }
 
-async function isPluginInstalledAtScope(ctx: CliContext, binaryName: string, scope: string): Promise<boolean> {
-  const scopes = await getInstalledPluginScopes(ctx, binaryName, [scope]);
-  return scopes.length > 0;
+function hasPluginAtScope(plugins: readonly InstalledPlugin[], pluginId: string, scope: string): boolean {
+  return plugins.some((p) => p.id === pluginId && p.scope === scope);
 }
 
-async function getInstalledPluginScopes<T extends string>(
-  ctx: CliContext,
-  binaryName: string,
+function filterPluginScopes<T extends string>(
+  plugins: readonly InstalledPlugin[],
+  pluginId: string,
   scopes: readonly T[],
-): Promise<T[]> {
-  const plugins = await listPlugins(ctx, binaryName);
-  return scopes.filter((scope) => plugins.some((p) => p.id === PLUGIN_ID && p.scope === scope));
+): T[] {
+  return scopes.filter((scope) => hasPluginAtScope(plugins, pluginId, scope));
 }
 
 async function isMarketplaceConfigured(ctx: CliContext, binaryName: string): Promise<boolean> {
   const marketplaces = await listMarketplaces(ctx, binaryName);
-  return marketplaces.some((m) => m.name === MARKETPLACE_NAME);
+  return marketplaces.some((m) => m.name === CLAUDE_MARKETPLACE_NAME);
 }
 
 async function listPlugins(ctx: CliContext, binaryName: string): Promise<InstalledPlugin[]> {
