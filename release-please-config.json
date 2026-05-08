@@ -6,6 +6,7 @@
       "package-name": "contextbridge",
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
       "extra-files": [
         {
           "type": "json",
