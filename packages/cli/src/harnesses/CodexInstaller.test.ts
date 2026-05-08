@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext } from '#src/testHelpers/index.ts';
+import { createStubContext, readErrorLogs, readWarnLogs } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
 import { getDescriptor } from './registry.ts';
 
@@ -121,13 +121,18 @@ describe('CodexInstaller', () => {
     });
 
     it('fails before writing files when Codex version output is unparseable', async () => {
-      const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
+      const { installer, context, logs } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
 
       const err = await captureError(installer.install(context, { yes: true }));
 
       expect(err).toBeInstanceOf(CommanderError);
       expect((err as Error).message).toContain('Could not determine Codex CLI version');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
+      expect(
+        readErrorLogs(logs).some(
+          (record) => record.msg === 'could not determine Codex CLI version' && record['stdout'] === 'weird\n',
+        ),
+      ).toBe(true);
     });
 
     it('fails when Codex feature commands fail', async () => {
@@ -141,6 +146,28 @@ describe('CodexInstaller', () => {
 
       expect(err).toBeInstanceOf(CommanderError);
       expect((err as Error).message).toBe('nope');
+    });
+
+    it('continues when disabling the legacy Codex hook feature fails', async () => {
+      const { installer, context, logs } = createCodexInstallerContext(
+        tmp,
+        {},
+        { disableLegacyHooksResult: { exitCode: 1, stdout: 'not enabled\n', stderr: 'unknown feature\n' } },
+      );
+
+      await installer.install(context, { yes: true });
+
+      expect(readHooksJson(join(tmp, '.codex', 'hooks.json')).hooks.Stop[0]?.hooks[0]).toMatchObject({
+        command: 'contextbridge hook codex',
+      });
+      expect(
+        readWarnLogs(logs).some(
+          (record) =>
+            record.msg === 'codex features disable codex_hooks failed; continuing' &&
+            record['stdout'] === 'not enabled\n' &&
+            record['stderr'] === 'unknown feature\n',
+        ),
+      ).toBe(true);
     });
   });
 
@@ -281,15 +308,20 @@ function createCodexInstallerContext(
   options: {
     readonly versionStdout?: string;
     readonly enableHooksResult?: { readonly exitCode?: number; readonly stdout?: string; readonly stderr?: string };
+    readonly disableLegacyHooksResult?: {
+      readonly exitCode?: number;
+      readonly stdout?: string;
+      readonly stderr?: string;
+    };
   } = {},
 ) {
-  const { versionStdout = 'codex-cli 0.129.0\n', enableHooksResult } = options;
+  const { versionStdout = 'codex-cli 0.129.0\n', enableHooksResult, disableLegacyHooksResult } = options;
   const { env = environment.build({ HOME: tmp }), ...restOverrides } = overrides;
   const testContext = createStubContext({ env, ...restOverrides });
   testContext.commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
   testContext.commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: versionStdout });
   testContext.commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves(enableHooksResult);
-  testContext.commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
+  testContext.commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves(disableLegacyHooksResult);
   return { installer: new CodexInstaller(), ...testContext };
 }
 

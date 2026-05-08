@@ -15,6 +15,7 @@ import type { SupportedHarnessDescriptor } from './types.ts';
 const CODEX_HOOK_COMMAND = 'contextbridge hook codex';
 const CODEX_HOOK_TIMEOUT_SECONDS = 345600;
 const CODEX_HOOK_STATUS_MESSAGE = 'Opening PlanBridge';
+// 0.129.0 introduced the replacement `hooks` feature flag for the deprecated `codex_hooks` flag.
 const MINIMUM_CODEX_VERSION = '0.129.0';
 
 const STOP_HOOK_KEY = 'Stop';
@@ -282,9 +283,11 @@ function isPlanBridgeHook(value: unknown): boolean {
 }
 
 async function requireSupportedCodexVersion(ctx: CliContext, binaryName: string): Promise<void> {
+  const { logger } = ctx;
   const result = await runCodexCommand(ctx, binaryName, ['--version'], 'version check');
   const parsed = parseCodexVersion(result.stdout);
   if (!parsed) {
+    logger.error({ stdout: result.stdout }, 'could not determine Codex CLI version');
     throw new CommanderError(
       1,
       'contextbridge.codexInstaller.unsupportedVersion',
@@ -303,7 +306,7 @@ async function requireSupportedCodexVersion(ctx: CliContext, binaryName: string)
 
 async function enableCodexHookFeatureFlags(ctx: CliContext, binaryName: string): Promise<void> {
   await runCodexCommand(ctx, binaryName, ['features', 'enable', 'hooks'], 'features enable hooks');
-  await runCodexCommand(ctx, binaryName, ['features', 'disable', 'codex_hooks'], 'features disable codex_hooks');
+  await tryRunCodexCommand(ctx, binaryName, ['features', 'disable', 'codex_hooks'], 'features disable codex_hooks');
 }
 
 async function runCodexCommand(
@@ -327,6 +330,32 @@ async function runCodexCommand(
   }
 
   return result;
+}
+
+async function tryRunCodexCommand(
+  ctx: CliContext,
+  binaryName: string,
+  args: readonly string[],
+  label: string,
+): Promise<void> {
+  const { commandRunner, logger } = ctx;
+  try {
+    const result = await commandRunner.run(binaryName, args);
+    if (result.exitCode === 0) {
+      logger.debug(
+        { args, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr },
+        `${binaryName} ${label}`,
+      );
+      return;
+    }
+
+    logger.warn(
+      { args, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr },
+      `${binaryName} ${label} failed; continuing`,
+    );
+  } catch (err) {
+    logger.warn({ err, args }, `${binaryName} ${label} failed; continuing`);
+  }
 }
 
 function parseCodexVersion(source: string): string | null {
