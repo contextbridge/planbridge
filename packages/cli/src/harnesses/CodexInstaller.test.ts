@@ -37,7 +37,10 @@ describe('CodexInstaller', () => {
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
       expect(commandRunnerCalls(context, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI (scope: user)');
+      expect(io.stderr.text()).toContain('Action required');
+      expect(io.stderr.text()).toContain('PlanBridge will not run in Codex until this hook is trusted');
       expect(io.stderr.text()).toContain('open /hooks');
+      expect(io.stderr.text()).toContain('https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook');
     });
 
     it('installs project-scope hook configuration under the project root and enables features at user scope', async () => {

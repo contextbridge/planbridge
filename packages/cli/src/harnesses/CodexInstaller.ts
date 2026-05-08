@@ -69,10 +69,11 @@ export class CodexInstaller extends ScopedHarnessInstaller {
     await enableCodexHookFeatureFlags(ctx, this.descriptor.binaryName);
 
     io.stderr.write(`✓ PlanBridge hook installed for Codex CLI (scope: ${scope}).\n`);
-    io.stderr.write(`Restart Codex CLI for the hook to load.\n`);
+    io.stderr.write(`Action required: PlanBridge will not run in Codex until this hook is trusted.\n`);
     io.stderr.write(
-      `Then open /hooks, verify the Stop hook runs \`${CODEX_HOOK_COMMAND}\`, and press t to trust it.\n`,
+      `Restart Codex CLI, open /hooks, verify the Stop hook runs \`${CODEX_HOOK_COMMAND}\`, and press t.\n`,
     );
+    io.stderr.write(`Walkthrough: https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook\n`);
   }
 
   protected async runUninstall(ctx: CliContext, scope: InstallScope): Promise<void> {
