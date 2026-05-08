@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
+import { CLAUDE_LEGACY_PLUGIN_ID, CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import {
   createStubContext,
@@ -214,10 +215,10 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(process.execPath, ['install', 'claude']).resolves();
 
     await runUpdate(context);
@@ -238,10 +239,10 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(process.execPath, ['install', 'claude']).resolves();
 
     await runUpdate(context);
@@ -262,10 +263,10 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
     commandRunner.on(process.execPath, ['install', 'claude']).resolves();
 
     await runUpdate(context);
@@ -286,10 +287,10 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }]));
     commandRunner.on(process.execPath, ['install', 'claude']).resolves();
 
     await runUpdate(context);
@@ -360,7 +361,7 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
     await runUpdate(context);
@@ -380,10 +381,10 @@ describe('runUpdate', () => {
     });
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(process.execPath, ['install', 'claude']).resolves({ exitCode: 1, stderr: 'install failed' });
 
     await runUpdate(context);

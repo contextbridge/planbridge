@@ -8,7 +8,13 @@ import {
   readErrorLogs,
   readLogs,
 } from '#src/testHelpers/index.ts';
-import { ClaudeInstaller } from './ClaudeInstaller.ts';
+import {
+  CLAUDE_LEGACY_PLUGIN_ID,
+  CLAUDE_MARKETPLACE_NAME,
+  CLAUDE_MARKETPLACE_SOURCE,
+  CLAUDE_PLUGIN_ID,
+  ClaudeInstaller,
+} from './ClaudeInstaller.ts';
 import { getDescriptor } from './registry.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -30,10 +36,10 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
 
     const stderr = io.stderr.text();
@@ -47,7 +53,7 @@ describe('ClaudeInstaller.install', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves({
       stdout: "Adding marketplace…✔ Marketplace 'contextbridge' already on disk — declared in user settings",
     });
@@ -61,10 +67,10 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
     expect(io.stderr.text()).toContain('installed for Claude Code');
   });
@@ -73,7 +79,7 @@ describe('ClaudeInstaller.install', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'cli@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
@@ -84,11 +90,11 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
 
     const stderr = io.stderr.text();
@@ -102,7 +108,7 @@ describe('ClaudeInstaller.install', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'cli@contextbridge', scope: 'project' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
@@ -112,10 +118,10 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
     expect(io.stderr.text()).not.toContain('renamed from cli@contextbridge');
   });
@@ -162,7 +168,7 @@ describe('ClaudeInstaller.install', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'cli@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'install'])
@@ -173,10 +179,10 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('plugin not found in marketplace'))).toBe(true);
   });
@@ -186,8 +192,8 @@ describe('ClaudeInstaller.install', () => {
     const { context, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     stubPluginList(commandRunner, [
-      { id: 'planbridge@contextbridge', scope: 'user' },
-      { id: 'cli@contextbridge', scope: 'user' },
+      { id: CLAUDE_PLUGIN_ID, scope: 'user' },
+      { id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves({ exitCode: 1, stderr: 'update failed' });
@@ -197,10 +203,10 @@ describe('ClaudeInstaller.install', () => {
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       {
         cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
+        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('update failed'))).toBe(true);
   });
@@ -222,18 +228,18 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
     expect(commandRunner.calls).toEqual([
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', 'contextbridge'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
     ]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed from Claude Code (scope: user)');
     expect(io.stdout.text()).toBe('');
@@ -243,8 +249,8 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'project' }]);
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
@@ -252,7 +258,7 @@ describe('ClaudeInstaller.uninstall', () => {
     expect(commandRunner.calls).toEqual([
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', 'contextbridge'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
     ]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
     expect(readLogs(logs).some((r) => r.msg.includes('not installed at scope user'))).toBe(true);
@@ -262,7 +268,7 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, []);
 
@@ -270,7 +276,7 @@ describe('ClaudeInstaller.uninstall', () => {
 
     expect(commandRunner.calls).toEqual([
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
     ]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
@@ -281,18 +287,18 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, io, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'cli@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
     expect(commandRunner.calls).toEqual([
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', 'contextbridge'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
     ]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
     expect(readLogs(logs).some((r) => r.msg.includes('not installed at scope user'))).toBe(true);
@@ -303,21 +309,21 @@ describe('ClaudeInstaller.uninstall', () => {
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     stubPluginList(commandRunner, [
-      { id: 'planbridge@contextbridge', scope: 'user' },
-      { id: 'cli@contextbridge', scope: 'user' },
+      { id: CLAUDE_PLUGIN_ID, scope: 'user' },
+      { id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
     expect(commandRunner.calls).toEqual([
       { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'planbridge@contextbridge', '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', 'contextbridge'], opts: {} },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
     ]);
   });
 
@@ -363,7 +369,7 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves({ exitCode: 1, stderr: 'disk full' });
 
     expect(installer.uninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
@@ -375,9 +381,9 @@ describe('ClaudeInstaller.uninstall', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner, logs } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])
       .resolves({ exitCode: 1, stderr: 'some other marketplace error' });
@@ -424,9 +430,9 @@ describe('ClaudeInstaller scope prompt', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner, prompter } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'project' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
     prompter.setSelect('project');
 
@@ -437,7 +443,7 @@ describe('ClaudeInstaller scope prompt', () => {
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])[0]?.args).toEqual([
       'plugin',
       'uninstall',
-      'planbridge@contextbridge',
+      CLAUDE_PLUGIN_ID,
       '--scope',
       'project',
     ]);
@@ -462,16 +468,16 @@ describe('ClaudeInstaller.status', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'user' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
 
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
     expect(status.installed).toBe(true);
     expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: 'contextbridge' },
-      { kind: 'plugin', identifier: 'planbridge@contextbridge', scope: 'user' },
+      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+      { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
     ]);
   });
 
@@ -480,29 +486,29 @@ describe('ClaudeInstaller.status', () => {
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     stubMarketplaceList(commandRunner, []);
-    stubPluginList(commandRunner, [{ id: 'planbridge@contextbridge', scope: 'project' }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
 
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
     expect(status.installed).toBe(true);
-    expect(status.managed).toEqual([{ kind: 'plugin', identifier: 'planbridge@contextbridge', scope: 'project' }]);
+    expect(status.managed).toEqual([{ kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'project' }]);
   });
 
   it('reports a legacy cli@contextbridge install as managed but not installed', async () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
-    stubPluginList(commandRunner, [{ id: 'cli@contextbridge', scope: 'user' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
+    stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
 
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
     expect(status.installed).toBe(false);
     expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: 'contextbridge' },
-      { kind: 'plugin', identifier: 'cli@contextbridge', scope: 'user' },
+      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+      { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
   });
 
@@ -510,10 +516,10 @@ describe('ClaudeInstaller.status', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     stubPluginList(commandRunner, [
-      { id: 'planbridge@contextbridge', scope: 'user' },
-      { id: 'cli@contextbridge', scope: 'user' },
+      { id: CLAUDE_PLUGIN_ID, scope: 'user' },
+      { id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
 
     const status = await installer.status(context);
@@ -521,9 +527,9 @@ describe('ClaudeInstaller.status', () => {
     expect(status.detected).toBe(true);
     expect(status.installed).toBe(true);
     expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: 'contextbridge' },
-      { kind: 'plugin', identifier: 'planbridge@contextbridge', scope: 'user' },
-      { kind: 'plugin', identifier: 'cli@contextbridge', scope: 'user' },
+      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+      { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
+      { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
   });
 
@@ -531,14 +537,14 @@ describe('ClaudeInstaller.status', () => {
     const installer = new ClaudeInstaller();
     const { context, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, [{ name: 'contextbridge' }]);
+    stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     stubPluginList(commandRunner, []);
 
     const status = await installer.status(context);
 
     expect(status.detected).toBe(true);
     expect(status.installed).toBe(false);
-    expect(status.managed).toEqual([{ kind: 'marketplace', identifier: 'contextbridge' }]);
+    expect(status.managed).toEqual([{ kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME }]);
   });
 
   it('reports detected: true with no managed entries when claude is on PATH but PlanBridge is not installed', async () => {

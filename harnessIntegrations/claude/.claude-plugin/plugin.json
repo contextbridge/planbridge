@@ -8,5 +8,5 @@
   "homepage": "https://plan.contextbridge.ai",
   "repository": "https://github.com/contextbridge/planbridge",
   "license": "MIT",
-  "keywords": ["contextbridge", "planbridge", "planning", "review", "hooks", "ExitPlanMode"]
+  "keywords": ["contextbridge", "planbridge", "planning", "review", "hooks"]
 }

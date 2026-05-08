@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { createStubContext, marketplaceListResult, parseStdoutJson, pluginListResult } from '#src/testHelpers/index.ts';
 import { runInstallStatus } from './installStatus.ts';
@@ -11,10 +12,10 @@ describe('runInstallStatus', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
     await runInstallStatus(context);
 
@@ -41,7 +42,7 @@ describe('runInstallStatus', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
     await runInstallStatus(context);
@@ -57,7 +58,7 @@ describe('runInstallStatus', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'project' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
 
     await runInstallStatus(context);
 
@@ -79,10 +80,10 @@ describe('runInstallStatus', () => {
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: 'contextbridge' }]));
+      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: 'planbridge@contextbridge', scope: 'user' }]));
+      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
     await runInstallStatus(context, { json: true });
 
@@ -94,8 +95,8 @@ describe('runInstallStatus', () => {
       detected: true,
       installed: true,
       managed: [
-        { kind: 'marketplace', identifier: 'contextbridge' },
-        { kind: 'plugin', identifier: 'planbridge@contextbridge', scope: 'user' },
+        { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+        { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
       ],
     });
     expect(payload[1]).toMatchObject({

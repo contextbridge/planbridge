@@ -7,10 +7,10 @@ import { getSupportedDescriptor } from './registry.ts';
 import { INSTALL_SCOPES, type InstallScope, ScopedHarnessInstaller } from './ScopedHarnessInstaller.ts';
 import type { SupportedHarnessDescriptor } from './types.ts';
 
-const PLUGIN_ID = 'planbridge@contextbridge';
-const LEGACY_PLUGIN_ID = 'cli@contextbridge';
-const MARKETPLACE_SOURCE = 'contextbridge/claude-plugin';
-const MARKETPLACE_NAME = 'contextbridge';
+export const CLAUDE_PLUGIN_ID = 'planbridge@contextbridge';
+export const CLAUDE_LEGACY_PLUGIN_ID = 'cli@contextbridge';
+export const CLAUDE_MARKETPLACE_SOURCE = 'contextbridge/claude-plugin';
+export const CLAUDE_MARKETPLACE_NAME = 'contextbridge';
 
 const InstalledPluginSchema = z.object({
   id: z.string().trim().nonempty(),
@@ -41,16 +41,16 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     }
     const managed: ManagedEntry[] = [];
     if (await isMarketplaceConfigured(ctx, binaryName)) {
-      managed.push({ kind: 'marketplace', identifier: MARKETPLACE_NAME });
+      managed.push({ kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME });
     }
     const plugins = await listPlugins(ctx, binaryName);
-    const newScopes = filterPluginScopes(plugins, PLUGIN_ID, INSTALL_SCOPES);
-    const legacyScopes = filterPluginScopes(plugins, LEGACY_PLUGIN_ID, INSTALL_SCOPES);
+    const newScopes = filterPluginScopes(plugins, CLAUDE_PLUGIN_ID, INSTALL_SCOPES);
+    const legacyScopes = filterPluginScopes(plugins, CLAUDE_LEGACY_PLUGIN_ID, INSTALL_SCOPES);
     for (const scope of newScopes) {
-      managed.push({ kind: 'plugin', identifier: PLUGIN_ID, scope });
+      managed.push({ kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope });
     }
     for (const scope of legacyScopes) {
-      managed.push({ kind: 'plugin', identifier: LEGACY_PLUGIN_ID, scope });
+      managed.push({ kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope });
     }
     return { descriptor: this.descriptor, detected: true, installed: newScopes.length > 0, managed };
   }
@@ -60,25 +60,32 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     const { binaryName } = this.descriptor;
 
     const plugins = await listPlugins(ctx, binaryName);
-    const hasCurrentAtScope = hasPluginAtScope(plugins, PLUGIN_ID, scope);
-    const hasLegacyAtScope = hasPluginAtScope(plugins, LEGACY_PLUGIN_ID, scope);
+    const hasCurrentAtScope = hasPluginAtScope(plugins, CLAUDE_PLUGIN_ID, scope);
+    const hasLegacyAtScope = hasPluginAtScope(plugins, CLAUDE_LEGACY_PLUGIN_ID, scope);
 
     await runPluginCommand(ctx, binaryName, 'marketplace add', [
       'marketplace',
       'add',
-      MARKETPLACE_SOURCE,
+      CLAUDE_MARKETPLACE_SOURCE,
       '--scope',
       scope,
     ]);
     if (hasCurrentAtScope) {
-      await runPluginCommand(ctx, binaryName, 'update', ['update', PLUGIN_ID, '--scope', scope]);
+      await runPluginCommand(ctx, binaryName, 'update', ['update', CLAUDE_PLUGIN_ID, '--scope', scope]);
     } else {
-      await runPluginCommand(ctx, binaryName, 'install', ['install', PLUGIN_ID, '--scope', scope]);
+      await runPluginCommand(ctx, binaryName, 'install', ['install', CLAUDE_PLUGIN_ID, '--scope', scope]);
     }
 
     if (hasLegacyAtScope) {
-      await runPluginCommand(ctx, binaryName, 'uninstall legacy', ['uninstall', LEGACY_PLUGIN_ID, '--scope', scope]);
-      io.stderr.write(`PlanBridge plugin renamed from ${LEGACY_PLUGIN_ID} to ${PLUGIN_ID} — migrated automatically.\n`);
+      await runPluginCommand(ctx, binaryName, 'uninstall legacy', [
+        'uninstall',
+        CLAUDE_LEGACY_PLUGIN_ID,
+        '--scope',
+        scope,
+      ]);
+      io.stderr.write(
+        `PlanBridge plugin renamed from ${CLAUDE_LEGACY_PLUGIN_ID} to ${CLAUDE_PLUGIN_ID} — migrated automatically.\n`,
+      );
     }
 
     io.stderr.write(`✓ PlanBridge plugin installed for Claude Code (scope: ${scope}).\n`);
@@ -91,20 +98,25 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
 
     const plugins = await listPlugins(ctx, binaryName);
 
-    if (hasPluginAtScope(plugins, PLUGIN_ID, scope)) {
-      await runPluginCommand(ctx, binaryName, 'uninstall', ['uninstall', PLUGIN_ID, '--scope', scope]);
+    if (hasPluginAtScope(plugins, CLAUDE_PLUGIN_ID, scope)) {
+      await runPluginCommand(ctx, binaryName, 'uninstall', ['uninstall', CLAUDE_PLUGIN_ID, '--scope', scope]);
     } else {
-      logger.info(`${PLUGIN_ID} is not installed at scope ${scope}; skipping plugin uninstall`);
+      logger.info(`${CLAUDE_PLUGIN_ID} is not installed at scope ${scope}; skipping plugin uninstall`);
     }
 
-    if (hasPluginAtScope(plugins, LEGACY_PLUGIN_ID, scope)) {
-      await runPluginCommand(ctx, binaryName, 'uninstall legacy', ['uninstall', LEGACY_PLUGIN_ID, '--scope', scope]);
+    if (hasPluginAtScope(plugins, CLAUDE_LEGACY_PLUGIN_ID, scope)) {
+      await runPluginCommand(ctx, binaryName, 'uninstall legacy', [
+        'uninstall',
+        CLAUDE_LEGACY_PLUGIN_ID,
+        '--scope',
+        scope,
+      ]);
     }
 
     if (await isMarketplaceConfigured(ctx, binaryName)) {
-      await runPluginCommand(ctx, binaryName, 'marketplace remove', ['marketplace', 'remove', MARKETPLACE_NAME]);
+      await runPluginCommand(ctx, binaryName, 'marketplace remove', ['marketplace', 'remove', CLAUDE_MARKETPLACE_NAME]);
     } else {
-      logger.info(`${MARKETPLACE_NAME} marketplace is not configured; skipping marketplace remove`);
+      logger.info(`${CLAUDE_MARKETPLACE_NAME} marketplace is not configured; skipping marketplace remove`);
     }
 
     io.stderr.write(`✓ PlanBridge plugin removed from Claude Code (scope: ${scope}).\n`);
@@ -125,7 +137,7 @@ function filterPluginScopes<T extends string>(
 
 async function isMarketplaceConfigured(ctx: CliContext, binaryName: string): Promise<boolean> {
   const marketplaces = await listMarketplaces(ctx, binaryName);
-  return marketplaces.some((m) => m.name === MARKETPLACE_NAME);
+  return marketplaces.some((m) => m.name === CLAUDE_MARKETPLACE_NAME);
 }
 
 async function listPlugins(ctx: CliContext, binaryName: string): Promise<InstalledPlugin[]> {
