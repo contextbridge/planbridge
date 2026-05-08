@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import {
-  type FakeCommandRunner,
   createStubContext,
-  marketplaceListResult,
-  pluginListResult,
+  primeClaudeShellouts,
   readErrorLogs,
   readLogs,
+  stubMarketplaceList,
+  stubPluginList,
 } from '#src/testHelpers/index.ts';
 import {
   CLAUDE_LEGACY_PLUGIN_ID,
@@ -18,17 +18,10 @@ import {
 import { getDescriptor } from './registry.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-type PluginFixture = Parameters<typeof pluginListResult>[0][number];
-type MarketplaceFixture = Parameters<typeof marketplaceListResult>[0][number];
 
 describe('ClaudeInstaller.install', () => {
   it('runs marketplace-add then plugin-install at user scope and emits onboarding prose', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { installer, context, io, commandRunner } = setupTest();
 
     await installer.install(context, { yes: true });
 
@@ -50,15 +43,10 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('updates the plugin when the new id is already installed at the target scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves({
       stdout: "Adding marketplace…✔ Marketplace 'contextbridge' already on disk — declared in user settings",
-    });
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves({
-      stdout: 'Updated plugin "planbridge@contextbridge" to latest version',
     });
 
     await installer.install(context, { yes: true });
@@ -71,13 +59,8 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('migrates a legacy cli@contextbridge install at the target scope after installing the new id', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
 
     await installer.install(context, { yes: true });
 
@@ -100,12 +83,8 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('leaves legacy cli@contextbridge alone when it is at a different scope than the install target', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
     await installer.install(context, { yes: true });
 
@@ -115,8 +94,7 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('aborts when claude is not on PATH and never invokes a shellout', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
+    const { installer, context, commandRunner } = setupTest();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
     expect(installer.install(context, { yes: true })).rejects.toThrow('Install Claude Code');
@@ -124,10 +102,7 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('aborts when marketplace-add fails and bubbles stderr', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
+    const { installer, context, commandRunner, logs } = setupTest();
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])
       .resolves({ exitCode: 1, stderr: 'network unreachable' });
@@ -139,11 +114,7 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('aborts when plugin-install fails after a successful marketplace-add', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
+    const { installer, context, commandRunner, logs } = setupTest();
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'install'])
       .resolves({ exitCode: 1, stderr: 'plugin not found in marketplace' });
@@ -155,11 +126,8 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('does not remove a legacy install when the new plugin install fails', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'install'])
       .resolves({ exitCode: 1, stderr: 'plugin not found in marketplace' });
@@ -171,14 +139,11 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('does not remove a legacy install when the new plugin update fails', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [
       { id: CLAUDE_PLUGIN_ID, scope: 'user' },
       { id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves({ exitCode: 1, stderr: 'update failed' });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
@@ -188,10 +153,7 @@ describe('ClaudeInstaller.install', () => {
   });
 
   it('logs a synthetic detail when stderr is empty on a non-zero exit', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
+    const { installer, context, commandRunner, logs } = setupTest();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves({ exitCode: 3 });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
@@ -201,13 +163,9 @@ describe('ClaudeInstaller.install', () => {
 
 describe('ClaudeInstaller.uninstall', () => {
   it('lists, uninstalls, lists marketplaces, removes marketplace, emits confirmation at user scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
@@ -222,12 +180,9 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('skips plugin-uninstall when the plugin is not installed at the user scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
@@ -238,12 +193,8 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('skips marketplace-remove when the marketplace is not configured', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    stubMarketplaceList(commandRunner, []);
 
     await installer.uninstall(context, { yes: true });
 
@@ -256,13 +207,9 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('uninstalls a legacy cli@contextbridge install at the target scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, io, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
@@ -275,16 +222,12 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('uninstalls both the new id and the legacy cli@contextbridge when both are at the target scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner } = setupTest();
     stubPluginList(commandRunner, [
       { id: CLAUDE_PLUGIN_ID, scope: 'user' },
       { id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
     ]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
     await installer.uninstall(context, { yes: true });
 
@@ -296,11 +239,7 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('is fully idempotent when both the plugin and marketplace are already absent', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
-    stubMarketplaceList(commandRunner, []);
+    const { installer, context, io, commandRunner } = setupTest();
 
     await installer.uninstall(context, { yes: true });
 
@@ -310,8 +249,7 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('aborts when claude is not on PATH and never invokes a shellout', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
+    const { installer, context, commandRunner } = setupTest();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
     expect(installer.uninstall(context, { yes: true })).rejects.toThrow('Install Claude Code');
@@ -319,9 +257,7 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('bubbles a CommanderError and runs no further shellouts when `plugin list --json` fails', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves({ exitCode: 1, stderr: 'permission denied' });
@@ -332,9 +268,7 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('bubbles a real plugin-uninstall failure and does not call marketplace-list', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves({ exitCode: 1, stderr: 'disk full' });
 
@@ -345,11 +279,8 @@ describe('ClaudeInstaller.uninstall', () => {
   });
 
   it('bubbles a real marketplace-remove failure after a clean plugin uninstall', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     commandRunner
       .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])
@@ -363,12 +294,7 @@ describe('ClaudeInstaller.uninstall', () => {
 
 describe('ClaudeInstaller scope prompt', () => {
   it('prompts for scope when yes=false and installs at the chosen scope', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { installer, context, commandRunner, prompter } = setupTest();
     prompter.setSelect('project');
 
     await installer.install(context, { yes: false });
@@ -380,12 +306,7 @@ describe('ClaudeInstaller scope prompt', () => {
   });
 
   it('skips the scope prompt when yes=true and uses the user-scope default', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubPluginList(commandRunner, []);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { installer, context, commandRunner, prompter } = setupTest();
 
     await installer.install(context, { yes: true });
 
@@ -394,13 +315,9 @@ describe('ClaudeInstaller scope prompt', () => {
   });
 
   it('prompts for scope on uninstall when yes=false', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, prompter } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
     prompter.setSelect('project');
 
     await installer.uninstall(context, { yes: false });
@@ -419,8 +336,7 @@ describe('ClaudeInstaller scope prompt', () => {
 
 describe('ClaudeInstaller.status', () => {
   it('reports detected: false with no managed entries when claude is not on PATH', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
+    const { installer, context, commandRunner } = setupTest();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
     const status = await installer.status(context);
@@ -432,9 +348,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports detected: true with marketplace and user-scope plugin entries when present', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner } = setupTest();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]);
 
@@ -449,10 +363,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports project-scope plugin installs', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, []);
+    const { installer, context, commandRunner } = setupTest();
     stubPluginList(commandRunner, [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]);
 
     const status = await installer.status(context);
@@ -463,9 +374,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports a legacy cli@contextbridge install as managed but not installed', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner } = setupTest();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     stubPluginList(commandRunner, [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]);
 
@@ -480,9 +389,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports both new and legacy plugin entries when both are installed', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner } = setupTest();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
     stubPluginList(commandRunner, [
       { id: CLAUDE_PLUGIN_ID, scope: 'user' },
@@ -501,11 +408,8 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports marketplace-only partial state as managed but not installed', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner } = setupTest();
     stubMarketplaceList(commandRunner, [{ name: CLAUDE_MARKETPLACE_NAME }]);
-    stubPluginList(commandRunner, []);
 
     const status = await installer.status(context);
 
@@ -515,11 +419,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('reports detected: true with no managed entries when claude is on PATH but PlanBridge is not installed', async () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    stubMarketplaceList(commandRunner, []);
-    stubPluginList(commandRunner, []);
+    const { installer, context } = setupTest();
 
     const status = await installer.status(context);
 
@@ -529,9 +429,7 @@ describe('ClaudeInstaller.status', () => {
   });
 
   it('bubbles a CommanderError when marketplace status cannot be listed', () => {
-    const installer = new ClaudeInstaller();
-    const { context, commandRunner, logs } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { installer, context, commandRunner, logs } = setupTest();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves({ exitCode: 2 });
 
     expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
@@ -539,12 +437,9 @@ describe('ClaudeInstaller.status', () => {
   });
 });
 
-function stubPluginList(commandRunner: FakeCommandRunner, plugins: PluginFixture[]): void {
-  commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult(plugins));
-}
-
-function stubMarketplaceList(commandRunner: FakeCommandRunner, marketplaces: MarketplaceFixture[]): void {
-  commandRunner
-    .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-    .resolves(marketplaceListResult(marketplaces));
+function setupTest() {
+  const installer = new ClaudeInstaller();
+  const stub = createStubContext();
+  primeClaudeShellouts(stub.commandRunner);
+  return { installer, ...stub };
 }

@@ -83,15 +83,27 @@ describe('FakeCommandRunner', () => {
     });
   });
 
-  describe('matcher order — first match wins', () => {
-    it('uses the responder registered first when multiple match', async () => {
+  describe('matcher order — last match wins', () => {
+    it('uses the responder registered last when multiple match, so later overrides win', async () => {
       const cr = new FakeCommandRunner();
       cr.onAny().resolves({ stdout: 'first' });
       cr.onAny().resolves({ stdout: 'second' });
 
       const result = await cr.run('claude', []);
 
-      expect(result.stdout).toBe('first');
+      expect(result.stdout).toBe('second');
+    });
+
+    it('lets a specific override replace a generic default', async () => {
+      const cr = new FakeCommandRunner();
+      cr.on('claude').resolves({ stdout: 'default' });
+      cr.on('claude', ['plugin', 'install']).resolves({ stdout: 'override' });
+
+      const generic = await cr.run('claude', ['plugin', 'list']);
+      const overridden = await cr.run('claude', ['plugin', 'install']);
+
+      expect(generic.stdout).toBe('default');
+      expect(overridden.stdout).toBe('override');
     });
 
     it('falls through past responders that do not match', async () => {

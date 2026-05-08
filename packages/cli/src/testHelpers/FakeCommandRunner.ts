@@ -53,7 +53,7 @@ export class FakeCommandRunner implements CommandRunner {
 
   run(cmd: string, args: readonly string[], opts: RunCommandOptions = {}): Promise<RunCommandResult> {
     this.calls.push({ cmd, args, opts });
-    const responder = this.responders.find((r) => r.matcher(cmd, args));
+    const responder = this.responders.findLast((r) => r.matcher(cmd, args));
     if (!responder) {
       return Promise.reject(new Error(this.formatMiss(cmd, args)));
     }
