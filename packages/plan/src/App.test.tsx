@@ -155,9 +155,11 @@ describe('App', () => {
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
-    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveTextContent(
-      'Plan approved. Return to Codex to confirm implementation. This window will close in 3 seconds.',
-    );
+    const countdown = await screen.findByTestId(submitBarTestIds.countdown);
+    expect(countdown).toHaveTextContent('Plan approved.');
+    expect(countdown).toHaveTextContent('Return to Codex to confirm implementation.');
+    expect(countdown).toHaveTextContent('This window will close in 3 seconds.');
+    expect(countdown.querySelector('strong')).not.toBeNull();
   });
 
   it('shows default countdown for hook_codex when changes are requested', async () => {

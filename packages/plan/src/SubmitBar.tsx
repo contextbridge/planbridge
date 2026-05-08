@@ -32,9 +32,17 @@ export function SubmitBar({ submission, source }: SubmitBarProps) {
           className="rounded-md border border-border px-3 py-2 text-sm leading-6 text-muted-foreground"
           data-testid={submitBarTestIds.countdown}
         >
-          {isCodexApproval
-            ? `Plan approved. Return to Codex to confirm implementation. This window will close in ${formatCountdownLabel(submission.closeCountdownSeconds)}.`
-            : `This window will close in ${formatCountdownLabel(submission.closeCountdownSeconds)}.`}
+          {isCodexApproval ? (
+            <>
+              <span>Plan approved.</span>
+              <strong className="block">Return to Codex to confirm implementation.</strong>
+              <span>
+                This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.
+              </span>
+            </>
+          ) : (
+            `This window will close in ${formatCountdownLabel(submission.closeCountdownSeconds)}.`
+          )}
         </div>
       ) : null}
 
