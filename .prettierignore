@@ -16,8 +16,9 @@ tools/infrastructure/cdk.out/
 .github/CODEOWNERS
 .github/workflows/auto-approve.yml
 
-# release-please owns CHANGELOG.md formatting; don't fight it.
+# release-please owns formatting of files it writes; don't fight it.
 CHANGELOG.md
+harnessIntegrations/claude/.claude-plugin/plugin.json
 
 # ContextBot owns formatting of agents and its own rules
 AGENTS.md
