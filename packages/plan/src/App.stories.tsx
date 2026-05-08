@@ -1,16 +1,27 @@
+import type { PlanReviewSource } from '@contextbridge/shared/planReviewSchema';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withAppContext } from '../.storybook/appContextDecorator.tsx';
 import { App } from './App.tsx';
+import type { AppProps } from './App.tsx';
 import { samplePlan } from './demo/samplePlans.ts';
 
-const meta = {
+type StoryArgs = AppProps & { source?: PlanReviewSource };
+
+const meta: Meta<StoryArgs> = {
   title: 'Plan/App',
   component: App,
   parameters: {
     layout: 'fullscreen',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof App>;
+  argTypes: {
+    source: {
+      control: 'select',
+      options: ['file', 'stdin', 'hook_claude', 'hook_codex'],
+      description: 'Plan source — controls post-submit messaging (e.g. Codex handoff notice)',
+    },
+  },
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -112,12 +123,23 @@ const delayedSubmit = async () => {
 
 export const Default: Story = {
   args: {
+    source: 'hook_codex',
     initialPayload: {
       content: samplePlan,
       title: 'Refactor auth middleware',
-      metadata: { source: 'stdin' },
+      metadata: { source: 'hook_codex' },
     },
   },
+  render: ({ source, initialPayload, ...rest }) => (
+    <App
+      {...rest}
+      initialPayload={
+        initialPayload
+          ? { ...initialPayload, metadata: { source: source ?? initialPayload.metadata?.source ?? 'stdin' } }
+          : undefined
+      }
+    />
+  ),
   decorators: [withAppContext({ submitPlanReview: delayedSubmit })],
 };
 
