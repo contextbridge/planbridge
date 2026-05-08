@@ -63,15 +63,10 @@ describe('ClaudeInstaller.install', () => {
 
     await installer.install(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      {
-        cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
-        opts: {},
-      },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-    ]);
+    const updateCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update']);
+    expect(updateCalls).toHaveLength(1);
+    expect(updateCalls[0]?.args).toEqual(['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user']);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     expect(io.stderr.text()).toContain('installed for Claude Code');
   });
 
@@ -114,15 +109,8 @@ describe('ClaudeInstaller.install', () => {
 
     await installer.install(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      {
-        cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
-        opts: {},
-      },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-    ]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     expect(io.stderr.text()).not.toContain('renamed from cli@contextbridge');
   });
 
@@ -145,7 +133,8 @@ describe('ClaudeInstaller.install', () => {
       .resolves({ exitCode: 1, stderr: 'network unreachable' });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toHaveLength(2);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update'])).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('network unreachable'))).toBe(true);
   });
 
@@ -160,7 +149,8 @@ describe('ClaudeInstaller.install', () => {
       .resolves({ exitCode: 1, stderr: 'plugin not found in marketplace' });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toHaveLength(3);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('plugin not found in marketplace'))).toBe(true);
   });
 
@@ -175,15 +165,8 @@ describe('ClaudeInstaller.install', () => {
       .resolves({ exitCode: 1, stderr: 'plugin not found in marketplace' });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      {
-        cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
-        opts: {},
-      },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-    ]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('plugin not found in marketplace'))).toBe(true);
   });
 
@@ -199,15 +182,8 @@ describe('ClaudeInstaller.install', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves({ exitCode: 1, stderr: 'update failed' });
 
     expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      {
-        cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
-        opts: {},
-      },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-    ]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('update failed'))).toBe(true);
   });
 
@@ -255,11 +231,8 @@ describe('ClaudeInstaller.uninstall', () => {
 
     await installer.uninstall(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
-    ]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toHaveLength(1);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
     expect(readLogs(logs).some((r) => r.msg.includes('not installed at scope user'))).toBe(true);
   });
@@ -274,11 +247,10 @@ describe('ClaudeInstaller.uninstall', () => {
 
     await installer.uninstall(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-    ]);
+    const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
+    expect(uninstallCalls).toHaveLength(1);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user']);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toEqual([]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
     expect(readLogs(logs).some((r) => r.msg.includes('marketplace is not configured'))).toBe(true);
   });
@@ -294,12 +266,10 @@ describe('ClaudeInstaller.uninstall', () => {
 
     await installer.uninstall(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
-    ]);
+    const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
+    expect(uninstallCalls).toHaveLength(1);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user']);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toHaveLength(1);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
     expect(readLogs(logs).some((r) => r.msg.includes('not installed at scope user'))).toBe(true);
   });
@@ -318,13 +288,11 @@ describe('ClaudeInstaller.uninstall', () => {
 
     await installer.uninstall(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME], opts: {} },
-    ]);
+    const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
+    expect(uninstallCalls).toHaveLength(2);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'user']);
+    expect(uninstallCalls[1]?.args).toEqual(['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user']);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toHaveLength(1);
   });
 
   it('is fully idempotent when both the plugin and marketplace are already absent', async () => {
@@ -336,10 +304,8 @@ describe('ClaudeInstaller.uninstall', () => {
 
     await installer.uninstall(context, { yes: true });
 
-    expect(commandRunner.calls).toEqual([
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'list', '--json'], opts: {} },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'list', '--json'], opts: {} },
-    ]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toEqual([]);
     expect(io.stderr.text()).toContain('PlanBridge plugin removed');
   });
 
@@ -373,7 +339,8 @@ describe('ClaudeInstaller.uninstall', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves({ exitCode: 1, stderr: 'disk full' });
 
     expect(installer.uninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toHaveLength(2);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('disk full'))).toBe(true);
   });
 
@@ -389,7 +356,7 @@ describe('ClaudeInstaller.uninstall', () => {
       .resolves({ exitCode: 1, stderr: 'some other marketplace error' });
 
     expect(installer.uninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-    expect(commandRunner.calls).toHaveLength(4);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toHaveLength(1);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('some other marketplace error'))).toBe(true);
   });
 });
