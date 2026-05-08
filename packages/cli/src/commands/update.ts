@@ -65,9 +65,16 @@ export function registerUpdate(ctx: CliContext, program: Command): void {
 // sync with the binary across renames and hook-contract changes. Skips harnesses
 // the user never wired up; never blocks update success on a refresh failure.
 async function refreshInstalledHarnesses(ctx: CliContext): Promise<void> {
+  const { commandRunner, logger } = ctx;
+  // Resolve via PATH, not process.execPath: brew purges the old cellar dir before this runs.
+  const binaryPath = commandRunner.which('contextbridge');
+  if (!binaryPath) {
+    logger.error('post-update harness refresh skipped: contextbridge not found on PATH');
+    return;
+  }
   for (const installer of ALL_INSTALLERS) {
     for (const scope of await getInstallerRefreshScopes(ctx, installer)) {
-      await refreshInstallerScope(ctx, installer, scope);
+      await refreshInstallerScope(ctx, binaryPath, installer, scope);
     }
   }
 }
@@ -77,25 +84,30 @@ async function getInstallerRefreshScopes(ctx: CliContext, installer: HarnessInst
     const status = await installer.status(ctx);
     return getRefreshScopes(status.managed);
   } catch (err) {
-    ctx.logger.warn({ err, harness: installer.descriptor.id }, 'post-update harness refresh failed');
+    ctx.logger.error({ err, harness: installer.descriptor.id }, 'post-update harness refresh failed');
     return [];
   }
 }
 
-async function refreshInstallerScope(ctx: CliContext, installer: HarnessInstaller, scope: string): Promise<void> {
+async function refreshInstallerScope(
+  ctx: CliContext,
+  binaryPath: string,
+  installer: HarnessInstaller,
+  scope: string,
+): Promise<void> {
   const { commandRunner, logger } = ctx;
   try {
-    const result = await commandRunner.run(process.execPath, ['install', installer.descriptor.id, '--scope', scope], {
+    const result = await commandRunner.run(binaryPath, ['install', installer.descriptor.id, '--scope', scope], {
       stdio: 'inherit',
     });
     if (result.exitCode !== 0) {
-      logger.warn(
+      logger.error(
         { exitCode: result.exitCode, harness: installer.descriptor.id, scope },
         'post-update harness refresh failed',
       );
     }
   } catch (err) {
-    logger.warn({ err, harness: installer.descriptor.id, scope }, 'post-update harness refresh failed');
+    logger.error({ err, harness: installer.descriptor.id, scope }, 'post-update harness refresh failed');
   }
 }
 
