@@ -10,7 +10,7 @@ import {
 } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, marketplaceListResult, pluginListResult } from '#src/testHelpers/index.ts';
+import { createStubContext, primeClaudeShellouts, stubClaudeState } from '#src/testHelpers/index.ts';
 import { runInstall } from './install.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -18,12 +18,7 @@ const CODEX_BINARY = getDescriptor('codex').binaryName;
 
 describe('runInstall', () => {
   it('with --yes installs Claude when not yet wired up and reports the summary', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { context, io, commandRunner, prompter } = setupTest();
 
     await runInstall(context, { yes: true });
 
@@ -47,14 +42,10 @@ describe('runInstall', () => {
   });
 
   it('skips already-installed harnesses by default and notes them in the summary', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
+    const { context, io, commandRunner, prompter } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
@@ -69,16 +60,10 @@ describe('runInstall', () => {
   });
 
   it('with --force re-runs install over an already-installed harness and drops the skipped suffix', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves();
+    const { context, io, commandRunner, prompter } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true, force: true });
 
@@ -91,14 +76,10 @@ describe('runInstall', () => {
   });
 
   it('treats an install at a different scope as already installed and skips by default', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
+    const { context, io, commandRunner } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
@@ -112,14 +93,8 @@ describe('runInstall', () => {
   });
 
   it('does not skip Claude when only the marketplace is configured', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { context, io, commandRunner } = setupTest();
+    stubClaudeState(commandRunner, { marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME }] });
 
     await runInstall(context, { yes: true });
 
@@ -133,13 +108,8 @@ describe('runInstall', () => {
 
   it('records a status failure for one harness and still installs another detected harness', async () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-install-status-failure-'));
-    const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { context, io, commandRunner } = setupTest({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
 
     try {
       const configDir = join(tmp, '.codex');
@@ -174,10 +144,7 @@ describe('runInstall', () => {
   });
 
   it('without --yes prompts the user and skips when they decline', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
+    const { context, io, commandRunner, prompter } = setupTest();
     prompter.setConfirm(false);
 
     await runInstall(context);
@@ -190,12 +157,7 @@ describe('runInstall', () => {
   });
 
   it('without --yes runs confirm + scope prompts and installs at the chosen scope', async () => {
-    const { context, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { context, commandRunner, prompter } = setupTest();
     prompter.setConfirm(true);
     prompter.setSelect('project');
 
@@ -213,7 +175,7 @@ describe('runInstall', () => {
   });
 
   it('throws when no supported harnesses are detected', () => {
-    const { context, commandRunner, io } = createStubContext();
+    const { context, commandRunner, io } = setupTest();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
     expect(runInstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
@@ -221,6 +183,12 @@ describe('runInstall', () => {
     expect(io.stderr.text()).toContain('Claude Code: not detected');
   });
 });
+
+function setupTest(overrides?: Parameters<typeof createStubContext>[0]) {
+  const stub = createStubContext(overrides);
+  primeClaudeShellouts(stub.commandRunner);
+  return stub;
+}
 
 async function captureError(promise: Promise<unknown>): Promise<unknown> {
   try {

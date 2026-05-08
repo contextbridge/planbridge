@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
 import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, marketplaceListResult, pluginListResult, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
 const CLAUDE_BINARY = getDescriptor('claude').binaryName;
@@ -90,11 +90,7 @@ describe('runCli', () => {
   });
 
   it('routes argv into the install claude subcommand with default user scope', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { context, io, commandRunner } = setupClaudeTest();
 
     const exitCode = await runCli(context, ['install', 'claude']);
 
@@ -151,16 +147,10 @@ describe('runCli', () => {
   });
 
   it('routes argv into the uninstall claude subcommand with --scope project', async () => {
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
+    const { context, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     const exitCode = await runCli(context, ['uninstall', 'claude', '--scope', 'project']);
 
@@ -171,12 +161,7 @@ describe('runCli', () => {
   });
 
   it('routes argv into the no-target install orchestrator with --yes', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
-    commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
+    const { context, io, prompter } = setupClaudeTest();
 
     const exitCode = await runCli(context, ['install', '--yes']);
 
@@ -186,14 +171,10 @@ describe('runCli', () => {
   });
 
   it('routes argv into install status with --json and emits to stdout', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
+    const { context, io, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -202,14 +183,10 @@ describe('runCli', () => {
   });
 
   it('registers cb_command and identifies before parsing for a top-level subcommand', async () => {
-    const { context, analytics, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json'])
-      .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
-    commandRunner
-      .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
-      .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
+    const { context, analytics, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -279,3 +256,9 @@ describe('resolveCbCommand', () => {
     expect(resolveCbCommand(program, ['parent', '--', 'child'])).toBe('parent');
   });
 });
+
+function setupClaudeTest(overrides?: Parameters<typeof createStubContext>[0]) {
+  const stub = createStubContext(overrides);
+  primeClaudeShellouts(stub.commandRunner);
+  return stub;
+}

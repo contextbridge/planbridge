@@ -1,4 +1,12 @@
-export { marketplaceListResult, pluginListResult } from './claudeInstallerFakes.ts';
+export {
+  type ClaudeStateFixture,
+  type MarketplaceFixture,
+  type PluginFixture,
+  marketplaceListResult,
+  pluginListResult,
+  primeClaudeShellouts,
+  stubClaudeState,
+} from './claudeInstallerFakes.ts';
 export { type CommandStub, type FakeCommandCall, FakeCommandRunner } from './FakeCommandRunner.ts';
 export { FakeIo } from './FakeIo.ts';
 export { FakePrompter } from './FakePrompter.ts';
