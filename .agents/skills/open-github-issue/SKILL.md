@@ -70,6 +70,6 @@ EOF
 Issues must be **self-contained**. A reader must be able to understand the issue without access to the reporter's machine or session.
 
 - **Include full context** under each section: reproduction steps, log excerpts, error messages, stack traces, file paths and line numbers when relevant.
-- Wrap logs, stack traces, and command output in fenced code blocks (```` ```shell ````).
+- Wrap logs, stack traces, and command output in fenced code blocks (` ```shell `).
 - Use Markdown for everything else — GitHub renders it natively.
 - After creation, return the issue URL printed by `gh` so the user can open it.
