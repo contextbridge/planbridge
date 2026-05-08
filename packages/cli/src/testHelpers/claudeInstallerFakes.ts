@@ -27,6 +27,7 @@ export function primeClaudeShellouts(commandRunner: FakeCommandRunner): void {
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']).resolves();
+  commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'update']).resolves();
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'install']).resolves();
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'update']).resolves();
   commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();

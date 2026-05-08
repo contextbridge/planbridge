@@ -32,6 +32,7 @@ describe('ClaudeInstaller.install', () => {
         args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'update', CLAUDE_MARKETPLACE_NAME], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);
 
@@ -55,6 +56,7 @@ describe('ClaudeInstaller.install', () => {
     expect(updateCalls).toHaveLength(1);
     expect(updateCalls[0]?.args).toEqual(['plugin', 'update', CLAUDE_PLUGIN_ID, '--scope', 'user']);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'update'])).toHaveLength(1);
     expect(io.stderr.text()).toContain('installed for Claude Code');
   });
 
@@ -71,6 +73,7 @@ describe('ClaudeInstaller.install', () => {
         args: ['plugin', 'marketplace', 'add', CLAUDE_MARKETPLACE_SOURCE, '--scope', 'user'],
         opts: {},
       },
+      { cmd: CLAUDE_BINARY, args: ['plugin', 'marketplace', 'update', CLAUDE_MARKETPLACE_NAME], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user'], opts: {} },
       { cmd: CLAUDE_BINARY, args: ['plugin', 'uninstall', CLAUDE_LEGACY_PLUGIN_ID, '--scope', 'user'], opts: {} },
     ]);

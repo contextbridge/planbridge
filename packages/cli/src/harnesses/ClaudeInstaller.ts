@@ -70,6 +70,7 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
       '--scope',
       scope,
     ]);
+    await runPluginCommand(ctx, binaryName, 'marketplace update', ['marketplace', 'update', CLAUDE_MARKETPLACE_NAME]);
     if (hasCurrentAtScope) {
       await runPluginCommand(ctx, binaryName, 'update', ['update', CLAUDE_PLUGIN_ID, '--scope', scope]);
     } else {
