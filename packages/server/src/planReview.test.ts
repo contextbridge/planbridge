@@ -182,6 +182,41 @@ describe('createPlanReviewServerApp', () => {
     ]);
     expect(notice).toBe('still pending');
   });
+
+  it('/perform-update returns an error when no performUpdate callback is provided', async () => {
+    const app = createPlanReviewServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+    });
+    const res = await app.fetch(new Request('http://localhost/perform-update', { method: 'POST' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: 'error', message: 'Update is not available in this context.' });
+  });
+
+  it('/perform-update invokes the callback and returns the result', async () => {
+    const app = createPlanReviewServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate: () => Promise.resolve({ status: 'success', message: 'Updated to v0.2.0' }),
+    });
+    const res = await app.fetch(new Request('http://localhost/perform-update', { method: 'POST' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: 'success', message: 'Updated to v0.2.0' });
+  });
+
+  it('/perform-update returns an error when the callback rejects', async () => {
+    const app = createPlanReviewServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate: () => Promise.reject(new Error('install failed')),
+    });
+    const res = await app.fetch(new Request('http://localhost/perform-update', { method: 'POST' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: 'error', message: 'Update failed unexpectedly.' });
+  });
 });
 
 describe('startServer', () => {

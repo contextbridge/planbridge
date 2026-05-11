@@ -1,7 +1,8 @@
 import type { ServerContext } from '@contextbridge/server/context';
 import { startServer } from '@contextbridge/server/planReview';
-import type { RunningServer } from '@contextbridge/server/planReview';
+import type { PerformUpdate, RunningServer } from '@contextbridge/server/planReview';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
+import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
 import type { PlanReviewSource, PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
@@ -29,6 +30,7 @@ export interface PlanReviewDependencies {
       payload: SubmissionPayload;
       config: FrontendConfig;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
+      performUpdate?: PerformUpdate;
     },
   ): RunningServer;
   registerSigintHandler(handler: () => void): () => void;
@@ -71,6 +73,7 @@ export async function runPlanReview(
       payload,
       config: frontendConfig,
       checkForUpdate: () => updater.checkForUpdate().catch(() => null),
+      performUpdate: buildPerformUpdate(updater),
     });
     removeSigintHandler = deps.registerSigintHandler(() => {
       if (sigintHandled) {
@@ -109,8 +112,8 @@ export async function runPlanReview(
 
 const defaultPlanReviewDependencies: PlanReviewDependencies = {
   loadHtml: () => import('./bundledPlanHtml.ts').then((m) => m.bundledPlanHtml),
-  startReviewServer: (ctx, { html, payload, config, checkForUpdate }) =>
-    startServer(ctx, { html, payload, config, checkForUpdate }),
+  startReviewServer: (ctx, { html, payload, config, checkForUpdate, performUpdate }) =>
+    startServer(ctx, { html, payload, config, checkForUpdate, performUpdate }),
   registerSigintHandler: (handler) => {
     process.on('SIGINT', handler);
     return () => {
@@ -118,3 +121,25 @@ const defaultPlanReviewDependencies: PlanReviewDependencies = {
     };
   },
 };
+
+function buildPerformUpdate(updater: CliContext['updater']): PerformUpdate {
+  return async (): Promise<PerformUpdateResult> => {
+    try {
+      const result = await updater.performUpdate();
+      switch (result.status) {
+        case 'executed':
+          return { status: 'success', message: 'Update complete. Restart contextbridge to use the new version.' };
+        case 'skipped-already-latest':
+          return { status: 'success', message: `Already on the latest version (v${result.currentVersion}).` };
+        case 'refused':
+        case 'recovery-needed':
+        case 'error':
+          return { status: 'error', message: result.message };
+        default:
+          return { status: 'error', message: 'Unexpected update result.' };
+      }
+    } catch {
+      return { status: 'error', message: 'Update failed unexpectedly.' };
+    }
+  };
+}

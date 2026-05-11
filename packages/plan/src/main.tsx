@@ -6,6 +6,7 @@ import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/sha
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
+import { fetchPerformUpdate } from './fetchPerformUpdate.ts';
 import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
 import type { PlanAppContext as PlanAppContextValue } from './useAppContext.ts';
 import { PlanAppContext } from './useAppContext.ts';
@@ -32,6 +33,7 @@ async function bootstrap(target: HTMLElement): Promise<void> {
     ...base,
     fetchPayload,
     fetchUpdateNotice: () => fetchUpdateNotice(base.fetcher),
+    performUpdate: () => fetchPerformUpdate(base.fetcher),
     submitPlanReview,
     autoCloseDelaySeconds: 3,
   };

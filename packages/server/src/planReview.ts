@@ -1,4 +1,5 @@
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
+import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
 import {
   type PlanReviewSubmission,
   PlanReviewSubmissionSchema,
@@ -8,8 +9,10 @@ import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { ServerContext } from './context.ts';
 
 const UPDATE_NOTICE_TIMEOUT_MS = 3_000;
+const PERFORM_UPDATE_TIMEOUT_MS = 60_000;
 
 export type CheckForUpdate = () => Promise<UpdateNotice | null>;
+export type PerformUpdate = () => Promise<PerformUpdateResult>;
 
 export interface StartServerOptions {
   /** Plan UI bundle. Awaited lazily on the first GET /. */
@@ -18,6 +21,7 @@ export interface StartServerOptions {
   readonly config: FrontendConfig;
   readonly port?: number;
   readonly checkForUpdate?: CheckForUpdate;
+  readonly performUpdate?: PerformUpdate;
 }
 
 export interface RunningServer {
@@ -53,7 +57,7 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
 }
 
 export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerOptions): PlanReviewServerApp {
-  const { html, payload, config, checkForUpdate } = opts;
+  const { html, payload, config, checkForUpdate, performUpdate } = opts;
   const { logger } = ctx;
 
   let resolveResult!: (r: PlanReviewSubmission) => void;
@@ -83,6 +87,10 @@ export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerO
       if (req.method === 'GET' && url.pathname === '/update-notice') {
         const notice = await resolveUpdateNotice(checkForUpdate);
         return Response.json(notice);
+      }
+      if (req.method === 'POST' && url.pathname === '/perform-update') {
+        const result = await resolvePerformUpdate(performUpdate);
+        return Response.json(result);
       }
       if (req.method === 'POST' && url.pathname === '/submit') {
         let body: unknown;
@@ -118,5 +126,19 @@ async function resolveUpdateNotice(checkForUpdate: CheckForUpdate | undefined): 
     return await Promise.race([Promise.resolve().then(checkForUpdate), timeout]);
   } catch {
     return null;
+  }
+}
+
+async function resolvePerformUpdate(performUpdate: PerformUpdate | undefined): Promise<PerformUpdateResult> {
+  if (!performUpdate) {
+    return { status: 'error', message: 'Update is not available in this context.' };
+  }
+  const timeout = new Promise<PerformUpdateResult>((resolve) => {
+    setTimeout(() => resolve({ status: 'error', message: 'Update timed out.' }), PERFORM_UPDATE_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([Promise.resolve().then(performUpdate), timeout]);
+  } catch {
+    return { status: 'error', message: 'Update failed unexpectedly.' };
   }
 }

@@ -3,16 +3,17 @@ import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { Alert, AlertDescription, AlertTitle } from '@contextbridge/ui/components/ui/alert';
 import { Button } from '@contextbridge/ui/components/ui/button';
 import { Sparkles, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePlanAppContext } from './useAppContext.ts';
 
-const UPDATE_COMMAND = 'contextbridge update';
+type UpdateState = 'idle' | 'updating' | 'success' | 'error';
 
 export const updateNoticeCardTestIds = {
   container: 'update-notice-card',
-  copyButton: 'update-notice-card-copy',
+  updateButton: 'update-notice-card-update',
   dismissButton: 'update-notice-card-dismiss',
   changelogLink: 'update-notice-card-changelog',
+  statusMessage: 'update-notice-card-status',
 };
 
 export interface UpdateNoticeCardProps {
@@ -21,15 +22,28 @@ export interface UpdateNoticeCardProps {
 }
 
 export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
-  const { analytics } = usePlanAppContext();
+  const { analytics, performUpdate } = usePlanAppContext();
+  const [updateState, setUpdateState] = useState<UpdateState>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
     analytics.capture('update_notice_viewed', { latest_version: notice.latestVersion });
   }, [analytics, notice.latestVersion]);
 
-  const handleCopy = () => {
-    analytics.capture('update_command_copied', { latest_version: notice.latestVersion });
-    void navigator.clipboard.writeText(UPDATE_COMMAND).catch(() => {});
+  const handleUpdate = () => {
+    analytics.capture('update_now_clicked', { latest_version: notice.latestVersion });
+    setUpdateState('updating');
+    setStatusMessage('');
+
+    void performUpdate().then((result) => {
+      if (result.status === 'success') {
+        setUpdateState('success');
+        setStatusMessage(result.message);
+      } else {
+        setUpdateState('error');
+        setStatusMessage(result.message);
+      }
+    });
   };
 
   const handleDismiss = () => {
@@ -59,18 +73,28 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
           </a>
         </AlertTitle>
         <AlertDescription className="text-muted-foreground text-xs">
-          You&apos;re on v{notice.currentVersion}. Run to upgrade:
+          You&apos;re on v{notice.currentVersion}.
         </AlertDescription>
         <div className="col-start-2 mt-1.5 flex items-center gap-1.5">
-          <code className="bg-muted flex-1 truncate rounded px-1.5 py-0.5 font-mono text-xs">{UPDATE_COMMAND}</code>
-          <Button
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={handleCopy}
-            data-testid={updateNoticeCardTestIds.copyButton}
-          >
-            Copy command
-          </Button>
+          {statusMessage ? (
+            <span
+              className="flex-1 truncate text-xs text-muted-foreground"
+              data-testid={updateNoticeCardTestIds.statusMessage}
+            >
+              {statusMessage}
+            </span>
+          ) : null}
+          {updateState !== 'success' ? (
+            <Button
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={handleUpdate}
+              disabled={updateState === 'updating'}
+              data-testid={updateNoticeCardTestIds.updateButton}
+            >
+              {updateState === 'updating' ? 'Updating…' : 'Update Now'}
+            </Button>
+          ) : null}
         </div>
         <Button
           size="icon"

@@ -16,6 +16,7 @@ export function createStoryAppContext(overrides?: Partial<PlanAppContextValue>):
     }),
     fetchPayload: () => Promise.resolve({ content: '' }),
     fetchUpdateNotice: () => Promise.resolve(null),
+    performUpdate: () => Promise.resolve({ status: 'success' as const, message: 'Updated.' }),
     submitPlanReview: () => Promise.resolve(),
     autoCloseDelaySeconds: 3,
     ...overrides,

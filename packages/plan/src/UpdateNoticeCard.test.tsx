@@ -1,3 +1,4 @@
+import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -27,14 +28,12 @@ describe('UpdateNoticeCard', () => {
     cleanup();
   });
 
-  it('renders the versions and the contextbridge update command', () => {
+  it('renders the versions', () => {
     renderCard();
     const container = screen.getByTestId(updateNoticeCardTestIds.container);
     expect(container).toBeInTheDocument();
     expect(container).toHaveTextContent('Update available: v0.2.0');
     expect(container).toHaveTextContent("You're on v0.1.0");
-    expect(container).toHaveTextContent('Run to upgrade');
-    expect(container).toHaveTextContent('contextbridge update');
   });
 
   it('fires update_notice_viewed analytics on first render', () => {
@@ -44,18 +43,71 @@ describe('UpdateNoticeCard', () => {
     expect(viewed?.properties).toMatchObject({ latest_version: '0.2.0' });
   });
 
-  it('fires analytics on copy click and does not throw even if clipboard is unavailable', async () => {
+  it('fires analytics and calls performUpdate on Update Now click', async () => {
     const user = userEvent.setup();
-    const { analytics } = renderCard();
+    const { analytics, performUpdate } = renderCard();
 
-    // Click must not throw regardless of the browser's clipboard availability.
-    // The handler wraps navigator.clipboard.writeText in try/catch because
-    // some proxies strip it in non-secure contexts.
-    await user.click(screen.getByTestId(updateNoticeCardTestIds.copyButton));
+    await user.click(screen.getByTestId(updateNoticeCardTestIds.updateButton));
 
-    const copied = analytics.captures.find((c) => c.event === 'update_command_copied');
-    expect(copied).toBeDefined();
-    expect(copied?.properties).toMatchObject({ latest_version: '0.2.0' });
+    const clicked = analytics.captures.find((c) => c.event === 'update_now_clicked');
+    expect(clicked).toBeDefined();
+    expect(clicked?.properties).toMatchObject({ latest_version: '0.2.0' });
+    expect(performUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows "Updating…" while the update is in progress', async () => {
+    const user = userEvent.setup();
+    let resolveUpdate!: (result: PerformUpdateResult) => void;
+    const fake = createFakeAppContext();
+    fake.performUpdate.mockReturnValue(
+      new Promise<PerformUpdateResult>((resolve) => {
+        resolveUpdate = resolve;
+      }),
+    );
+
+    render(
+      <PlanAppContext.Provider value={fake.context}>
+        <UpdateNoticeCard notice={NOTICE} onDismiss={vi.fn()} />
+      </PlanAppContext.Provider>,
+    );
+
+    await user.click(screen.getByTestId(updateNoticeCardTestIds.updateButton));
+    expect(screen.getByTestId(updateNoticeCardTestIds.updateButton)).toHaveTextContent('Updating…');
+    expect(screen.getByTestId(updateNoticeCardTestIds.updateButton)).toBeDisabled();
+
+    resolveUpdate({ status: 'success', message: 'Updated to v0.2.0' });
+  });
+
+  it('shows success message and hides button when update succeeds', async () => {
+    const user = userEvent.setup();
+    const fake = createFakeAppContext();
+    fake.performUpdate.mockResolvedValue({ status: 'success', message: 'Updated to v0.2.0' });
+
+    render(
+      <PlanAppContext.Provider value={fake.context}>
+        <UpdateNoticeCard notice={NOTICE} onDismiss={vi.fn()} />
+      </PlanAppContext.Provider>,
+    );
+
+    await user.click(screen.getByTestId(updateNoticeCardTestIds.updateButton));
+    expect(screen.getByTestId(updateNoticeCardTestIds.statusMessage)).toHaveTextContent('Updated to v0.2.0');
+    expect(screen.queryByTestId(updateNoticeCardTestIds.updateButton)).not.toBeInTheDocument();
+  });
+
+  it('shows error message and keeps button when update fails', async () => {
+    const user = userEvent.setup();
+    const fake = createFakeAppContext();
+    fake.performUpdate.mockResolvedValue({ status: 'error', message: 'Installation failed.' });
+
+    render(
+      <PlanAppContext.Provider value={fake.context}>
+        <UpdateNoticeCard notice={NOTICE} onDismiss={vi.fn()} />
+      </PlanAppContext.Provider>,
+    );
+
+    await user.click(screen.getByTestId(updateNoticeCardTestIds.updateButton));
+    expect(screen.getByTestId(updateNoticeCardTestIds.statusMessage)).toHaveTextContent('Installation failed.');
+    expect(screen.getByTestId(updateNoticeCardTestIds.updateButton)).toBeInTheDocument();
   });
 
   it('calls onDismiss + fires analytics when the × button is clicked', async () => {

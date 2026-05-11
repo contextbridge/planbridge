@@ -1,4 +1,5 @@
 import type { FrontendContext } from '@contextbridge/context/frontend';
+import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { createContext, useContext } from 'react';
@@ -6,6 +7,7 @@ import { createContext, useContext } from 'react';
 export interface PlanAppContext extends FrontendContext {
   fetchPayload: () => Promise<SubmissionPayload>;
   fetchUpdateNotice: () => Promise<UpdateNotice | null>;
+  performUpdate: () => Promise<PerformUpdateResult>;
   submitPlanReview: (submission: PlanReviewSubmission) => Promise<void>;
   autoCloseDelaySeconds: number;
 }

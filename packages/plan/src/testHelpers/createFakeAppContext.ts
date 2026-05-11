@@ -4,6 +4,7 @@ import {
   type FakeFrontendTelemetry,
   fakeFrontendContext,
 } from '@contextbridge/context/testHelpers';
+import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { Mock } from 'vitest';
@@ -23,6 +24,7 @@ export interface FakeAppContextResult {
   submitPlanReview: Mock<(submission: PlanReviewSubmission) => Promise<void>>;
   fetchPayload: Mock<() => Promise<SubmissionPayload>>;
   fetchUpdateNotice: Mock<() => Promise<UpdateNotice | null>>;
+  performUpdate: Mock<() => Promise<PerformUpdateResult>>;
   analytics: FakeAnalytics;
   telemetry: FakeFrontendTelemetry;
 }
@@ -32,6 +34,9 @@ export function createFakeAppContext(overrides?: Partial<PlanAppContext>): FakeA
   const submitPlanReview = vi.fn<(submission: PlanReviewSubmission) => Promise<void>>().mockResolvedValue(undefined);
   const fetchPayload = vi.fn<() => Promise<SubmissionPayload>>().mockResolvedValue({ content: '' });
   const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(null);
+  const performUpdate = vi
+    .fn<() => Promise<PerformUpdateResult>>()
+    .mockResolvedValue({ status: 'success', message: 'Updated.' });
   const context: PlanAppContext = {
     ...fakeFrontendContext({
       scheduleTimeout: timers.scheduleTimeout,
@@ -39,6 +44,7 @@ export function createFakeAppContext(overrides?: Partial<PlanAppContext>): FakeA
     }),
     fetchPayload,
     fetchUpdateNotice,
+    performUpdate,
     submitPlanReview,
     autoCloseDelaySeconds: 3,
     ...overrides,
@@ -49,6 +55,7 @@ export function createFakeAppContext(overrides?: Partial<PlanAppContext>): FakeA
     submitPlanReview,
     fetchPayload,
     fetchUpdateNotice,
+    performUpdate,
     analytics: context.analytics as FakeAnalytics,
     telemetry: context.telemetry as FakeFrontendTelemetry,
   };
