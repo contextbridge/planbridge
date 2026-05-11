@@ -127,8 +127,8 @@ export const AnnotationSubmissionSchema = z.object({
 });
 export type AnnotationSubmission = z.infer<typeof AnnotationSubmissionSchema>;
 
-export const AnnotationSourceSchema = z.enum(['file', 'stdin', 'hook_claude', 'hook_codex']);
-export type AnnotationSource = z.infer<typeof AnnotationSourceSchema>;
+export const AnnotationEntrypointSchema = z.enum(['plan_command', 'hook_claude', 'hook_codex']);
+export type AnnotationEntrypoint = z.infer<typeof AnnotationEntrypointSchema>;
 
 export const AnnotationPayloadSchema = z.object({
   content: z.string(),
@@ -139,7 +139,7 @@ export const AnnotationPayloadSchema = z.object({
     .nullish(),
   metadata: z
     .object({
-      source: AnnotationSourceSchema,
+      entrypoint: AnnotationEntrypointSchema,
     })
     .optional(),
 });

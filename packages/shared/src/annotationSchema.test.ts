@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  AnnotationEntrypointSchema,
   AnnotationPayloadSchema,
-  AnnotationSourceSchema,
   AnnotationSubmissionSchema,
 } from './annotationSchema.ts';
 import { annotationAnchor, annotationThread, commentMessage, globalThread } from './testFactories.ts';
@@ -73,36 +73,28 @@ describe('AnnotationPayloadSchema', () => {
     expect(parsed.title).toBeUndefined();
   });
 
-  it('accepts content with file source metadata', () => {
+  it('accepts content with entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
-      metadata: { source: 'file' },
+      metadata: { entrypoint: 'plan_command' },
     });
-    expect(parsed.metadata?.source).toBe('file');
+    expect(parsed.metadata?.entrypoint).toBe('plan_command');
   });
 
-  it('accepts content with stdin source metadata', () => {
+  it('accepts hook_claude entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
-      metadata: { source: 'stdin' },
+      metadata: { entrypoint: 'hook_claude' },
     });
-    expect(parsed.metadata?.source).toBe('stdin');
+    expect(parsed.metadata?.entrypoint).toBe('hook_claude');
   });
 
-  it('accepts hook_claude source metadata', () => {
+  it('accepts hook_codex entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
-      metadata: { source: 'hook_claude' },
+      metadata: { entrypoint: 'hook_codex' },
     });
-    expect(parsed.metadata?.source).toBe('hook_claude');
-  });
-
-  it('accepts hook_codex source metadata', () => {
-    const parsed = AnnotationPayloadSchema.parse({
-      content: '# plan',
-      metadata: { source: 'hook_codex' },
-    });
-    expect(parsed.metadata?.source).toBe('hook_codex');
+    expect(parsed.metadata?.entrypoint).toBe('hook_codex');
   });
 
   it('accepts a title', () => {
@@ -126,21 +118,25 @@ describe('AnnotationPayloadSchema', () => {
   });
 });
 
-describe('AnnotationSourceSchema', () => {
-  it('accepts file', () => {
-    expect(AnnotationSourceSchema.parse('file')).toBe('file');
-  });
-
-  it('accepts stdin', () => {
-    expect(AnnotationSourceSchema.parse('stdin')).toBe('stdin');
+describe('AnnotationEntrypointSchema', () => {
+  it('accepts plan_command', () => {
+    expect(AnnotationEntrypointSchema.parse('plan_command')).toBe('plan_command');
   });
 
   it('accepts hook_claude', () => {
-    expect(AnnotationSourceSchema.parse('hook_claude')).toBe('hook_claude');
+    expect(AnnotationEntrypointSchema.parse('hook_claude')).toBe('hook_claude');
   });
 
   it('accepts hook_codex', () => {
-    expect(AnnotationSourceSchema.parse('hook_codex')).toBe('hook_codex');
+    expect(AnnotationEntrypointSchema.parse('hook_codex')).toBe('hook_codex');
+  });
+
+  it("rejects the old 'file' value", () => {
+    expect(() => AnnotationEntrypointSchema.parse('file')).toThrow();
+  });
+
+  it("rejects the old 'stdin' value", () => {
+    expect(() => AnnotationEntrypointSchema.parse('stdin')).toThrow();
   });
 });
 
