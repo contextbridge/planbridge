@@ -6,11 +6,12 @@ import {
   reviewer,
 } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
-import { formatAsMarkdown } from './markdown.ts';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { PLAN_TEMPLATES } from './templates.ts';
 
-describe('formatAsMarkdown', () => {
+describe('PLAN_TEMPLATES (plan-flavored formatAgentResponse output)', () => {
   it('renders approved submissions as a short markdown confirmation', () => {
-    const output = formatAsMarkdown({ status: 'approved', threads: [] }, 'unused plan source');
+    const output = formatAgentResponse(PLAN_TEMPLATES, { status: 'approved', threads: [] }, 'unused plan source');
 
     expect(output).toMatchInlineSnapshot(`
 "# Plan review: approved
@@ -36,7 +37,8 @@ The human reviewed this plan and approved it with no changes. Proceed to impleme
       '- Stage B.',
     ].join('\n');
 
-    const output = formatAsMarkdown(
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
       {
         status: 'changes_requested',
         threads: [
@@ -134,7 +136,8 @@ The comment below applies to the following section of the plan:
   it('renders single-line annotations with "line N" instead of a range', () => {
     const planContent = ['- Item one.', '- Item two with `code`.', '- Item three.'].join('\n');
 
-    const output = formatAsMarkdown(
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
       {
         status: 'changes_requested',
         threads: [
@@ -171,7 +174,8 @@ The comment below applies to the following section of the plan:
   it('omits the highlighted call-out when the exact selection spans multiple lines', () => {
     const planContent = ['first line', 'second line', 'third line'].join('\n');
 
-    const output = formatAsMarkdown(
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
       {
         status: 'changes_requested',
         threads: [

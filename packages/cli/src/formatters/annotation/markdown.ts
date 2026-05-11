@@ -1,32 +1,27 @@
 import type {
+  AnnotationSubmission,
   CommentMessage,
   CommentThread,
   CommentThreadSubject,
-  PlanReviewSubmission,
   SourceLineRange,
-} from '@contextbridge/shared/planReviewSchema';
+} from '@contextbridge/shared/annotationSchema';
 import { instantFromString } from '@contextbridge/shared/time';
-import Handlebars from 'handlebars';
 import type { Blockquote, Root } from 'mdast';
 import { toMarkdown } from 'mdast-util-to-markdown';
-import annotationSectionSource from './templates/annotationSection.hbs' with { type: 'text' };
-import approvedSource from './templates/approved.hbs' with { type: 'text' };
-import changesRequestedSource from './templates/changesRequested.hbs' with { type: 'text' };
-import generalFeedbackSectionSource from './templates/generalFeedbackSection.hbs' with { type: 'text' };
+import type { AnnotationTemplates } from './templates.ts';
 
 type AnnotationSubject = Extract<CommentThreadSubject, { kind: 'annotation' }>;
 
-const approvedTemplate = Handlebars.compile(approvedSource, { noEscape: true });
-const changesRequestedTemplate = Handlebars.compile(changesRequestedSource, { noEscape: true });
-const generalFeedbackSectionTemplate = Handlebars.compile(generalFeedbackSectionSource, { noEscape: true });
-const annotationSectionTemplate = Handlebars.compile(annotationSectionSource, { noEscape: true });
-
-export function formatAsMarkdown(submission: PlanReviewSubmission, planContent: string): string {
+export function formatAgentResponse(
+  templates: AnnotationTemplates,
+  submission: AnnotationSubmission,
+  content: string,
+): string {
   if (submission.status === 'approved') {
-    return approvedTemplate({});
+    return templates.approved({});
   }
 
-  const planLines = planContent.split('\n');
+  const contentLines = content.split('\n');
   const sections: string[] = [];
   const globalThreads = submission.threads.filter((thread) => thread.subject.kind === 'global');
   const annotationThreads = submission.threads.filter(
@@ -34,15 +29,15 @@ export function formatAsMarkdown(submission: PlanReviewSubmission, planContent: 
   );
 
   if (globalThreads.length > 0) {
-    sections.push(generalFeedbackSectionTemplate({ threads: renderThreadsAsBlockquotes(globalThreads) }));
+    sections.push(templates.generalFeedbackSection({ threads: renderThreadsAsBlockquotes(globalThreads) }));
   }
 
   for (const thread of annotationThreads) {
     const { sourceLines, quote } = thread.subject.anchor;
     sections.push(
-      annotationSectionTemplate({
+      templates.annotationSection({
         range: formatLineRange(sourceLines),
-        sourceSlice: sliceSource(planLines, sourceLines),
+        sourceSlice: sliceSource(contentLines, sourceLines),
         highlighted: formatHighlighted(quote.exact),
         thread: renderThreadsAsBlockquotes([thread]),
       }),
@@ -50,7 +45,7 @@ export function formatAsMarkdown(submission: PlanReviewSubmission, planContent: 
   }
 
   const body = sections.map((section) => section.trimEnd()).join('\n\n');
-  return `${changesRequestedTemplate({ body }).trimEnd()}\n`;
+  return `${templates.changesRequested({ body }).trimEnd()}\n`;
 }
 
 function renderThreadsAsBlockquotes(threads: CommentThread[]): string {
@@ -99,9 +94,9 @@ function formatLineRange({ start, end }: SourceLineRange): string {
   return start === end ? `line ${start}` : `lines ${start}–${end}`;
 }
 
-function sliceSource(planLines: string[], { start, end }: SourceLineRange): string {
+function sliceSource(contentLines: string[], { start, end }: SourceLineRange): string {
   // Source lines are 1-indexed; array indices are 0-indexed.
-  return planLines.slice(start - 1, end).join('\n');
+  return contentLines.slice(start - 1, end).join('\n');
 }
 
 function formatHighlighted(exact: string): string | undefined {
