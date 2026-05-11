@@ -1,4 +1,4 @@
-import { CircleHelp, MessageSquareHeart } from 'lucide-react';
+import { CircleHelp, MessageSquare } from 'lucide-react';
 import { BrandMark } from './BrandMark.tsx';
 import { Button } from './ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
@@ -39,13 +39,12 @@ export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackH
         </span>
         <Button
           asChild
-          className="text-violet-light hover:text-violet-light/80"
           data-testid={headerTestIds.feedbackButton}
           size="xs"
-          variant="outline"
+          variant="default"
         >
           <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
-            <MessageSquareHeart className="size-3" />
+            <MessageSquare className="size-3" />
             Feedback
           </a>
         </Button>
