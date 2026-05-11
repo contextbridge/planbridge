@@ -105,6 +105,9 @@ describe('runCli', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
+    commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
+    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
@@ -113,27 +116,31 @@ describe('runCli', () => {
       expect(JSON.parse(readFileSync(join(tmp, '.codex', 'hooks.json'), 'utf8'))).toMatchObject({
         hooks: { Stop: [{ hooks: [{ command: 'contextbridge hook codex' }] }] },
       });
-      expect(readFileSync(join(tmp, '.codex', 'config.toml'), 'utf8')).toContain('codex_hooks = true');
+      expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'enable', 'hooks'])).toHaveLength(1);
+      expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('scope: user');
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
   });
 
-  it('prints handler CommanderError messages from the install codex subcommand', async () => {
+  it('routes install codex without parsing Codex config.toml', async () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const configDir = join(tmp, '.codex');
     mkdirSync(configDir, { recursive: true });
     writeFileSync(join(configDir, 'config.toml'), '[features\nbroken');
     const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
+    commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
+    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
 
-      expect(exitCode).toBe(1);
-      expect(io.stderr.text()).toContain('invalid Codex config.toml');
-      expect(existsSync(join(configDir, 'hooks.json'))).toBe(false);
+      expect(exitCode).toBe(0);
+      expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI');
+      expect(existsSync(join(configDir, 'hooks.json'))).toBe(true);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }

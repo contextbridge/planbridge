@@ -313,6 +313,7 @@ describe('runUpdate', () => {
     const { context, commandRunner, updater } = createStubContext({ projectRoot });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
     commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
       status: 'executed',
@@ -327,7 +328,6 @@ describe('runUpdate', () => {
         join(configDir, 'hooks.json'),
         JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'contextbridge hook codex' }] }] } }),
       );
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
       commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'codex']).resolves();
 
       await runUpdate(context);
