@@ -43,7 +43,7 @@ describe('runUninstall', () => {
     expect(commandRunner.calls).toHaveLength(2);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed');
     expect(stderr).toContain('Uninstalled 0 of 1 detected harness (1 not installed, skipped).');
   });
 
@@ -64,7 +64,7 @@ describe('runUninstall', () => {
     expect(marketplaceRemoveCalls[0]?.args).toEqual(['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME]);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed (marketplace contextbridge)');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed (marketplace contextbridge)');
     expect(stderr).toContain('Uninstalled 1 of 1 detected harness');
   });
 
