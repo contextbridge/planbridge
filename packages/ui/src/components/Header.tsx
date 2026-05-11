@@ -18,7 +18,7 @@ export const headerTestIds = {
 export interface HeaderProps {
   version: string;
   docsHref: string;
-  feedbackHref?: string;
+  feedbackHref: string;
   githubRepoHref: string;
   slackHelpHref: string;
 }
@@ -37,20 +37,18 @@ export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackH
         <span className="text-xs tabular-nums text-muted-foreground" data-testid={headerTestIds.version}>
           v{version}
         </span>
-        {feedbackHref ? (
-          <Button
-            asChild
-            className="text-violet-light hover:text-violet-light/80"
-            data-testid={headerTestIds.feedbackButton}
-            size="xs"
-            variant="ghost"
-          >
-            <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
-              <MessageSquareHeart className="size-3" />
-              Feedback
-            </a>
-          </Button>
-        ) : null}
+        <Button
+          asChild
+          className="text-violet-light hover:text-violet-light/80"
+          data-testid={headerTestIds.feedbackButton}
+          size="xs"
+          variant="outline"
+        >
+          <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
+            <MessageSquareHeart className="size-3" />
+            Feedback
+          </a>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Help"
