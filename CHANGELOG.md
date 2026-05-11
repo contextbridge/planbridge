@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/contextbridge/planbridge/compare/v0.3.0...v0.4.0) (2026-05-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* compatibility with Codex 0.129.0+ ([#65](https://github.com/contextbridge/planbridge/issues/65))
+
+### Features
+
+* add feedback button to plan UI header (PLAN-7) ([#69](https://github.com/contextbridge/planbridge/issues/69)) ([082cb0b](https://github.com/contextbridge/planbridge/commit/082cb0bafe7778cba9b3bcbb891f4255704162bd))
+* clarify Codex implementation handoff after plan approval (PLAN-21) ([#67](https://github.com/contextbridge/planbridge/issues/67)) ([ea723d6](https://github.com/contextbridge/planbridge/commit/ea723d6ef5b14427a9988033142cff3d2188ab5b))
+
+
+### Bug Fixes
+
+* compatibility with Codex 0.129.0+ ([#65](https://github.com/contextbridge/planbridge/issues/65)) ([410fac1](https://github.com/contextbridge/planbridge/commit/410fac17f7dab35311607c9be8b0099f50de2cff))
+* disable telemetry in CI ([#73](https://github.com/contextbridge/planbridge/issues/73)) ([d00fd6d](https://github.com/contextbridge/planbridge/commit/d00fd6dc9d2414b6418ad0bfb8429260eccad679))
+* disambiguate install status wording (PLAN-26) ([#78](https://github.com/contextbridge/planbridge/issues/78)) ([48c7852](https://github.com/contextbridge/planbridge/commit/48c7852d4118f4c73448a63313e67b7e66020add)), closes [#77](https://github.com/contextbridge/planbridge/issues/77)
+
 ## [0.3.0](https://github.com/contextbridge/planbridge/compare/v0.2.0...v0.3.0) (2026-05-08)
 
 
