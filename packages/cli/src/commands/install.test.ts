@@ -37,7 +37,7 @@ describe('runInstall', () => {
     expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user']);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed');
     expect(stderr).toContain('Installed 1 of 1 detected harness');
   });
 
@@ -54,7 +54,7 @@ describe('runInstall', () => {
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain(
-      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ user)',
+      'Claude Code: PlanBridge installed (marketplace contextbridge; plugin planbridge@contextbridge @ user)',
     );
     expect(stderr).toContain('Installed 0 of 1 detected harness (1 already installed, skipped).');
   });
@@ -87,7 +87,7 @@ describe('runInstall', () => {
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain(
-      'Claude Code: installed (marketplace contextbridge; plugin planbridge@contextbridge @ project)',
+      'Claude Code: PlanBridge installed (marketplace contextbridge; plugin planbridge@contextbridge @ project)',
     );
     expect(stderr).toContain('(1 already installed, skipped)');
   });
@@ -101,7 +101,7 @@ describe('runInstall', () => {
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toHaveLength(1);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed (marketplace contextbridge)');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed (marketplace contextbridge)');
     expect(stderr).toContain('Installed 1 of 1 detected harness');
     expect(stderr).not.toContain('already installed, skipped');
   });

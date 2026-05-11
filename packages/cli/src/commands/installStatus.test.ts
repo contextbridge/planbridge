@@ -20,7 +20,7 @@ describe('runInstallStatus', () => {
     await runInstallStatus(context);
 
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed');
+    expect(stderr).toContain('Claude Code: PlanBridge installed');
     expect(stderr).toContain('marketplace contextbridge');
     expect(stderr).toContain('plugin planbridge@contextbridge @ user');
     expect(io.stdout.text()).toBe('');
@@ -34,7 +34,7 @@ describe('runInstallStatus', () => {
 
     await runInstallStatus(context);
 
-    expect(io.stderr.text()).toContain('Claude Code: not installed');
+    expect(io.stderr.text()).toContain('Claude Code: PlanBridge not installed');
   });
 
   it('reports partial Claude artifacts without calling them installed', async () => {
@@ -48,8 +48,8 @@ describe('runInstallStatus', () => {
     await runInstallStatus(context);
 
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed (marketplace contextbridge)');
-    expect(stderr).not.toContain('Claude Code: installed');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed (marketplace contextbridge)');
+    expect(stderr).not.toContain('Claude Code: PlanBridge installed');
   });
 
   it('reports project-scope Claude installs', async () => {
