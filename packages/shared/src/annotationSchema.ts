@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { instantFromString } from './time.ts';
 
-export const PlanReviewStatusSchema = z.enum(['approved', 'changes_requested']);
-export type PlanReviewStatus = z.infer<typeof PlanReviewStatusSchema>;
+export const AnnotationStatusSchema = z.enum(['approved', 'changes_requested']);
+export type AnnotationStatus = z.infer<typeof AnnotationStatusSchema>;
 
 export const TextQuoteSelectorSchema = z.object({
   exact: z.string().nonempty(),
@@ -121,16 +121,16 @@ export const CommentThreadSchema = z.object({
 });
 export type CommentThread = z.infer<typeof CommentThreadSchema>;
 
-export const PlanReviewSubmissionSchema = z.object({
-  status: PlanReviewStatusSchema,
+export const AnnotationSubmissionSchema = z.object({
+  status: AnnotationStatusSchema,
   threads: z.array(CommentThreadSchema).default([]),
 });
-export type PlanReviewSubmission = z.infer<typeof PlanReviewSubmissionSchema>;
+export type AnnotationSubmission = z.infer<typeof AnnotationSubmissionSchema>;
 
-export const PlanReviewSourceSchema = z.enum(['file', 'stdin', 'hook_claude', 'hook_codex']);
-export type PlanReviewSource = z.infer<typeof PlanReviewSourceSchema>;
+export const AnnotationSourceSchema = z.enum(['file', 'stdin', 'hook_claude', 'hook_codex']);
+export type AnnotationSource = z.infer<typeof AnnotationSourceSchema>;
 
-export const SubmissionPayloadSchema = z.object({
+export const AnnotationPayloadSchema = z.object({
   content: z.string(),
   title: z
     .string()
@@ -139,8 +139,8 @@ export const SubmissionPayloadSchema = z.object({
     .nullish(),
   metadata: z
     .object({
-      source: PlanReviewSourceSchema,
+      source: AnnotationSourceSchema,
     })
     .optional(),
 });
-export type SubmissionPayload = z.infer<typeof SubmissionPayloadSchema>;
+export type AnnotationPayload = z.infer<typeof AnnotationPayloadSchema>;

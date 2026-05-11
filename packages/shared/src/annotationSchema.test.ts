@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'bun:test';
-import { PlanReviewSubmissionSchema, SubmissionPayloadSchema } from './planReviewSchema.ts';
+import {
+  AnnotationPayloadSchema,
+  AnnotationSourceSchema,
+  AnnotationSubmissionSchema,
+} from './annotationSchema.ts';
 import { annotationAnchor, annotationThread, commentMessage, globalThread } from './testFactories.ts';
 import { Temporal, instantFromString, instantToString } from './time.ts';
 
-describe('PlanReviewSubmissionSchema', () => {
+describe('AnnotationSubmissionSchema', () => {
   it('accepts an approval with no threads', () => {
-    const parsed = PlanReviewSubmissionSchema.parse({ status: 'approved' });
+    const parsed = AnnotationSubmissionSchema.parse({ status: 'approved' });
     expect(parsed.status).toBe('approved');
     expect(parsed.threads).toEqual([]);
   });
 
   it('accepts an annotation thread with authored messages', () => {
-    const parsed = PlanReviewSubmissionSchema.parse({
+    const parsed = AnnotationSubmissionSchema.parse({
       status: 'changes_requested',
       threads: [annotationThread.build()],
     });
@@ -22,7 +26,7 @@ describe('PlanReviewSubmissionSchema', () => {
   });
 
   it('accepts a global thread', () => {
-    const parsed = PlanReviewSubmissionSchema.parse({
+    const parsed = AnnotationSubmissionSchema.parse({
       status: 'changes_requested',
       threads: [globalThread.build()],
     });
@@ -32,7 +36,7 @@ describe('PlanReviewSubmissionSchema', () => {
 
   it('rejects a thread with no messages', () => {
     expect(() =>
-      PlanReviewSubmissionSchema.parse({
+      AnnotationSubmissionSchema.parse({
         status: 'changes_requested',
         threads: [{ id: 'thr_01', subject: { kind: 'global' }, messages: [] }],
       }),
@@ -41,7 +45,7 @@ describe('PlanReviewSubmissionSchema', () => {
 
   it('rejects an invalid createdAt string', () => {
     expect(() =>
-      PlanReviewSubmissionSchema.parse({
+      AnnotationSubmissionSchema.parse({
         status: 'changes_requested',
         threads: [annotationThread.build({ messages: [commentMessage.build({ createdAt: 'today' })] })],
       }),
@@ -50,7 +54,7 @@ describe('PlanReviewSubmissionSchema', () => {
 
   it('rejects a backwards position range', () => {
     expect(() =>
-      PlanReviewSubmissionSchema.parse({
+      AnnotationSubmissionSchema.parse({
         status: 'approved',
         threads: [
           annotationThread.build({
@@ -62,23 +66,31 @@ describe('PlanReviewSubmissionSchema', () => {
   });
 });
 
-describe('SubmissionPayloadSchema', () => {
+describe('AnnotationPayloadSchema', () => {
   it('accepts content with no metadata', () => {
-    const parsed = SubmissionPayloadSchema.parse({ content: '# plan' });
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan' });
     expect(parsed.metadata).toBeUndefined();
     expect(parsed.title).toBeUndefined();
   });
 
-  it('accepts content with source metadata', () => {
-    const parsed = SubmissionPayloadSchema.parse({
+  it('accepts content with file source metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
       metadata: { source: 'file' },
     });
     expect(parsed.metadata?.source).toBe('file');
   });
 
+  it('accepts content with stdin source metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      metadata: { source: 'stdin' },
+    });
+    expect(parsed.metadata?.source).toBe('stdin');
+  });
+
   it('accepts hook_claude source metadata', () => {
-    const parsed = SubmissionPayloadSchema.parse({
+    const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
       metadata: { source: 'hook_claude' },
     });
@@ -86,7 +98,7 @@ describe('SubmissionPayloadSchema', () => {
   });
 
   it('accepts hook_codex source metadata', () => {
-    const parsed = SubmissionPayloadSchema.parse({
+    const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
       metadata: { source: 'hook_codex' },
     });
@@ -94,23 +106,41 @@ describe('SubmissionPayloadSchema', () => {
   });
 
   it('accepts a title', () => {
-    const parsed = SubmissionPayloadSchema.parse({ content: '# plan', title: '  plan  ' });
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', title: '  plan  ' });
     expect(parsed.title).toBe('plan');
   });
 
   it('accepts a null title', () => {
-    const parsed = SubmissionPayloadSchema.parse({ content: 'no heading', title: null });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'no heading', title: null });
     expect(parsed.title).toBeNull();
   });
 
   it('coalesces an empty title to null', () => {
-    const parsed = SubmissionPayloadSchema.parse({ content: 'x', title: '' });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', title: '' });
     expect(parsed.title).toBeNull();
   });
 
   it('coalesces a whitespace-only title to null', () => {
-    const parsed = SubmissionPayloadSchema.parse({ content: 'x', title: '   ' });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', title: '   ' });
     expect(parsed.title).toBeNull();
+  });
+});
+
+describe('AnnotationSourceSchema', () => {
+  it('accepts file', () => {
+    expect(AnnotationSourceSchema.parse('file')).toBe('file');
+  });
+
+  it('accepts stdin', () => {
+    expect(AnnotationSourceSchema.parse('stdin')).toBe('stdin');
+  });
+
+  it('accepts hook_claude', () => {
+    expect(AnnotationSourceSchema.parse('hook_claude')).toBe('hook_claude');
+  });
+
+  it('accepts hook_codex', () => {
+    expect(AnnotationSourceSchema.parse('hook_codex')).toBe('hook_codex');
   });
 });
 
