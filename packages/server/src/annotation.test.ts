@@ -1,18 +1,22 @@
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
+import type { AnnotationPayload } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
-import type { SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { annotationThread, globalThread } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { describe, expect, it } from 'bun:test';
-import { createPlanReviewServerApp, startServer } from './planReview.ts';
+import { createAnnotationServerApp, startServer } from './annotation.ts';
 
-describe('createPlanReviewServerApp', () => {
-  const payload: SubmissionPayload = { content: '# plan', metadata: { source: 'file' } };
+describe('createAnnotationServerApp', () => {
+  const payload: AnnotationPayload = {
+    content: '# plan',
+    contentKind: 'plan',
+    metadata: { entrypoint: 'plan_command' },
+  };
   const config: FrontendConfig = { distinctId: 'test-distinct-id', telemetryDisabled: false };
   const ctx = fakeBaseContext();
 
   it('serves the UI html at /', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -28,7 +32,7 @@ describe('createPlanReviewServerApp', () => {
     const htmlPromise = new Promise<string>((resolve) => {
       resolveHtml = resolve;
     });
-    const app = createPlanReviewServerApp(ctx, { html: htmlPromise, payload, config });
+    const app = createAnnotationServerApp(ctx, { html: htmlPromise, payload, config });
 
     const responsePromise = app.fetch(new Request('http://localhost/'));
     resolveHtml('<html><body>deferred</body></html>');
@@ -39,7 +43,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('returns 500 when the html promise rejects', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.reject(new Error('bundle missing')),
       payload,
       config,
@@ -49,7 +53,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('serves the submission payload at /payload', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -60,7 +64,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('serves the frontend config at /config', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -71,7 +75,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('resolves the result promise on a valid POST /submit', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -95,7 +99,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('returns 400 when the submission fails schema validation', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -112,7 +116,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('returns 404 for unknown routes', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -122,7 +126,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('/update-notice returns null when no checkForUpdate callback is provided', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -139,7 +143,7 @@ describe('createPlanReviewServerApp', () => {
       channel: 'stable',
     };
     let calls = 0;
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -154,7 +158,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('/update-notice returns null when checkForUpdate rejects', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -165,7 +169,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('/update-notice returns null when checkForUpdate never resolves within the timeout', async () => {
-    const app = createPlanReviewServerApp(ctx, {
+    const app = createAnnotationServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload,
       config,
@@ -185,7 +189,11 @@ describe('createPlanReviewServerApp', () => {
 });
 
 describe('startServer', () => {
-  const payload: SubmissionPayload = { content: '# plan', metadata: { source: 'file' } };
+  const payload: AnnotationPayload = {
+    content: '# plan',
+    contentKind: 'plan',
+    metadata: { entrypoint: 'plan_command' },
+  };
   const config: FrontendConfig = { distinctId: 'test-distinct-id', telemetryDisabled: false };
   const ctx = fakeBaseContext();
 

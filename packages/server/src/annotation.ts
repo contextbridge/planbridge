@@ -1,9 +1,9 @@
-import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import {
-  type PlanReviewSubmission,
-  PlanReviewSubmissionSchema,
-  type SubmissionPayload,
-} from '@contextbridge/shared/planReviewSchema';
+  type AnnotationPayload,
+  type AnnotationSubmission,
+  AnnotationSubmissionSchema,
+} from '@contextbridge/shared/annotationSchema';
+import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { ServerContext } from './context.ts';
 
@@ -12,9 +12,9 @@ const UPDATE_NOTICE_TIMEOUT_MS = 3_000;
 export type CheckForUpdate = () => Promise<UpdateNotice | null>;
 
 export interface StartServerOptions {
-  /** Plan UI bundle. Awaited lazily on the first GET /. */
+  /** Annotation UI bundle. Awaited lazily on the first GET /. */
   readonly html: Promise<string>;
-  readonly payload: SubmissionPayload;
+  readonly payload: AnnotationPayload;
   readonly config: FrontendConfig;
   readonly port?: number;
   readonly checkForUpdate?: CheckForUpdate;
@@ -23,18 +23,18 @@ export interface StartServerOptions {
 export interface RunningServer {
   readonly port: number;
   readonly url: string;
-  readonly result: Promise<PlanReviewSubmission>;
+  readonly result: Promise<AnnotationSubmission>;
   close(): Promise<void>;
 }
 
-export interface PlanReviewServerApp {
-  readonly result: Promise<PlanReviewSubmission>;
+export interface AnnotationServerApp {
+  readonly result: Promise<AnnotationSubmission>;
   fetch: (req: Request) => Promise<Response>;
 }
 
 export function startServer(ctx: ServerContext, opts: StartServerOptions): RunningServer {
   const { logger } = ctx;
-  const app = createPlanReviewServerApp(ctx, opts);
+  const app = createAnnotationServerApp(ctx, opts);
   const server = Bun.serve({
     port: opts.port ?? 0,
     fetch: app.fetch,
@@ -42,7 +42,7 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
 
   const port = server.port ?? 0;
   const url = `http://localhost:${port}`;
-  logger.info({ url }, 'plan-review server listening');
+  logger.info({ url }, 'annotation server listening');
 
   return {
     port,
@@ -52,12 +52,12 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
   };
 }
 
-export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerOptions): PlanReviewServerApp {
+export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerOptions): AnnotationServerApp {
   const { html, payload, config, checkForUpdate } = opts;
   const { logger } = ctx;
 
-  let resolveResult!: (r: PlanReviewSubmission) => void;
-  const result = new Promise<PlanReviewSubmission>((resolve) => {
+  let resolveResult!: (r: AnnotationSubmission) => void;
+  const result = new Promise<AnnotationSubmission>((resolve) => {
     resolveResult = resolve;
   });
 
@@ -70,8 +70,8 @@ export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerO
           const body = await html;
           return new Response(body, { headers: { 'content-type': 'text/html; charset=utf-8' } });
         } catch (err) {
-          logger.error({ err }, 'failed to load plan UI bundle');
-          return new Response('failed to load plan UI bundle', { status: 500 });
+          logger.error({ err }, 'failed to load annotation UI bundle');
+          return new Response('failed to load annotation UI bundle', { status: 500 });
         }
       }
       if (req.method === 'GET' && url.pathname === '/config') {
@@ -91,7 +91,7 @@ export function createPlanReviewServerApp(ctx: ServerContext, opts: StartServerO
         } catch {
           return new Response('invalid JSON', { status: 400 });
         }
-        const parsed = PlanReviewSubmissionSchema.safeParse(body);
+        const parsed = AnnotationSubmissionSchema.safeParse(body);
         if (!parsed.success) {
           logger.warn({ issues: parsed.error.issues }, 'submission failed schema validation');
           return new Response('invalid submission', { status: 400 });
