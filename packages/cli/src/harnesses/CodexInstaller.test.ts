@@ -112,24 +112,22 @@ describe('CodexInstaller', () => {
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
     });
 
-    it('fails before writing files when Codex is too old', async () => {
+    it('fails before writing files when Codex is too old', () => {
       const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
 
-      const err = await captureError(installer.install(context, { yes: true }));
-
-      expect(err).toBeInstanceOf(CommanderError);
-      expect((err as Error).message).toContain('requires Codex CLI 0.129.0 or newer');
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow('requires Codex CLI 0.129.0 or newer');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
     });
 
-    it('fails before writing files when Codex version output is unparseable', async () => {
+    it('fails before writing files when Codex version output is unparseable', () => {
       const { installer, context, logs } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
 
-      const err = await captureError(installer.install(context, { yes: true }));
-
-      expect(err).toBeInstanceOf(CommanderError);
-      expect((err as Error).message).toContain('Could not determine Codex CLI version');
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow('Could not determine Codex CLI version');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
       expect(
         readErrorLogs(logs).some(
@@ -138,17 +136,16 @@ describe('CodexInstaller', () => {
       ).toBe(true);
     });
 
-    it('fails when Codex feature commands fail', async () => {
+    it('fails when Codex feature commands fail', () => {
       const { installer, context } = createCodexInstallerContext(
         tmp,
         {},
         { enableHooksResult: { exitCode: 2, stderr: 'nope' } },
       );
 
-      const err = await captureError(installer.install(context, { yes: true }));
-
-      expect(err).toBeInstanceOf(CommanderError);
-      expect((err as Error).message).toBe('nope');
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow(/^nope$/);
     });
 
     it('continues when disabling the legacy Codex hook feature fails', async () => {
@@ -342,15 +339,6 @@ function writePlanBridgeHooksJson(path: string): void {
 
 function writeHooksJson(path: string, value: unknown): void {
   writeFileSync(path, JSON.stringify(value));
-}
-
-async function captureError(promise: Promise<unknown>): Promise<unknown> {
-  try {
-    await promise;
-    return null;
-  } catch (err) {
-    return err;
-  }
 }
 
 function commandRunnerCalls(context: ReturnType<typeof createStubContext>['context'], args: readonly string[]) {
