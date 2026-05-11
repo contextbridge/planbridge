@@ -1,11 +1,13 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, MessageSquareHeart } from 'lucide-react';
 import { BrandMark } from './BrandMark.tsx';
+import { Button } from './ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
 
 export const headerTestIds = {
   container: 'cb-header',
   wordmark: 'cb-header-wordmark',
   version: 'cb-header-version',
+  feedbackButton: 'cb-header-feedback',
   helpTrigger: 'cb-header-help-trigger',
   helpMenu: 'cb-header-help-menu',
   helpDocsItem: 'cb-header-help-docs',
@@ -16,11 +18,12 @@ export const headerTestIds = {
 export interface HeaderProps {
   version: string;
   docsHref: string;
+  feedbackHref?: string;
   githubRepoHref: string;
   slackHelpHref: string;
 }
 
-export function Header({ version, docsHref, githubRepoHref, slackHelpHref }: HeaderProps) {
+export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackHelpHref }: HeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 flex h-11 items-center justify-between border-b border-border bg-background px-4 sm:px-6"
@@ -34,6 +37,20 @@ export function Header({ version, docsHref, githubRepoHref, slackHelpHref }: Hea
         <span className="text-xs tabular-nums text-muted-foreground" data-testid={headerTestIds.version}>
           v{version}
         </span>
+        {feedbackHref ? (
+          <Button
+            asChild
+            className="text-violet-light hover:text-violet-light/80"
+            data-testid={headerTestIds.feedbackButton}
+            size="xs"
+            variant="ghost"
+          >
+            <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
+              <MessageSquareHeart className="size-3" />
+              Feedback
+            </a>
+          </Button>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Help"
