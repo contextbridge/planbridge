@@ -3,6 +3,7 @@ import {
   AnnotationEntrypointSchema,
   AnnotationPayloadSchema,
   AnnotationSubmissionSchema,
+  ContentKindSchema,
 } from './annotationSchema.ts';
 import { annotationAnchor, annotationThread, commentMessage, globalThread } from './testFactories.ts';
 import { Temporal, instantFromString, instantToString } from './time.ts';
@@ -68,7 +69,7 @@ describe('AnnotationSubmissionSchema', () => {
 
 describe('AnnotationPayloadSchema', () => {
   it('accepts content with no metadata', () => {
-    const parsed = AnnotationPayloadSchema.parse({ content: '# plan' });
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', contentKind: 'plan' });
     expect(parsed.metadata).toBeUndefined();
     expect(parsed.title).toBeUndefined();
   });
@@ -76,6 +77,7 @@ describe('AnnotationPayloadSchema', () => {
   it('accepts content with entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
+      contentKind: 'plan',
       metadata: { entrypoint: 'plan_command' },
     });
     expect(parsed.metadata?.entrypoint).toBe('plan_command');
@@ -84,6 +86,7 @@ describe('AnnotationPayloadSchema', () => {
   it('accepts hook_claude entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
+      contentKind: 'plan',
       metadata: { entrypoint: 'hook_claude' },
     });
     expect(parsed.metadata?.entrypoint).toBe('hook_claude');
@@ -92,29 +95,44 @@ describe('AnnotationPayloadSchema', () => {
   it('accepts hook_codex entrypoint metadata', () => {
     const parsed = AnnotationPayloadSchema.parse({
       content: '# plan',
+      contentKind: 'plan',
       metadata: { entrypoint: 'hook_codex' },
     });
     expect(parsed.metadata?.entrypoint).toBe('hook_codex');
   });
 
   it('accepts a title', () => {
-    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', title: '  plan  ' });
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', contentKind: 'plan', title: '  plan  ' });
     expect(parsed.title).toBe('plan');
   });
 
   it('accepts a null title', () => {
-    const parsed = AnnotationPayloadSchema.parse({ content: 'no heading', title: null });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'no heading', contentKind: 'plan', title: null });
     expect(parsed.title).toBeNull();
   });
 
   it('coalesces an empty title to null', () => {
-    const parsed = AnnotationPayloadSchema.parse({ content: 'x', title: '' });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'plan', title: '' });
     expect(parsed.title).toBeNull();
   });
 
   it('coalesces a whitespace-only title to null', () => {
-    const parsed = AnnotationPayloadSchema.parse({ content: 'x', title: '   ' });
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'plan', title: '   ' });
     expect(parsed.title).toBeNull();
+  });
+
+  it('rejects an unknown contentKind', () => {
+    expect(() => AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'document' })).toThrow();
+  });
+
+  it('rejects a missing contentKind', () => {
+    expect(() => AnnotationPayloadSchema.parse({ content: 'x' })).toThrow();
+  });
+});
+
+describe('ContentKindSchema', () => {
+  it("accepts 'plan'", () => {
+    expect(ContentKindSchema.parse('plan')).toBe('plan');
   });
 });
 
