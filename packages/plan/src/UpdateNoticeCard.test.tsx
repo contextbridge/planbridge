@@ -1,4 +1,5 @@
 import type { PerformUpdateResult } from '@contextbridge/shared/performUpdateResultSchema';
+import { updateNotice } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -7,11 +8,7 @@ import { createFakeAppContext } from './testHelpers/createFakeAppContext.ts';
 import { UpdateNoticeCard, updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 import { PlanAppContext } from './useAppContext.ts';
 
-const NOTICE: UpdateNotice = {
-  currentVersion: '0.1.0',
-  latestVersion: '0.2.0',
-  channel: 'stable',
-};
+const NOTICE: UpdateNotice = updateNotice.build();
 
 function renderCard(notice: UpdateNotice = NOTICE, onDismiss: () => void = vi.fn()) {
   const fake = createFakeAppContext();

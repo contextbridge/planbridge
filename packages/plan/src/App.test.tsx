@@ -1,5 +1,6 @@
 import { DOCS_URL, GITHUB_DISCUSSIONS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import type { SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
+import { updateNotice } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
@@ -47,7 +48,7 @@ describe('App', () => {
   });
 
   it('renders the update-notice card when /update-notice resolves with a notice', async () => {
-    const notice: UpdateNotice = { currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' };
+    const notice: UpdateNotice = updateNotice.build();
     const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(notice);
     renderApp({ initialPayload: { content: '# Ready' } }, { fetchUpdateNotice });
 
@@ -66,7 +67,7 @@ describe('App', () => {
 
   it('dismisses the card and keeps it hidden when × is clicked', async () => {
     const user = userEvent.setup();
-    const notice: UpdateNotice = { currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' };
+    const notice: UpdateNotice = updateNotice.build();
     const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(notice);
     renderApp({ initialPayload: { content: '# Ready' } }, { fetchUpdateNotice });
 

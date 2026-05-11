@@ -6,6 +6,7 @@ import type {
   PlanReviewSubmission,
   StoredAnnotationAnchor,
 } from './planReviewSchema.ts';
+import type { UpdateNotice } from './updateNoticeSchema.ts';
 
 export const LOCAL_AUTHOR = {
   id: 'local-user',
@@ -72,4 +73,10 @@ export const globalThread = Factory.define<CommentThread>(() => {
 export const planReviewSubmission = Factory.define<PlanReviewSubmission>(() => ({
   status: 'changes_requested',
   threads: [globalThread.build(), annotationThread.build()],
+}));
+
+export const updateNotice = Factory.define<UpdateNotice>(() => ({
+  currentVersion: '0.1.0',
+  latestVersion: '0.2.0',
+  channel: 'stable',
 }));

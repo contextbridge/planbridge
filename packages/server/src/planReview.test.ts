@@ -1,8 +1,7 @@
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
-import { annotationThread, globalThread } from '@contextbridge/shared/testFactories';
-import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import { annotationThread, globalThread, updateNotice } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { createPlanReviewServerApp, startServer } from './planReview.ts';
 
@@ -133,11 +132,7 @@ describe('createPlanReviewServerApp', () => {
   });
 
   it('/update-notice invokes checkForUpdate on demand and returns the resolved notice', async () => {
-    const notice: UpdateNotice = {
-      currentVersion: '0.1.0',
-      latestVersion: '0.2.0',
-      channel: 'stable',
-    };
+    const notice = updateNotice.build();
     let calls = 0;
     const app = createPlanReviewServerApp(ctx, {
       html: Promise.resolve('<html><body>ui</body></html>'),
