@@ -1,4 +1,5 @@
 import { Factory } from 'fishery';
+import type { RunAnnotationArgs } from '#src/annotation/runAnnotation.ts';
 import type {
   CodexStopHookPayload,
   CodexTranscriptHookPromptLine,
@@ -6,7 +7,6 @@ import type {
 } from '#src/commands/codexHookSchema.ts';
 import type { Environment } from '#src/environment.ts';
 import type { HarnessDescriptor } from '#src/harnesses/types.ts';
-import type { RunPlanReviewArgs } from '#src/planReview/runPlanReview.ts';
 
 export const codexStopHookPayload = Factory.define<CodexStopHookPayload>(() => ({
   session_id: 'sess_123',
@@ -48,9 +48,10 @@ export const codexTranscriptHookPromptLine = Factory.define<CodexTranscriptHookP
   },
 }));
 
-export const planReviewArgs = Factory.define<RunPlanReviewArgs>(() => ({
-  planContent: '# Plan',
-  source: 'stdin',
+export const annotationArgs = Factory.define<RunAnnotationArgs>(() => ({
+  content: '# Plan',
+  contentKind: 'plan',
+  entrypoint: 'plan_command',
 }));
 
 export const environment = Factory.define<Environment>(() => ({
