@@ -22,7 +22,6 @@
     "@contextbridge/instrumentation": "workspace:*",
     "@contextbridge/server": "workspace:*",
     "@contextbridge/shared": "workspace:*",
-    "@decimalturn/toml-patch": "^1.2.0",
     "commander": "^14.0.3",
     "handlebars": "^4.7.9",
     "mdast-util-from-markdown": "^2.0.3",

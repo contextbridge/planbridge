@@ -110,12 +110,12 @@ describe('runInstall', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-install-status-failure-'));
     const { context, io, commandRunner } = setupTest({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
 
     try {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'hooks.json'), '{ bad json');
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
 
       const err = await captureError(runInstall(context, { yes: true }));
       expect(err).toBeInstanceOf(CommanderError);
