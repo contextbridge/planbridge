@@ -6,8 +6,8 @@ import { z } from 'zod';
  * human-readable message — internal diagnostics stay server-side.
  */
 export const PerformUpdateResultSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('success'), message: z.string() }),
-  z.object({ status: z.literal('error'), message: z.string() }),
+  z.object({ status: z.literal('success'), message: z.string().nonempty() }),
+  z.object({ status: z.literal('error'), message: z.string().nonempty() }),
 ]);
 
 export type PerformUpdateResult = z.infer<typeof PerformUpdateResultSchema>;
