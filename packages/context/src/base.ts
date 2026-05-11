@@ -44,6 +44,7 @@ export function createBaseContext(input: CreateBaseContextInput): BaseContext {
 export interface TelemetryOptOutEnv {
   readonly DO_NOT_TRACK?: boolean;
   readonly CONTEXTBRIDGE_TELEMETRY_DISABLED?: boolean;
+  readonly CI?: boolean;
 }
 
 export interface IsTelemetryDisabledInput {
@@ -58,5 +59,5 @@ export function isTelemetryDisabled(input: IsTelemetryDisabledInput): boolean {
 }
 
 function isEnvOptOut(env: TelemetryOptOutEnv): boolean {
-  return Boolean(env.DO_NOT_TRACK || env.CONTEXTBRIDGE_TELEMETRY_DISABLED);
+  return Boolean(env.DO_NOT_TRACK || env.CONTEXTBRIDGE_TELEMETRY_DISABLED || env.CI);
 }
