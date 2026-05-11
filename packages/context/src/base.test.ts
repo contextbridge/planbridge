@@ -61,6 +61,11 @@ describe('isTelemetryDisabled', () => {
     ).toBe(true);
   });
 
+  it('returns true in CI environments', () => {
+    expect(isTelemetryDisabled({ buildInfo: productionBuildInfo, env: { CI: true } })).toBe(true);
+    expect(isTelemetryDisabled({ buildInfo: productionBuildInfo, env: { GITHUB_ACTIONS: true } })).toBe(true);
+  });
+
   it('returns true when the build environment is not production', () => {
     expect(
       isTelemetryDisabled({

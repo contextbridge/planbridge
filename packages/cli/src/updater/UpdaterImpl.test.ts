@@ -511,6 +511,7 @@ function buildUpdater({
     LOG_LEVEL: 'info',
     DO_NOT_TRACK: false,
     CONTEXTBRIDGE_TELEMETRY_DISABLED: false,
+    CI: false,
     CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
     XDG_CONFIG_HOME: tmpRoot,
     ...envOverrides,

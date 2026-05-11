@@ -6,6 +6,7 @@ const Environment = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
   DO_NOT_TRACK: booleanEnv,
   CONTEXTBRIDGE_TELEMETRY_DISABLED: booleanEnv,
+  CI: booleanEnv,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: booleanEnv,
   XDG_CONFIG_HOME: z.string().optional(),
   HOME: z.string().optional(),

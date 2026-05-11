@@ -57,6 +57,7 @@ export const environment = Factory.define<Environment>(() => ({
   LOG_LEVEL: 'info',
   DO_NOT_TRACK: false,
   CONTEXTBRIDGE_TELEMETRY_DISABLED: false,
+  CI: false,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
 }));
 
