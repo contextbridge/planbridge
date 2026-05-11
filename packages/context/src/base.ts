@@ -45,7 +45,6 @@ export interface TelemetryOptOutEnv {
   readonly DO_NOT_TRACK?: boolean;
   readonly CONTEXTBRIDGE_TELEMETRY_DISABLED?: boolean;
   readonly CI?: boolean;
-  readonly GITHUB_ACTIONS?: boolean;
 }
 
 export interface IsTelemetryDisabledInput {
@@ -60,5 +59,5 @@ export function isTelemetryDisabled(input: IsTelemetryDisabledInput): boolean {
 }
 
 function isEnvOptOut(env: TelemetryOptOutEnv): boolean {
-  return Boolean(env.DO_NOT_TRACK || env.CONTEXTBRIDGE_TELEMETRY_DISABLED || env.CI || env.GITHUB_ACTIONS);
+  return Boolean(env.DO_NOT_TRACK || env.CONTEXTBRIDGE_TELEMETRY_DISABLED || env.CI);
 }
