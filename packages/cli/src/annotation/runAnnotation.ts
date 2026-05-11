@@ -1,32 +1,38 @@
+import { startServer } from '@contextbridge/server/annotation';
+import type { RunningServer } from '@contextbridge/server/annotation';
 import type { ServerContext } from '@contextbridge/server/context';
-import { startServer } from '@contextbridge/server/planReview';
-import type { RunningServer } from '@contextbridge/server/planReview';
+import type {
+  AnnotationEntrypoint,
+  AnnotationPayload,
+  AnnotationSubmission,
+  ContentKind,
+} from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
-import type { PlanReviewSource, PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { CliContext } from '#src/context.ts';
-import { extractPlanTitle } from './extractPlanTitle.ts';
+import { extractDocumentTitle } from './extractDocumentTitle.ts';
 
-export class PlanReviewInterruptedError extends Error {
-  constructor(message = 'plan review interrupted by SIGINT') {
+export class AnnotationInterruptedError extends Error {
+  constructor(message = 'annotation interrupted by SIGINT') {
     super(message);
-    this.name = 'PlanReviewInterruptedError';
+    this.name = 'AnnotationInterruptedError';
   }
 }
 
-export interface RunPlanReviewArgs {
-  planContent: string;
-  source: PlanReviewSource;
+export interface RunAnnotationArgs {
+  content: string;
+  contentKind: ContentKind;
+  entrypoint: AnnotationEntrypoint;
 }
 
-export interface PlanReviewDependencies {
+export interface AnnotationDependencies {
   loadHtml(): Promise<string>;
   startReviewServer(
     ctx: ServerContext,
     args: {
       html: Promise<string>;
-      payload: SubmissionPayload;
+      payload: AnnotationPayload;
       config: FrontendConfig;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
     },
@@ -34,20 +40,21 @@ export interface PlanReviewDependencies {
   registerSigintHandler(handler: () => void): () => void;
 }
 
-export async function runPlanReview(
+export async function runAnnotation(
   ctx: CliContext,
-  args: RunPlanReviewArgs,
-  deps: PlanReviewDependencies = defaultPlanReviewDependencies,
-): Promise<PlanReviewSubmission> {
+  args: RunAnnotationArgs,
+  deps: AnnotationDependencies = defaultAnnotationDependencies,
+): Promise<AnnotationSubmission> {
   const { analytics, logger, openUrl, frontendConfig, updater } = ctx;
   const startedAt = nowInstant();
 
-  const payload: SubmissionPayload = {
-    content: args.planContent,
-    title: extractPlanTitle(args.planContent),
-    metadata: { source: args.source },
+  const payload: AnnotationPayload = {
+    content: args.content,
+    title: extractDocumentTitle(args.content),
+    contentKind: args.contentKind,
+    metadata: { entrypoint: args.entrypoint },
   };
-  analytics.capture('plan_review_started', { source: args.source });
+  analytics.capture('plan_review_started', { source: args.entrypoint });
 
   let server: RunningServer | null = null;
   let removeSigintHandler = () => {};
@@ -60,11 +67,11 @@ export async function runPlanReview(
   void sigintPromise.catch(() => {});
 
   try {
-    // Kick off the plan-UI bundle decode without blocking. The server awaits
+    // Kick off the annotation-UI bundle decode without blocking. The server awaits
     // this lazily on the first GET / so the decode runs in parallel with
     // `Bun.serve` bind + browser launch.
     const htmlPromise = deps.loadHtml();
-    htmlPromise.catch((err: unknown) => logger.error({ err }, 'failed to load plan UI bundle'));
+    htmlPromise.catch((err: unknown) => logger.error({ err }, 'failed to load annotation UI bundle'));
 
     server = deps.startReviewServer(ctx, {
       html: htmlPromise,
@@ -79,10 +86,10 @@ export async function runPlanReview(
 
       sigintHandled = true;
       void closeServer();
-      rejectSigint(new PlanReviewInterruptedError());
+      rejectSigint(new AnnotationInterruptedError());
     });
 
-    logger.info({ url: server.url }, 'opening plan-review browser session');
+    logger.info({ url: server.url }, 'opening annotation browser session');
     await Promise.race([openUrl(server.url), sigintPromise]);
 
     const submittedReview = await Promise.race([server.result, sigintPromise]);
@@ -107,8 +114,8 @@ export async function runPlanReview(
   }
 }
 
-const defaultPlanReviewDependencies: PlanReviewDependencies = {
-  loadHtml: () => import('./bundledPlanHtml.ts').then((m) => m.bundledPlanHtml),
+const defaultAnnotationDependencies: AnnotationDependencies = {
+  loadHtml: () => import('./bundledAnnotationHtml.ts').then((m) => m.bundledAnnotationHtml),
   startReviewServer: (ctx, { html, payload, config, checkForUpdate }) =>
     startServer(ctx, { html, payload, config, checkForUpdate }),
   registerSigintHandler: (handler) => {
