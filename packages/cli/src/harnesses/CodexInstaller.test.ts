@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext } from '#src/testHelpers/index.ts';
-import { CodexInstaller, enableCodexHooksFeatureInToml } from './CodexInstaller.ts';
+import { createStubContext, readErrorLogs, readWarnLogs } from '#src/testHelpers/index.ts';
+import { CodexInstaller } from './CodexInstaller.ts';
 import { getDescriptor } from './registry.ts';
 
 const CODEX_BINARY = getDescriptor('codex').binaryName;
@@ -34,11 +34,16 @@ describe('CodexInstaller', () => {
         timeout: 345600,
         statusMessage: 'Opening PlanBridge',
       });
-      expect(readFileSync(join(tmp, '.codex', 'config.toml'), 'utf8')).toContain('codex_hooks = true');
+      expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
+      expect(commandRunnerCalls(context, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI (scope: user)');
+      expect(io.stderr.text()).toContain('Action required');
+      expect(io.stderr.text()).toContain('PlanBridge will not run in Codex until this hook is trusted');
+      expect(io.stderr.text()).toContain('open /hooks');
+      expect(io.stderr.text()).toContain('https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook');
     });
 
-    it('installs project-scope hook configuration under the project root', async () => {
+    it('installs project-scope hook configuration under the project root and enables features at user scope', async () => {
       const project = join(tmp, 'project');
       const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
 
@@ -46,7 +51,9 @@ describe('CodexInstaller', () => {
 
       const hooks = readHooksJson(join(project, '.codex', 'hooks.json'));
       expect(hooks.hooks.Stop[0]?.hooks[0]).toMatchObject({ command: 'contextbridge hook codex' });
-      expect(readFileSync(join(project, '.codex', 'config.toml'), 'utf8')).toContain('codex_hooks = true');
+      expect(existsSync(join(project, '.codex', 'config.toml'))).toBe(false);
+      expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
+      expect(commandRunnerCalls(context, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
     });
 
     it('is idempotent and preserves other Stop hooks', async () => {
@@ -75,19 +82,22 @@ describe('CodexInstaller', () => {
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
     });
 
-    it('does not write hooks.json when config.toml is malformed', () => {
+    it('ignores malformed config.toml because Codex owns feature config', async () => {
       const configDir = join(tmp, '.codex');
       const configPath = join(configDir, 'config.toml');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(configPath, '[features\nbroken');
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
-      expect(existsSync(join(configDir, 'hooks.json'))).toBe(false);
+      await installer.install(context, { yes: true });
+
+      expect(readHooksJson(join(configDir, 'hooks.json')).hooks.Stop[0]?.hooks[0]).toMatchObject({
+        command: 'contextbridge hook codex',
+      });
       expect(readFileSync(configPath, 'utf8')).toBe('[features\nbroken');
     });
 
-    it('does not update config.toml when hooks.json has an invalid hooks root', () => {
+    it('does not run feature commands when hooks.json has an invalid hooks root', () => {
       const configDir = join(tmp, '.codex');
       const configPath = join(configDir, 'config.toml');
       const hooksPath = join(configDir, 'hooks.json');
@@ -99,6 +109,65 @@ describe('CodexInstaller', () => {
       expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
       expect(readFileSync(configPath, 'utf8')).toBe('[features]\nunified_exec = true\n');
       expect(readFileSync(hooksPath, 'utf8')).toBe('{"hooks":[]}');
+      expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
+    });
+
+    it('fails before writing files when Codex is too old', () => {
+      const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
+
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow('requires Codex CLI 0.129.0 or newer');
+      expect(existsSync(join(tmp, '.codex'))).toBe(false);
+      expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
+    });
+
+    it('fails before writing files when Codex version output is unparseable', () => {
+      const { installer, context, logs } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
+
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow('Could not determine Codex CLI version');
+      expect(existsSync(join(tmp, '.codex'))).toBe(false);
+      expect(
+        readErrorLogs(logs).some(
+          (record) => record.msg === 'could not determine Codex CLI version' && record['stdout'] === 'weird\n',
+        ),
+      ).toBe(true);
+    });
+
+    it('fails when Codex feature commands fail', () => {
+      const { installer, context } = createCodexInstallerContext(
+        tmp,
+        {},
+        { enableHooksResult: { exitCode: 2, stderr: 'nope' } },
+      );
+
+      const installPromise = installer.install(context, { yes: true });
+      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
+      expect(installPromise).rejects.toThrow(/^nope$/);
+    });
+
+    it('continues when disabling the legacy Codex hook feature fails', async () => {
+      const { installer, context, logs } = createCodexInstallerContext(
+        tmp,
+        {},
+        { disableLegacyHooksResult: { exitCode: 1, stdout: 'not enabled\n', stderr: 'unknown feature\n' } },
+      );
+
+      await installer.install(context, { yes: true });
+
+      expect(readHooksJson(join(tmp, '.codex', 'hooks.json')).hooks.Stop[0]?.hooks[0]).toMatchObject({
+        command: 'contextbridge hook codex',
+      });
+      expect(
+        readWarnLogs(logs).some(
+          (record) =>
+            record.msg === 'codex features disable codex_hooks failed; continuing' &&
+            record['stdout'] === 'not enabled\n' &&
+            record['stderr'] === 'unknown feature\n',
+        ),
+      ).toBe(true);
     });
   });
 
@@ -156,7 +225,7 @@ describe('CodexInstaller', () => {
       });
     });
 
-    it('reports an installed hook only when hooks.json and config.toml are both valid', async () => {
+    it('reports an installed hook when hooks.json is present and Codex is supported', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
       await installer.install(context, { yes: true });
 
@@ -169,7 +238,7 @@ describe('CodexInstaller', () => {
       });
     });
 
-    it('reports hook-only partial state as managed but not installed', async () => {
+    it('reports hook-only state as installed because install owns feature setup', async () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writePlanBridgeHooksJson(join(configDir, 'hooks.json'));
@@ -178,14 +247,13 @@ describe('CodexInstaller', () => {
       const status = await installer.status(context);
 
       expect(status.detected).toBe(true);
-      expect(status.installed).toBe(false);
+      expect(status.installed).toBe(true);
       expect(status.managed).toEqual([{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }]);
     });
 
-    it('does not report managed when the feature flag exists but hooks.json is absent', async () => {
+    it('does not report managed when hooks.json is absent', async () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
       const { installer, context } = createCodexInstallerContext(tmp);
 
       const status = await installer.status(context);
@@ -199,7 +267,6 @@ describe('CodexInstaller', () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'hooks.json'), '{ bad json');
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
       const { installer, context } = createCodexInstallerContext(tmp);
 
       expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
@@ -209,46 +276,16 @@ describe('CodexInstaller', () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeHooksJson(join(configDir, 'hooks.json'), { hooks: [] });
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
       const { installer, context } = createCodexInstallerContext(tmp);
 
       expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
     });
 
-    it('bubbles invalid config.toml as a CommanderError', () => {
-      const configDir = join(tmp, '.codex');
-      mkdirSync(configDir, { recursive: true });
-      writePlanBridgeHooksJson(join(configDir, 'hooks.json'));
-      writeFileSync(join(configDir, 'config.toml'), '[features\nbroken');
-      const { installer, context } = createCodexInstallerContext(tmp);
+    it('reports status unavailable when Codex is too old', () => {
+      const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
 
       expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
     });
-  });
-});
-
-describe('enableCodexHooksFeatureInToml', () => {
-  it('adds a features table when the file is empty', () => {
-    expect(enableCodexHooksFeatureInToml('')).toBe('[features]\ncodex_hooks = true\n');
-  });
-
-  it('inserts into an existing features table', () => {
-    expect(enableCodexHooksFeatureInToml('[features]\nunified_exec = true\n')).toBe(
-      '[features]\nunified_exec = true\ncodex_hooks = true\n',
-    );
-  });
-
-  it('updates an existing flag', () => {
-    expect(enableCodexHooksFeatureInToml('[features]\ncodex_hooks = false\n')).toBe('[features]\ncodex_hooks = true\n');
-  });
-
-  it('returns the source unchanged when the flag is already true', () => {
-    const source = '# user comment\n[features]  # inline\n  codex_hooks = true\nunified_exec = true\n';
-    expect(enableCodexHooksFeatureInToml(source)).toBe(source);
-  });
-
-  it('throws on malformed TOML rather than silently overwriting', () => {
-    expect(() => enableCodexHooksFeatureInToml('[features\nbroken')).toThrow();
   });
 });
 
@@ -265,10 +302,26 @@ interface HooksJson {
   };
 }
 
-function createCodexInstallerContext(tmp: string, overrides: Parameters<typeof createStubContext>[0] = {}) {
+function createCodexInstallerContext(
+  tmp: string,
+  overrides: Parameters<typeof createStubContext>[0] = {},
+  options: {
+    readonly versionStdout?: string;
+    readonly enableHooksResult?: { readonly exitCode?: number; readonly stdout?: string; readonly stderr?: string };
+    readonly disableLegacyHooksResult?: {
+      readonly exitCode?: number;
+      readonly stdout?: string;
+      readonly stderr?: string;
+    };
+  } = {},
+) {
+  const { versionStdout = 'codex-cli 0.129.0\n', enableHooksResult, disableLegacyHooksResult } = options;
   const { env = environment.build({ HOME: tmp }), ...restOverrides } = overrides;
   const testContext = createStubContext({ env, ...restOverrides });
   testContext.commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+  testContext.commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: versionStdout });
+  testContext.commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves(enableHooksResult);
+  testContext.commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves(disableLegacyHooksResult);
   return { installer: new CodexInstaller(), ...testContext };
 }
 
@@ -286,4 +339,11 @@ function writePlanBridgeHooksJson(path: string): void {
 
 function writeHooksJson(path: string, value: unknown): void {
   writeFileSync(path, JSON.stringify(value));
+}
+
+function commandRunnerCalls(context: ReturnType<typeof createStubContext>['context'], args: readonly string[]) {
+  const commandRunner = context.commandRunner as unknown as {
+    callsTo(cmd: string, args: readonly string[]): readonly unknown[];
+  };
+  return commandRunner.callsTo(CODEX_BINARY, args);
 }
