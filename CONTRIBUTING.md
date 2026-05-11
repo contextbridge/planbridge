@@ -17,7 +17,7 @@ bun run dev -- --help
 ```
 packages/
 ├── cli/              @contextbridge/cli, the contextbridge binary
-├── plan/             @contextbridge/plan, Vite + React browser UI for plan review
+├── annotation/       @contextbridge/annotation, Vite + React browser UI for annotating markdown documents
 ├── server/           @contextbridge/server, local Bun.serve HTTP library
 ├── shared/           @contextbridge/shared, types and zod schemas
 ├── ui/               @contextbridge/ui, shared CSS, fonts, shadcn components
@@ -42,7 +42,7 @@ Use `just verify` to run all checks (format, lint, automated tests etc). For ind
 1. `bun run format` (Prettier)
 2. `bun run typecheck`
 3. `bun run lint` (ESLint)
-4. `bun run test` (per-package; Bun's test runner for most packages, vitest for `@contextbridge/plan`)
+4. `bun run test` (per-package; Bun's test runner for most packages, vitest for `@contextbridge/annotation`)
 
 ## Coding Conventions
 

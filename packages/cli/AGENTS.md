@@ -1,6 +1,6 @@
 # AGENTS.md — @contextbridge/cli
 
-The `contextbridge` binary. Owns the subcommand dispatch, commander wiring, pino logger, and the plan-review orchestration (local HTTP server + browser lifecycle). Root repo conventions still apply — see `../../AGENTS.md` for repo-wide rules (DI, file naming, imports, Context pattern overview).
+The `contextbridge` binary. Owns the subcommand dispatch, commander wiring, pino logger, and the annotation-loop orchestration (local HTTP server + browser lifecycle). Root repo conventions still apply — see `../../AGENTS.md` for repo-wide rules (DI, file naming, imports, Context pattern overview).
 
 ## Binary & framework
 
@@ -35,7 +35,7 @@ Extends `BaseContext` from `@contextbridge/context` and adds:
 - Log output is captured on a dedicated `MemoryStream` exposed by the test context; `readLogs()` parses pino's JSON lines for assertions.
 - For CLI-level tests that need to exercise argv parsing or dispatch, call `runCli(ctx, argv)` from `#src/cli.ts`.
 
-## Plan-Review Loop
+## Annotation Loop
 
 ```
 stdin / [path]  ─▶  contextbridge plan
@@ -48,8 +48,8 @@ stdin / [path]  ─▶  contextbridge plan
                        { status: "approved" | "changes_requested", annotations: [...] }
 ```
 
-The CLI process owns the server and the browser lifecycle. When the user submits in the browser, the server shuts down and the CLI emits its structured result to stdout. That stdout contract is what harness hooks (Claude `exitPlanMode`, Codex Stop hook, etc.) consume.
+The loop is kind-agnostic: it serves a markdown document into the annotation UI and emits a structured result on stdout. The `plan` subcommand is the only user-facing entrypoint today and is tuned for plan-mode handoffs from Claude Code and Codex hooks; additional sibling entrypoints (e.g., `contextbridge open` per issue #51) will land on the same loop. The CLI process owns the server and the browser lifecycle. When the user submits in the browser, the server shuts down and the CLI emits its structured result to stdout. That stdout contract is what harness hooks (Claude `exitPlanMode`, Codex Stop hook, etc.) consume.
 
-## Build: embedded plan UI
+## Build: embedded annotation UI
 
-At build time, the `@contextbridge/plan` UI is bundled into a single HTML file via `vite-plugin-singlefile` and embedded into the compiled CLI binary as a string literal — see `scripts/build.ts`. The binary is fully self-contained: no external assets at runtime.
+At build time, the `@contextbridge/annotation` UI is bundled into a single HTML file via `vite-plugin-singlefile` and embedded into the compiled CLI binary as a string literal — see `scripts/build.ts`. The binary is fully self-contained: no external assets at runtime.

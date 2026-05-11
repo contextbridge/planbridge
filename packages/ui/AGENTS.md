@@ -1,6 +1,6 @@
 # @contextbridge/ui — shared styling foundation
 
-This package holds the styling foundation for every browser UI in cb-cli (`packages/plan`, later `packages/review`, …). It exports:
+This package holds the styling foundation for every browser UI in cb-cli (`packages/annotation`, later `packages/review`, …). It exports:
 
 - **`./styles.css`** — global stylesheet (Tailwind v4 + fonts + OKLCH color palette + shadcn CSS variables). Consumers import this exactly once from their entry.
 - **`./lib/utils`** — `cn()` helper (clsx + tailwind-merge).
@@ -21,7 +21,7 @@ This package holds the styling foundation for every browser UI in cb-cli (`packa
 
 ## How consumers wire this up
 
-A consuming package (e.g. `packages/plan`) does five things:
+A consuming package (e.g. `packages/annotation`) does five things:
 
 1. **devDeps**: `tailwindcss` and `@tailwindcss/vite` (the Tailwind engine runs in the **consumer's** Vite build, not here).
 2. **Dependency**: `"@contextbridge/ui": "workspace:*"`.
