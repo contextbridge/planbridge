@@ -76,7 +76,7 @@ export type StoredAnnotationAnchor = z.infer<typeof StoredAnnotationAnchorSchema
 
 export const CommentAuthorSchema = z.object({
   id: z.string().nonempty(),
-  kind: z.enum(['human', 'agent']),
+  kind: z.enum(['user', 'agent']),
   displayName: z.string().trim().nonempty(),
 });
 export type CommentAuthor = z.infer<typeof CommentAuthorSchema>;

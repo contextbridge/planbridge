@@ -8,7 +8,7 @@ import type { AnnotationCommentThread } from './annotationTypes.ts';
 
 const LOCAL_AUTHOR = {
   id: 'local-user',
-  kind: 'human' as const,
+  kind: 'user' as const,
   displayName: 'You',
 };
 

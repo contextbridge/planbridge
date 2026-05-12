@@ -205,7 +205,7 @@ describe('useAnnotationState', () => {
               messages: [
                 {
                   id: 'msg_global',
-                  author: { id: 'local-user', kind: 'human', displayName: 'You' },
+                  author: { id: 'local-user', kind: 'user', displayName: 'You' },
                   body: 'ignored seed',
                   createdAt: '2026-04-20T12:34:56.000Z',
                 },

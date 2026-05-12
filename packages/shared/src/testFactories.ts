@@ -9,13 +9,13 @@ import type {
 
 export const LOCAL_AUTHOR = {
   id: 'local-user',
-  kind: 'human' as const,
+  kind: 'user' as const,
   displayName: 'You',
 };
 
 export const reviewer = Factory.define<CommentAuthor>(() => ({
   id: 'reviewer',
-  kind: 'human',
+  kind: 'user',
   displayName: 'Reviewer',
 }));
 

@@ -70,7 +70,7 @@ const seededThreads = [
         id: 'msg_story_01',
         author: {
           id: 'local-user',
-          kind: 'human' as const,
+          kind: 'user' as const,
           displayName: 'You',
         },
         body: 'Why does the doc step happen after the verifier swap instead of before it?',
