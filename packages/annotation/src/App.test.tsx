@@ -151,7 +151,9 @@ describe('App', () => {
 
   it('shows Codex-specific handoff notice on approval when source is hook_codex', async () => {
     const user = userEvent.setup();
-    renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_codex' } } });
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_codex' } },
+    });
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
@@ -161,7 +163,9 @@ describe('App', () => {
 
   it('shows default countdown for hook_codex when changes are requested', async () => {
     const user = userEvent.setup();
-    renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_codex' } } });
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_codex' } },
+    });
 
     await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs work');
     await user.click(screen.getByTestId(submitBarTestIds.button));
@@ -174,7 +178,9 @@ describe('App', () => {
 
   it('shows default countdown for hook_claude approval', async () => {
     const user = userEvent.setup();
-    renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } } });
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+    });
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
@@ -336,10 +342,12 @@ describe('App', () => {
   it('does not let a long fenced code block overflow into the sidebar', async () => {
     const longLine = 'x'.repeat(500);
     renderApp({
-      initialPayload: { contentKind: 'plan', content: `# Plan
+      initialPayload: {
+        contentKind: 'plan',
+        content: `# Plan
 
 \`\`\`ts
-const a = "${longLine }";
+const a = "${longLine}";
 \`\`\`
 `,
       },
@@ -356,9 +364,11 @@ const a = "${longLine }";
   it('does not let a long inline code span overflow into the sidebar', async () => {
     const longCode = 'x'.repeat(500);
     renderApp({
-      initialPayload: { contentKind: 'plan', content: `# Plan
+      initialPayload: {
+        contentKind: 'plan',
+        content: `# Plan
 
-Run \`${longCode }\` now.
+Run \`${longCode}\` now.
 `,
       },
     });
