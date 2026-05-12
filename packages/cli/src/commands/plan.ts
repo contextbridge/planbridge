@@ -1,6 +1,6 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { nowInstant } from '@contextbridge/shared/time';
-import { type Command, CommanderError } from 'commander';
+import { type Command, CommanderError, InvalidArgumentError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
 import {
@@ -12,11 +12,12 @@ import { readStreamToString } from '#src/streams.ts';
 
 export interface PlanArgs {
   path?: string;
+  port?: number;
 }
 
 export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReviewDependencies): Promise<void> {
   const { io, logger, analytics } = ctx;
-  const { path } = args;
+  const { path, port } = args;
   const startedAt = nowInstant();
 
   if (!path && io.stdin.isTTY === true) {
@@ -43,7 +44,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReview
   analytics.capture('plan_review_started', { source });
 
   try {
-    const submission = await runPlanReview(ctx, { planContent: content }, deps);
+    const submission = await runPlanReview(ctx, { planContent: content, port }, deps);
     io.stdout.write(formatAsMarkdown(submission, content));
     analytics.capture('plan_review_submitted', {
       status: submission.status,
@@ -66,8 +67,9 @@ export function registerPlan(ctx: CliContext, program: Command): void {
       'Run a PlanBridge plan review: reads the plan from stdin or [path], opens a local browser UI for a human to approve or annotate, and writes the markdown result to stdout.',
     )
     .argument('[path]', 'path to a file containing the plan (alternative to stdin)')
-    .action(async (path: string | undefined) => {
-      await runPlan(ctx, { path });
+    .option('--port <number>', 'serve the plan review browser UI on a specific port', parsePortOption)
+    .action(async (path: string | undefined, opts: { port?: number }) => {
+      await runPlan(ctx, { path, port: opts.port });
     });
 }
 
@@ -81,4 +83,17 @@ function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): nev
     logger.error(message);
   }
   throw new CommanderError(1, `contextbridge.plan.${kind}Error`, message);
+}
+
+function parsePortOption(value: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError('port must be an integer between 1 and 65535');
+  }
+
+  const port = Number(value);
+  if (port < 1 || port > 65535) {
+    throw new InvalidArgumentError('port must be an integer between 1 and 65535');
+  }
+
+  return port;
 }

@@ -39,6 +39,13 @@ describe('runCli', () => {
     expect(io.stderr.text()).toContain('--bogus');
   });
 
+  it.each(['abc', '3000.5', '0', '-1', '65536'])('rejects invalid plan --port value %s', async (port) => {
+    const { context, io } = createStubContext();
+    const exitCode = await runCli(context, ['plan', '--port', port]);
+    expect(exitCode).not.toBe(0);
+    expect(io.stderr.text()).toContain('port must be an integer between 1 and 65535');
+  });
+
   it('routes argv into the hook claude subcommand', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.write(

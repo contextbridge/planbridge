@@ -1,6 +1,7 @@
 import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
 import { planReviewSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
+import { environment } from '#src/testFactories.ts';
 import { createStubContext } from '#src/testHelpers/index.ts';
 import { type PlanReviewDependencies, runPlanReview } from './runPlanReview.ts';
 
@@ -15,8 +16,27 @@ describe('runPlanReview', () => {
     expect(submission).toEqual(deps.submission);
     expect(openedUrls).toEqual(['http://localhost:4312']);
     expect(deps.payloads).toEqual([{ content: '# Plan', title: 'Plan' }]);
+    expect(deps.port).toBeUndefined();
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
+  });
+
+  it('uses CONTEXTBRIDGE_PORT when no CLI port is supplied', async () => {
+    const { context } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createPlanReviewDependencies();
+
+    await runPlanReview(context, { planContent: '# Plan' }, deps);
+
+    expect(deps.port).toBe(3456);
+  });
+
+  it('uses the explicit port before CONTEXTBRIDGE_PORT', async () => {
+    const { context } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createPlanReviewDependencies();
+
+    await runPlanReview(context, { planContent: '# Plan', port: 3000 }, deps);
+
+    expect(deps.port).toBe(3000);
   });
 
   it('closes the server when opening the browser fails', () => {
@@ -50,6 +70,7 @@ function createPlanReviewDependencies(
 ): PlanReviewDependencies & {
   closeCount: number;
   payloads: SubmissionPayload[];
+  readonly port: number | undefined;
   sigintHandlerRegistered: Promise<void>;
   sigintHandlerRemoved: boolean;
   submission: PlanReviewSubmission;
@@ -61,12 +82,16 @@ function createPlanReviewDependencies(
   let closeCount = 0;
   let sigintHandler: (() => void) | null = null;
   let sigintHandlerRemoved = false;
+  let observedPort: number | undefined;
 
   return {
     get closeCount() {
       return closeCount;
     },
     payloads,
+    get port() {
+      return observedPort;
+    },
     sigintHandlerRegistered: sigintRegistration.promise,
     get sigintHandlerRemoved() {
       return sigintHandlerRemoved;
@@ -80,8 +105,9 @@ function createPlanReviewDependencies(
       sigintHandler();
     },
     loadHtml: () => Promise.resolve('<html><body>plan review</body></html>'),
-    startReviewServer: (_ctx, { payload }) => {
+    startReviewServer: (_ctx, { payload, port }) => {
       payloads.push(payload);
+      observedPort = port;
       return {
         port: 4312,
         url: 'http://localhost:4312',

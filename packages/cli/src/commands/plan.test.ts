@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
 import type { PlanReviewDependencies } from '#src/planReview/runPlanReview.ts';
+import { environment } from '#src/testFactories.ts';
 import { createStubContext, readErrorLogs, readLogs, readWarnLogs } from '#src/testHelpers/index.ts';
 import { runPlan } from './plan.ts';
 
@@ -141,6 +142,28 @@ describe('plan handler', () => {
     expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
   });
 
+  it('passes an explicit port to the review server', async () => {
+    const { context, io } = createStubContext();
+    const deps = createPlanDependencies();
+    io.stdin.write('# My plan\n');
+    io.stdin.end();
+
+    await runPlan(context, { port: 3000 }, deps);
+
+    expect(deps.port).toBe(3000);
+  });
+
+  it('lets an explicit port override CONTEXTBRIDGE_PORT', async () => {
+    const { context, io } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createPlanDependencies();
+    io.stdin.write('# My plan\n');
+    io.stdin.end();
+
+    await runPlan(context, { port: 3000 }, deps);
+
+    expect(deps.port).toBe(3000);
+  });
+
   it('does not report SIGINT to telemetry', async () => {
     const { context, analytics, telemetry, io } = createStubContext();
     const deps = createPlanDependencies({ result: createDeferred<PlanReviewSubmission>().promise });
@@ -164,6 +187,7 @@ function createPlanDependencies(
   } = {},
 ): PlanReviewDependencies & {
   payloads: SubmissionPayload[];
+  readonly port: number | undefined;
   closed: boolean;
   sigintHandlerRegistered: Promise<void>;
   submission: PlanReviewSubmission;
@@ -174,9 +198,13 @@ function createPlanDependencies(
   const sigintRegistration = createDeferred<void>();
   let closed = false;
   let sigintHandler: (() => void) | null = null;
+  let observedPort: number | undefined;
 
   return {
     payloads,
+    get port() {
+      return observedPort;
+    },
     sigintHandlerRegistered: sigintRegistration.promise,
     get closed() {
       return closed;
@@ -190,8 +218,9 @@ function createPlanDependencies(
       sigintHandler();
     },
     loadHtml: () => Promise.resolve('<html><body>plan review</body></html>'),
-    startReviewServer: (_ctx, { payload }) => {
+    startReviewServer: (_ctx, { payload, port }) => {
       payloads.push(payload);
+      observedPort = port;
       return {
         port: 4312,
         url: 'http://localhost:4312',

@@ -39,6 +39,19 @@ contextbridge plan plan.md
 cat plan.md | contextbridge plan
 ```
 
+By default, PlanBridge asks the OS for an available local port. To bind the
+browser UI to a specific port, set `CONTEXTBRIDGE_PORT` for hook-driven flows or
+pass `--port` for a manual run:
+
+```sh
+export CONTEXTBRIDGE_PORT=3456
+contextbridge plan --port 3456 plan.md
+```
+
+This is useful in environments that proxy a known port. For example, exe.dev
+forwards ports in the `3000..9999` range, so a VM can run PlanBridge with
+`CONTEXTBRIDGE_PORT=3456` and access the review UI through exe.dev's proxy.
+
 Inside Claude Code or Codex, the intended manual flow is:
 
 ```sh

@@ -16,6 +16,7 @@ export class PlanReviewInterruptedError extends Error {
 
 export interface RunPlanReviewArgs {
   planContent: string;
+  port?: number;
 }
 
 export interface PlanReviewDependencies {
@@ -26,6 +27,7 @@ export interface PlanReviewDependencies {
       html: Promise<string>;
       payload: SubmissionPayload;
       config: FrontendConfig;
+      port?: number;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
     },
   ): RunningServer;
@@ -37,7 +39,8 @@ export async function runPlanReview(
   args: RunPlanReviewArgs,
   deps: PlanReviewDependencies = defaultPlanReviewDependencies,
 ): Promise<PlanReviewSubmission> {
-  const { logger, openUrl, frontendConfig, updater } = ctx;
+  const { logger, openUrl, frontendConfig, updater, env } = ctx;
+  const { port = env.CONTEXTBRIDGE_PORT } = args;
 
   const payload: SubmissionPayload = {
     content: args.planContent,
@@ -65,6 +68,7 @@ export async function runPlanReview(
       html: htmlPromise,
       payload,
       config: frontendConfig,
+      port,
       checkForUpdate: () => updater.checkForUpdate().catch(() => null),
     });
     removeSigintHandler = deps.registerSigintHandler(() => {
@@ -98,8 +102,8 @@ export async function runPlanReview(
 
 const defaultPlanReviewDependencies: PlanReviewDependencies = {
   loadHtml: () => import('./bundledPlanHtml.ts').then((m) => m.bundledPlanHtml),
-  startReviewServer: (ctx, { html, payload, config, checkForUpdate }) =>
-    startServer(ctx, { html, payload, config, checkForUpdate }),
+  startReviewServer: (ctx, { html, payload, config, port, checkForUpdate }) =>
+    startServer(ctx, { html, payload, config, port, checkForUpdate }),
   registerSigintHandler: (handler) => {
     process.on('SIGINT', handler);
     return () => {
