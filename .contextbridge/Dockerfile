@@ -19,7 +19,7 @@ RUN groupmod -g "${AGENT_GID}" bun \
 # nodejs is required so `bun run vitest` resolves vitest's `#!/usr/bin/env node`
 # shebang to a real Node — under Bun's runtime, vitest browser mode hangs silently
 # before any tests run. Chromium runtime libs are for Playwright (drives
-# @contextbridge/plan's vitest --browser tests).
+# @contextbridge/annotation's vitest --browser tests).
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \

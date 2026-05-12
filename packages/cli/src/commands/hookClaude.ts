@@ -1,14 +1,14 @@
+import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import type { PlanReviewSubmission } from '@contextbridge/shared/planReviewSchema';
 import { type Command, CommanderError } from 'commander';
+import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type ClaudeHookResponse, claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
-import { type RunPlanReviewArgs, runPlanReview } from '#src/planReview/runPlanReview.ts';
 import { readStreamToString } from '#src/streams.ts';
 import { type ClaudeHookPayload, ClaudeHookPayloadSchema } from './claudeHookSchema.ts';
 
 export interface HookClaudeDependencies {
-  runReview?: (ctx: CliContext, args: RunPlanReviewArgs) => Promise<PlanReviewSubmission>;
+  runReview?: (ctx: CliContext, args: RunAnnotationArgs) => Promise<AnnotationSubmission>;
 }
 
 export async function runHookClaude(ctx: CliContext, deps: HookClaudeDependencies = {}): Promise<void> {
@@ -85,7 +85,7 @@ async function handleExitPlanMode(
   deps: HookClaudeDependencies,
 ): Promise<ClaudeHookResponse> {
   const { logger } = ctx;
-  const { runReview = runPlanReview } = deps;
+  const { runReview = runAnnotation } = deps;
 
   if (!payload.tool_input?.plan) {
     abort(ctx, 'input', 'missing tool_input.plan for ExitPlanMode');
@@ -94,9 +94,9 @@ async function handleExitPlanMode(
   const planContent = payload.tool_input.plan;
   logger.info({ tool: payload.tool_name, bytes: Buffer.byteLength(planContent, 'utf8') }, 'claude hook received');
 
-  let submission: PlanReviewSubmission;
+  let submission: AnnotationSubmission;
   try {
-    submission = await runReview(ctx, { planContent });
+    submission = await runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_claude' });
   } catch (err) {
     abort(ctx, 'runtime', getErrorMessage(err));
   }

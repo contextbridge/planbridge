@@ -2,10 +2,10 @@ name: Chromatic
 
 on:
   pull_request:
-    types: [opened, synchronize, labeled, closed]
+    types: [opened, synchronize, reopened, closed]
     paths:
-      - 'packages/plan/**/*.tsx'
-      - 'packages/plan/**/*.css'
+      - 'packages/annotation/**/*.tsx'
+      - 'packages/annotation/**/*.css'
       - 'packages/ui/**/*.tsx'
       - 'packages/ui/**/*.css'
       - '.github/workflows/chromatic.yml'
@@ -23,13 +23,12 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Run if PR has 'chromatic' label AND either:
-    # 1. PR is open (opened, synchronize, labeled events), OR
-    # 2. PR was just merged to main (closed event with merged=true)
+    # Triggered by the workflow-level paths filter (UI/CSS changes only). Skip the
+    # closed event unless it's a merge to main — closed-without-merge shouldn't
+    # republish baselines.
     if: |
-      contains(github.event.pull_request.labels.*.name, 'chromatic') &&
-      (github.event.action != 'closed' ||
-       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'))
+      github.event.action != 'closed' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -42,19 +41,21 @@ jobs:
         uses: ./.github/actions/bootstrap
 
       - name: Build Storybook
-        run: bun run --cwd packages/plan build-storybook
+        run: bun run --cwd packages/annotation build-storybook
+        env:
+          SKIP_DEMO_STORIES: 'true'
 
       - name: Deploy to Chromatic
         # Use CLI directly instead of chromaui/action because the action overwrites
         # CHROMATIC_SHA/CHROMATIC_BRANCH env vars with GitHub context values, ignoring
         # user overrides. The CLI respects these env vars properly.
         # Issue: https://github.com/chromaui/chromatic-cli/issues/1230
-        working-directory: packages/plan
+        working-directory: packages/annotation
         run: |
           bun run chromatic -- \
             --project-token="${{ secrets.CHROMATIC_PROJECT_TOKEN }}" \
             --storybook-build-dir=storybook-static \
-            --storybook-base-dir=packages/plan \
+            --storybook-base-dir=packages/annotation \
             --only-changed \
             --exit-zero-on-changes \
             ${{ github.event.pull_request.merged && '--auto-accept-changes' || '' }}

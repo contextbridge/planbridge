@@ -29,9 +29,9 @@ export async function runInstallStatus(ctx: CliContext, options: InstallStatusOp
 export function formatStatusLine(status: HarnessStatus): string {
   const { displayName } = status.descriptor;
   if (!status.detected) return `${displayName}: not detected`;
-  if (status.installed) return `${displayName}: installed (${formatManaged(status)})`;
-  if (status.managed.length === 0) return `${displayName}: not installed`;
-  return `${displayName}: not installed (${formatManaged(status)})`;
+  if (status.installed) return `${displayName}: PlanBridge installed (${formatManaged(status)})`;
+  if (status.managed.length === 0) return `${displayName}: PlanBridge not installed`;
+  return `${displayName}: PlanBridge not installed (${formatManaged(status)})`;
 }
 
 export function registerInstallStatus(ctx: CliContext, installCommand: Command): void {

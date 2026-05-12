@@ -6,7 +6,7 @@ paths:
 
 # React Compiler memoization
 
-This repo has `babel-plugin-react-compiler` enabled via `@vitejs/plugin-react` (see `packages/plan/vite.config.ts`). The compiler auto-memoizes; **do not write `useCallback` or `useMemo` manually** unless one of the narrow cases below applies. Manual memos are noise — more code, no behavior change.
+This repo has `babel-plugin-react-compiler` enabled via `@vitejs/plugin-react` (see `packages/annotation/vite.config.ts`). The compiler auto-memoizes; **do not write `useCallback` or `useMemo` manually** unless one of the narrow cases below applies. Manual memos are noise — more code, no behavior change.
 
 Companion lint rules from `eslint-plugin-react-hooks` catch adjacent anti-patterns (`react-hooks/set-state-in-effect`, purity/mutation violations, bail-out cases). They do **not** flag redundant `useCallback` / `useMemo` — that's a write-time decision, which is why this rule exists.
 

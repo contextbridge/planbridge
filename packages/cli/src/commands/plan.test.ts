@@ -1,14 +1,21 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { PlanReviewSubmission, SubmissionPayload } from '@contextbridge/shared/planReviewSchema';
-import { planReviewSubmission } from '@contextbridge/shared/testFactories';
+import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
-import type { PlanReviewDependencies } from '#src/planReview/runPlanReview.ts';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs, readLogs, readWarnLogs } from '#src/testHelpers/index.ts';
+import {
+  createAnnotationDependencies,
+  createDeferred,
+  createStubContext,
+  readErrorLogs,
+  readLogs,
+  readWarnLogs,
+} from '#src/testHelpers/index.ts';
 import { runPlan } from './plan.ts';
 
 describe('plan handler', () => {
@@ -25,14 +32,14 @@ describe('plan handler', () => {
   it('reads plan content from stdin and emits the review submission', async () => {
     const openedUrls: string[] = [];
     const { context, io } = createStubContext({ openUrl: (url) => (openedUrls.push(url), Promise.resolve()) });
-    const expectedSubmission = planReviewSubmission.build();
-    const deps = createPlanDependencies({ submission: expectedSubmission });
+    const expectedSubmission = annotationSubmission.build();
+    const deps = createAnnotationDependencies({ submission: expectedSubmission });
     io.stdin.write('# My plan\n\nStep 1.\n');
     io.stdin.end();
 
     await runPlan(context, {}, deps);
 
-    expect(io.stdout.text()).toBe(formatAsMarkdown(expectedSubmission, deps.payloads[0]!.content));
+    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, expectedSubmission, deps.payloads[0]!.content));
     expect(openedUrls).toEqual(['http://localhost:4312']);
     expect(deps.closed).toBe(true);
   });
@@ -42,12 +49,12 @@ describe('plan handler', () => {
     writeFileSync(planPath, '# From positional path\n');
 
     const { context, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.isTTY = true;
 
     await runPlan(context, { path: planPath }, deps);
 
-    expect(io.stdout.text()).toBe(formatAsMarkdown(deps.submission, deps.payloads[0]!.content));
+    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content));
     expect(deps.payloads[0]?.content).toBe('# From positional path\n');
   });
 
@@ -56,7 +63,7 @@ describe('plan handler', () => {
     writeFileSync(planPath, 'from positional path');
 
     const { context, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('from stdin');
     io.stdin.end();
 
@@ -95,7 +102,7 @@ describe('plan handler', () => {
 
   it('closes the server and surfaces a runtime error when the browser open fails', () => {
     const { context, io, logs } = createStubContext({ openUrl: () => Promise.reject(new Error('open failed')) });
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -107,7 +114,7 @@ describe('plan handler', () => {
 
   it('closes the server and exits cleanly (without error-level logs) when SIGINT is received', async () => {
     const { context, io, logs } = createStubContext();
-    const deps = createPlanDependencies({ result: createDeferred<PlanReviewSubmission>().promise });
+    const deps = createAnnotationDependencies({ result: createDeferred<AnnotationSubmission>().promise });
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -125,7 +132,7 @@ describe('plan handler', () => {
 
   it('captures plan_review_started and plan_review_submitted analytics events', async () => {
     const { context, analytics, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# My plan\n\nStep 1.\n');
     io.stdin.end();
 
@@ -133,7 +140,7 @@ describe('plan handler', () => {
 
     const started = analytics.captures.find((c) => c.event === 'plan_review_started');
     expect(started).toBeDefined();
-    expect(started?.properties).toEqual({ source: 'stdin' });
+    expect(started?.properties).toEqual({ source: 'plan_command' });
 
     const submitted = analytics.captures.find((c) => c.event === 'plan_review_submitted');
     expect(submitted).toBeDefined();
@@ -144,7 +151,7 @@ describe('plan handler', () => {
 
   it('passes an explicit port to the review server', async () => {
     const { context, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# My plan\n');
     io.stdin.end();
 
@@ -155,7 +162,7 @@ describe('plan handler', () => {
 
   it('lets an explicit port override CONTEXTBRIDGE_PORT', async () => {
     const { context, io } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# My plan\n');
     io.stdin.end();
 
@@ -166,7 +173,7 @@ describe('plan handler', () => {
 
   it('does not report SIGINT to telemetry', async () => {
     const { context, analytics, telemetry, io } = createStubContext();
-    const deps = createPlanDependencies({ result: createDeferred<PlanReviewSubmission>().promise });
+    const deps = createAnnotationDependencies({ result: createDeferred<AnnotationSubmission>().promise });
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -179,79 +186,3 @@ describe('plan handler', () => {
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
 });
-
-function createPlanDependencies(
-  options: {
-    submission?: PlanReviewSubmission;
-    result?: Promise<PlanReviewSubmission>;
-  } = {},
-): PlanReviewDependencies & {
-  payloads: SubmissionPayload[];
-  readonly port: number | undefined;
-  closed: boolean;
-  sigintHandlerRegistered: Promise<void>;
-  submission: PlanReviewSubmission;
-  triggerSigint(): void;
-} {
-  const payloads: SubmissionPayload[] = [];
-  const submission = options.submission ?? planReviewSubmission.build();
-  const sigintRegistration = createDeferred<void>();
-  let closed = false;
-  let sigintHandler: (() => void) | null = null;
-  let observedPort: number | undefined;
-
-  return {
-    payloads,
-    get port() {
-      return observedPort;
-    },
-    sigintHandlerRegistered: sigintRegistration.promise,
-    get closed() {
-      return closed;
-    },
-    submission,
-    triggerSigint() {
-      if (!sigintHandler) {
-        throw new Error('SIGINT handler was not registered');
-      }
-
-      sigintHandler();
-    },
-    loadHtml: () => Promise.resolve('<html><body>plan review</body></html>'),
-    startReviewServer: (_ctx, { payload, port }) => {
-      payloads.push(payload);
-      observedPort = port;
-      return {
-        port: 4312,
-        url: 'http://localhost:4312',
-        result: options.result ?? Promise.resolve(submission),
-        close: () => {
-          closed = true;
-          return Promise.resolve();
-        },
-      };
-    },
-    registerSigintHandler: (handler) => {
-      sigintHandler = handler;
-      sigintRegistration.resolve();
-      return () => {
-        sigintHandler = null;
-      };
-    },
-  };
-}
-
-function createDeferred<T>(): {
-  promise: Promise<T>;
-  resolve: (value: T | PromiseLike<T>) => void;
-  reject: (reason?: unknown) => void;
-} {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-
-  return { promise, resolve, reject };
-}

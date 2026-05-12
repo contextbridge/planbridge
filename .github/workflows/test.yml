@@ -43,7 +43,7 @@ jobs:
       - uses: ./.github/actions/bootstrap
       - name: Get Playwright version
         id: playwright-version
-        working-directory: packages/plan
+        working-directory: packages/annotation
         run: echo "version=$(jq -r '.devDependencies.playwright' package.json)" >> $GITHUB_OUTPUT
       - name: Get Ubuntu version
         id: ubuntu-version
@@ -56,7 +56,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}-playwright-browsers-
       - name: Install Playwright browsers
-        working-directory: packages/plan
+        working-directory: packages/annotation
         run: bunx playwright install --with-deps chromium
       - name: Run tests
         run: bun run test
@@ -67,6 +67,8 @@ jobs:
     name: Install script (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    env:
+      CONTEXTBRIDGE_TELEMETRY_DISABLED: '1'
     strategy:
       fail-fast: false
       matrix:

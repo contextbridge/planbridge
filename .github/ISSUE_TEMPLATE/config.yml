@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-issue-config.json
+
+contact_links:
+  - name: ContextBridge community Slack
+    url: https://go.contextbridge.ai/join-community
+    about: Ask questions, share feedback, or chat with the team and other users.

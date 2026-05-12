@@ -1,24 +1,29 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, MessageSquare } from 'lucide-react';
 import { BrandMark } from './BrandMark.tsx';
+import { Button } from './ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
 
 export const headerTestIds = {
   container: 'cb-header',
   wordmark: 'cb-header-wordmark',
   version: 'cb-header-version',
+  feedbackButton: 'cb-header-feedback',
   helpTrigger: 'cb-header-help-trigger',
   helpMenu: 'cb-header-help-menu',
   helpDocsItem: 'cb-header-help-docs',
+  helpGithubItem: 'cb-header-help-github',
   helpSlackItem: 'cb-header-help-slack',
 };
 
 export interface HeaderProps {
   version: string;
   docsHref: string;
+  feedbackHref: string;
+  githubRepoHref: string;
   slackHelpHref: string;
 }
 
-export function Header({ version, docsHref, slackHelpHref }: HeaderProps) {
+export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackHelpHref }: HeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 flex h-11 items-center justify-between border-b border-border bg-background px-4 sm:px-6"
@@ -32,6 +37,12 @@ export function Header({ version, docsHref, slackHelpHref }: HeaderProps) {
         <span className="text-xs tabular-nums text-muted-foreground" data-testid={headerTestIds.version}>
           v{version}
         </span>
+        <Button asChild data-testid={headerTestIds.feedbackButton} size="xs" variant="default">
+          <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
+            <MessageSquare className="size-3" />
+            Feedback
+          </a>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Help"
@@ -45,6 +56,11 @@ export function Header({ version, docsHref, slackHelpHref }: HeaderProps) {
             <DropdownMenuItem asChild data-testid={headerTestIds.helpDocsItem}>
               <a href={docsHref} rel="noopener noreferrer" target="_blank">
                 Documentation
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild data-testid={headerTestIds.helpGithubItem}>
+              <a href={githubRepoHref} rel="noopener noreferrer" target="_blank">
+                View on GitHub
               </a>
             </DropdownMenuItem>
             <DropdownMenuItem asChild data-testid={headerTestIds.helpSlackItem}>

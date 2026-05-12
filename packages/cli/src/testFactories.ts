@@ -1,4 +1,5 @@
 import { Factory } from 'fishery';
+import type { RunAnnotationArgs } from '#src/annotation/runAnnotation.ts';
 import type {
   CodexStopHookPayload,
   CodexTranscriptHookPromptLine,
@@ -47,10 +48,17 @@ export const codexTranscriptHookPromptLine = Factory.define<CodexTranscriptHookP
   },
 }));
 
+export const annotationArgs = Factory.define<RunAnnotationArgs>(() => ({
+  content: '# Plan',
+  contentKind: 'plan',
+  entrypoint: 'plan_command',
+}));
+
 export const environment = Factory.define<Environment>(() => ({
   LOG_LEVEL: 'info',
   DO_NOT_TRACK: false,
   CONTEXTBRIDGE_TELEMETRY_DISABLED: false,
+  CI: false,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
   CONTEXTBRIDGE_PORT: undefined,
 }));

@@ -1,0 +1,1 @@
+../../.contextbridge/rules/error-handling-neverthrow.md

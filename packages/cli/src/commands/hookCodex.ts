@@ -1,11 +1,11 @@
+import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage, toError } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
-import type { PlanReviewSubmission } from '@contextbridge/shared/planReviewSchema';
 import { type Command, CommanderError } from 'commander';
 import { ResultAsync, err, ok } from 'neverthrow';
+import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type CodexStopResponse, codexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
-import { type RunPlanReviewArgs, runPlanReview } from '#src/planReview/runPlanReview.ts';
 import { readStreamToString } from '#src/streams.ts';
 import {
   type CodexStopHookPayload,
@@ -15,7 +15,7 @@ import {
 } from './codexHookSchema.ts';
 
 export interface HookCodexDependencies {
-  runReview?: (ctx: CliContext, args: RunPlanReviewArgs) => Promise<PlanReviewSubmission>;
+  runReview?: (ctx: CliContext, args: RunAnnotationArgs) => Promise<AnnotationSubmission>;
   readTranscript?: (path: string) => Promise<string>;
 }
 
@@ -90,7 +90,7 @@ async function handleStop(
   deps: HookCodexDependencies,
 ): Promise<CodexStopResponse | null> {
   const { logger } = ctx;
-  const { runReview = runPlanReview } = deps;
+  const { runReview = runAnnotation } = deps;
 
   if (payload.stop_hook_active) {
     logger.debug({ hook: payload.hook_event_name }, 'codex hook inspecting active Stop continuation');
@@ -105,8 +105,11 @@ async function handleStop(
 
   logger.info({ bytes: Buffer.byteLength(planContent, 'utf8') }, 'codex hook received');
 
-  return ResultAsync.fromPromise(runReview(ctx, { planContent }), toError).match(
-    (submission: PlanReviewSubmission) => codexStopResponse(submission, planContent),
+  return ResultAsync.fromPromise(
+    runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_codex' }),
+    toError,
+  ).match(
+    (submission: AnnotationSubmission) => codexStopResponse(submission, planContent),
     (e) => abort(ctx, 'runtime', getErrorMessage(e)),
   );
 }
