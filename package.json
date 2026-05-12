@@ -13,8 +13,8 @@
     "typecheck": "bun run --filter '*' typecheck",
     "lint": "eslint . --max-warnings 0 --cache --ignore-pattern 'tools/**'",
     "lint:fix": "eslint . --fix --cache --ignore-pattern 'tools/**'",
-    "format": "prettier --write \"**/*.{ts,md,json}\"",
-    "format:check": "prettier --check \"**/*.{ts,md,json}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "synth:projen": "test -f tools/projen/package.json || (echo 'Private tools submodule is not initialized. Run: just tools-init' >&2; exit 1); bun run --cwd tools/projen synth"
   },
   "prettier": "@contextbridge-ai/prettier-config",

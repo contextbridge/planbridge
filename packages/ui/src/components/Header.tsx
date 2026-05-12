@@ -37,12 +37,7 @@ export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackH
         <span className="text-xs tabular-nums text-muted-foreground" data-testid={headerTestIds.version}>
           v{version}
         </span>
-        <Button
-          asChild
-          data-testid={headerTestIds.feedbackButton}
-          size="xs"
-          variant="default"
-        >
+        <Button asChild data-testid={headerTestIds.feedbackButton} size="xs" variant="default">
           <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
             <MessageSquare className="size-3" />
             Feedback

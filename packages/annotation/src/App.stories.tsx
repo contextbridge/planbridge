@@ -136,7 +136,10 @@ export const Default: Story = {
       {...rest}
       initialPayload={
         initialPayload
-          ? { ...initialPayload, metadata: { entrypoint: source ?? initialPayload.metadata?.entrypoint ?? 'plan_command' } }
+          ? {
+              ...initialPayload,
+              metadata: { entrypoint: source ?? initialPayload.metadata?.entrypoint ?? 'plan_command' },
+            }
           : undefined
       }
     />

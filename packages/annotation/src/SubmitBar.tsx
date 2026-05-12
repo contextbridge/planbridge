@@ -39,9 +39,7 @@ export function SubmitBar({ submission, source }: SubmitBarProps) {
               <strong className="block" data-testid={submitBarTestIds.codexHandoffNotice}>
                 Return to Codex to confirm implementation.
               </strong>
-              <span>
-                This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.
-              </span>
+              <span>This window will close in {formatCountdownLabel(submission.closeCountdownSeconds)}.</span>
             </>
           ) : (
             `This window will close in ${formatCountdownLabel(submission.closeCountdownSeconds)}.`
