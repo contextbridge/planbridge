@@ -5,12 +5,12 @@ import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchem
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { DOCUMENT_TEMPLATES } from '#src/formatters/document/templates.ts';
 import {
   createAnnotationDependencies,
   createStubContext,
+  expectErr,
   readErrorLogs,
   readWarnLogs,
 } from '#src/testHelpers/index.ts';
@@ -76,34 +76,37 @@ describe('open handler', () => {
     expect(payload).toMatchObject({ metadata: { sourcePath: resolve(file) } });
   });
 
-  it('errors cleanly when neither a path nor piped stdin is supplied', () => {
+  it('errors cleanly when neither a path nor piped stdin is supplied', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.isTTY = true;
 
-    expect(runOpen(context, {})).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runOpen(context, {}));
+    expect(err.message).toContain('provide content via stdin');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('provide content via stdin'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
-  it('errors cleanly when the file does not exist', () => {
+  it('errors cleanly when the file does not exist', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.isTTY = true;
 
-    expect(runOpen(context, { path: join(tmp, 'missing.md') })).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runOpen(context, { path: join(tmp, 'missing.md') }));
+    expect(err.message).toContain('failed to read content from file');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('failed to read content from file'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
-  it('errors when content is empty', () => {
+  it('errors when content is empty', async () => {
     const file = join(tmp, 'empty.md');
     writeFileSync(file, '   \n\n');
 
     const { context, io, logs } = createStubContext();
     io.stdin.isTTY = true;
 
-    expect(runOpen(context, { path: file })).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runOpen(context, { path: file }));
+    expect(err.message).toContain('content is empty');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('content is empty'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
   it('closes the server and exits cleanly (without error-level logs) when SIGINT is received', async () => {
@@ -116,7 +119,8 @@ describe('open handler', () => {
     await deps.sigintHandlerRegistered;
     deps.triggerSigint();
 
-    expect(openPromise).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(openPromise);
+    expect(err.kind).toBe('cancelled');
     expect(io.stdout.text()).toBe('');
     expect(deps.closed).toBe(true);
     // Interrupt path logs at info level so pinoIntegration doesn't forward it to Sentry.

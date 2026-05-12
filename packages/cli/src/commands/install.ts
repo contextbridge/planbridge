@@ -1,6 +1,9 @@
 import type { Command } from 'commander';
+import type { ResultAsync } from 'neverthrow';
 import type { CliContext } from '#src/context.ts';
 import { ALL_INSTALLERS } from '#src/installers/installers.ts';
+import type { AbortError } from './abort.ts';
+import { handleCommandResult } from './abort.ts';
 import { runHarnessOperation } from './harnessOperation.ts';
 import { registerInstallStatus } from './installStatus.ts';
 
@@ -9,9 +12,9 @@ export interface InstallOptions {
   force?: boolean;
 }
 
-export async function runInstall(ctx: CliContext, options: InstallOptions = {}): Promise<void> {
+export function runInstall(ctx: CliContext, options: InstallOptions = {}): ResultAsync<void, AbortError> {
   const { yes = false, force = false } = options;
-  await runHarnessOperation(ctx, 'install', { yes, force });
+  return runHarnessOperation(ctx, 'install', { yes, force });
 }
 
 export function registerInstall(ctx: CliContext, program: Command): void {
@@ -23,7 +26,7 @@ export function registerInstall(ctx: CliContext, program: Command): void {
     .option('-y, --yes', 'skip confirmation prompts', false)
     .option('--force', 'reinstall even when PlanBridge is already wired up', false)
     .action(async (opts: InstallOptions) => {
-      await runInstall(ctx, opts);
+      await handleCommandResult(ctx, runInstall(ctx, opts));
     });
 
   for (const installer of ALL_INSTALLERS) {

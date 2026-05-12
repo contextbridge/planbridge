@@ -1,8 +1,14 @@
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
-import { createStubContext, marketplaceListResult, pluginListResult } from '#src/testHelpers/index.ts';
+import {
+  createStubContext,
+  expectErr,
+  expectOk,
+  marketplaceListResult,
+  pluginListResult,
+} from '#src/testHelpers/index.ts';
+import { AbortError } from './abort.ts';
 import { runUninstall } from './uninstall.ts';
 
 const CLAUDE_BINARY = getHarness('claude').binaryName;
@@ -20,7 +26,7 @@ describe('runUninstall', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'uninstall']).resolves();
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
-    await runUninstall(context, { yes: true });
+    await expectOk(runUninstall(context, { yes: true }));
 
     const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
     const marketplaceRemoveCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']);
@@ -38,7 +44,7 @@ describe('runUninstall', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runUninstall(context, { yes: true });
+    await expectOk(runUninstall(context, { yes: true }));
 
     expect(commandRunner.calls).toHaveLength(2);
     expect(prompter.calls).toEqual([]);
@@ -56,7 +62,7 @@ describe('runUninstall', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']).resolves();
 
-    await runUninstall(context, { yes: true });
+    await expectOk(runUninstall(context, { yes: true }));
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     const marketplaceRemoveCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove']);
@@ -74,7 +80,7 @@ describe('runUninstall', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runUninstall(context, { yes: true, force: true });
+    await expectOk(runUninstall(context, { yes: true, force: true }));
 
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toEqual([]);
     expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'remove'])).toEqual([]);
@@ -94,18 +100,19 @@ describe('runUninstall', () => {
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
     prompter.setConfirm(false);
 
-    await runUninstall(context);
+    await expectOk(runUninstall(context));
 
     expect(prompter.calls).toEqual([{ message: 'Remove PlanBridge from Claude Code?', default: true }]);
     expect(io.stderr.text()).toContain('Claude Code: skipped');
     expect(io.stderr.text()).toContain('Uninstalled 0 of 1 detected harness');
   });
 
-  it('throws when no supported harnesses are detected', () => {
+  it('throws when no supported harnesses are detected', async () => {
     const { context, commandRunner, io } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
-    expect(runUninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUninstall(context, { yes: true }));
+    expect(err).toBeInstanceOf(AbortError);
     expect(commandRunner.calls).toEqual([]);
     expect(io.stderr.text()).toContain('Claude Code: not detected');
   });

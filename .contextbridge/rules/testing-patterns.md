@@ -45,3 +45,5 @@ globs: ["packages/**/*.test.ts", "packages/**/*.test.tsx", "packages/**/*TestIds
   import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
   screen.getByTestId(annotationPopoverTestIds.textarea);
   ```
+
+- **Use shared Result assertion helpers for neverthrow handlers.** When testing code that returns `Result` or `ResultAsync`, import `expectOk`, `expectOkValue`, or `expectErr` from the package's test helpers instead of using `.rejects` or repeating local `isOk()` / `isErr()` helpers. This keeps neverthrow tests explicit and consistent.

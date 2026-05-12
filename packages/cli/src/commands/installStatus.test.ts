@@ -1,7 +1,13 @@
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
-import { createStubContext, marketplaceListResult, parseStdoutJson, pluginListResult } from '#src/testHelpers/index.ts';
+import {
+  createStubContext,
+  expectOk,
+  marketplaceListResult,
+  parseStdoutJson,
+  pluginListResult,
+} from '#src/testHelpers/index.ts';
 import { runInstallStatus } from './installStatus.ts';
 
 const CLAUDE_BINARY = getHarness('claude').binaryName;
@@ -17,7 +23,7 @@ describe('runInstallStatus', () => {
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
-    await runInstallStatus(context);
+    await expectOk(runInstallStatus(context));
 
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: PlanBridge installed');
@@ -32,7 +38,7 @@ describe('runInstallStatus', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runInstallStatus(context);
+    await expectOk(runInstallStatus(context));
 
     expect(io.stderr.text()).toContain('Claude Code: PlanBridge not installed');
   });
@@ -45,7 +51,7 @@ describe('runInstallStatus', () => {
       .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runInstallStatus(context);
+    await expectOk(runInstallStatus(context));
 
     const stderr = io.stderr.text();
     expect(stderr).toContain('Claude Code: PlanBridge not installed (marketplace contextbridge)');
@@ -60,7 +66,7 @@ describe('runInstallStatus', () => {
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
 
-    await runInstallStatus(context);
+    await expectOk(runInstallStatus(context));
 
     expect(io.stderr.text()).toContain('plugin planbridge@contextbridge @ project');
   });
@@ -69,7 +75,7 @@ describe('runInstallStatus', () => {
     const { context, io, commandRunner } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
-    await runInstallStatus(context);
+    await expectOk(runInstallStatus(context));
 
     expect(io.stderr.text()).toContain('Claude Code: not detected');
     expect(commandRunner.calls).toEqual([]);
@@ -85,7 +91,7 @@ describe('runInstallStatus', () => {
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
-    await runInstallStatus(context, { json: true });
+    await expectOk(runInstallStatus(context, { json: true }));
 
     expect(io.stderr.text()).toBe('');
     const payload = parseStdoutJson(io) as unknown[];

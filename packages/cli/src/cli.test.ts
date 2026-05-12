@@ -6,7 +6,13 @@ import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
 import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
+import {
+  createStubContext,
+  primeClaudeShellouts,
+  readErrorLogs,
+  readWarnLogs,
+  stubClaudeState,
+} from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
 const CLAUDE_BINARY = getHarness('claude').binaryName;
@@ -75,7 +81,8 @@ describe('runCli', () => {
 
     expect(exitCode).toBe(1);
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('unsupported hook_event_name: PreToolUse'))).toBe(true);
+    expect(readWarnLogs(logs).some((r) => r.msg.includes('unsupported hook_event_name: PreToolUse'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
   });
 
   it('surfaces unknown flags on hook claude as a CommanderError', async () => {

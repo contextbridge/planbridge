@@ -1,10 +1,11 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { CommanderError } from 'commander';
+import type { ResultAsync as ResultAsyncType } from 'neverthrow';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from '#src/installers/detect.ts';
 import type { HarnessInstaller, HarnessStatus, InstallActionOptions } from '#src/installers/HarnessInstaller.ts';
 import { ALL_INSTALLERS } from '#src/installers/installers.ts';
 import { PROMPTER_CANCELLED_CODE } from '#src/prompter.ts';
+import { AbortError, abortable, logAbortError } from './abort.ts';
 import { formatStatusLine } from './installStatus.ts';
 
 export type HarnessOperationMode = 'install' | 'uninstall';
@@ -18,7 +19,11 @@ interface ModeLabels {
   readonly failureMessagePrefix: string;
   readonly logMessage: string;
   readonly skippedNote: string;
-  readonly run: (installer: HarnessInstaller, ctx: CliContext, options: InstallActionOptions) => Promise<void>;
+  readonly run: (
+    installer: HarnessInstaller,
+    ctx: CliContext,
+    options: InstallActionOptions,
+  ) => ResultAsyncType<void, AbortError>;
 }
 
 const MODE_LABELS: Record<HarnessOperationMode, ModeLabels> = {
@@ -51,13 +56,21 @@ export interface HarnessOperationOptions {
   readonly force: boolean;
 }
 
-export async function runHarnessOperation(
+export function runHarnessOperation(
+  ctx: CliContext,
+  mode: HarnessOperationMode,
+  options: HarnessOperationOptions,
+): ResultAsyncType<void, AbortError> {
+  return abortable(mode, runHarnessOperationUnsafe(ctx, mode, options));
+}
+
+async function runHarnessOperationUnsafe(
   ctx: CliContext,
   mode: HarnessOperationMode,
   { yes, force }: HarnessOperationOptions,
 ): Promise<void> {
   const labels = MODE_LABELS[mode];
-  const { io, prompter, logger } = ctx;
+  const { io, prompter } = ctx;
 
   const detected: Array<{ installer: HarnessInstaller; status?: HarnessStatus }> = [];
   const failures: string[] = [];
@@ -71,18 +84,18 @@ export async function runHarnessOperation(
       continue;
     }
 
-    try {
-      const status = await installer.status(ctx);
+    const statusResult = await installer.status(ctx);
+    if (statusResult.isOk()) {
+      const status = statusResult.value;
       io.writeStderr(`${formatStatusLine(status)}\n`);
       if (status.detected) {
         detected.push({ installer, status });
       }
-    } catch (err) {
+    } else {
+      const err = statusResult.error;
       const { displayName, id } = installer.descriptor;
       io.writeStderr(`${formatStatusFailureLine(displayName, err)}\n`);
-      if (!(err instanceof CommanderError)) {
-        logger.error({ err, harness: id }, 'status failed');
-      }
+      logAbortError(ctx, err, 'status failed', { harness: id });
       failures.push(displayName);
       detected.push({ installer });
     }
@@ -90,10 +103,10 @@ export async function runHarnessOperation(
 
   if (detected.length === 0) {
     const supported = ALL_INSTALLERS.map((i) => i.descriptor.displayName).join(', ');
-    throw new CommanderError(
-      1,
-      labels.noHarnessesCode,
+    throw AbortError.input(
+      mode,
       `No supported AI coding harnesses detected. PlanBridge currently supports: ${supported}. ${labels.noHarnessesHint}`,
+      { code: labels.noHarnessesCode },
     );
   }
 
@@ -111,26 +124,29 @@ export async function runHarnessOperation(
     }
 
     if (!yes) {
-      const proceed = await prompter.confirm({
+      const proceedResult = await prompter.confirm({
         message: labels.confirmMessage(displayName),
         default: true,
       });
+      if (proceedResult.isErr()) {
+        throw proceedResult.error;
+      }
+      const proceed = proceedResult.value;
       if (!proceed) {
         io.writeStderr(`${displayName}: skipped\n`);
         continue;
       }
     }
 
-    try {
-      await labels.run(installer, ctx, { yes });
+    const runResult = await labels.run(installer, ctx, { yes });
+    if (runResult.isOk()) {
       completedCount += 1;
-    } catch (err) {
-      if (err instanceof CommanderError && err.code === PROMPTER_CANCELLED_CODE) {
+    } else {
+      const err = runResult.error;
+      if (err.code === PROMPTER_CANCELLED_CODE) {
         throw err;
       }
-      if (!(err instanceof CommanderError)) {
-        logger.error({ err, harness: installer.descriptor.id }, labels.logMessage);
-      }
+      logAbortError(ctx, err, labels.logMessage, { harness: installer.descriptor.id });
       failures.push(displayName);
     }
   }
@@ -140,7 +156,9 @@ export async function runHarnessOperation(
   io.writeStderr(`${labels.pastTense} ${completedCount} of ${detected.length} ${detectedNoun}${skippedSuffix}.\n`);
 
   if (failures.length > 0) {
-    throw new CommanderError(1, labels.failureCode, `${labels.failureMessagePrefix}: ${failures.join(', ')}`);
+    throw AbortError.runtime(mode, `${labels.failureMessagePrefix}: ${failures.join(', ')}`, {
+      code: labels.failureCode,
+    });
   }
 }
 

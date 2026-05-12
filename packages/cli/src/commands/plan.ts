@@ -1,5 +1,6 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { type Command, CommanderError, InvalidArgumentError } from 'commander';
+import { type Command, InvalidArgumentError } from 'commander';
+import { ResultAsync, errAsync, okAsync } from 'neverthrow';
 import {
   type AnnotationDependencies,
   AnnotationInterruptedError,
@@ -9,54 +10,46 @@ import type { CliContext } from '#src/context.ts';
 import { parsePort } from '#src/environment.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
-import { abort } from './abort.ts';
+import { AbortError, handleCommandResult } from './abort.ts';
 
 export interface PlanArgs {
   path?: string;
   port?: number;
 }
 
-export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
+export function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): ResultAsync<void, AbortError> {
   const { io, logger } = ctx;
   const { path, port } = args;
 
   if (!path && io.stdinIsTTY === true) {
-    abort(
-      ctx,
-      'plan',
-      'input',
-      'provide plan content via stdin (e.g. `cat plan.md | contextbridge plan`) or a file path via [path]',
+    return errAsync(
+      AbortError.input(
+        'plan',
+        'provide plan content via stdin (e.g. `cat plan.md | contextbridge plan`) or a file path via [path]',
+      ),
     );
   }
 
   const source: 'file' | 'stdin' = path ? 'file' : 'stdin';
-  let content: string;
-  try {
-    content = path ? await Bun.file(path).text() : await io.readStdin();
-  } catch (err) {
-    abort(ctx, 'plan', 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
-  }
-
-  if (content.trim().length === 0) {
-    abort(ctx, 'plan', 'input', 'plan content is empty');
-  }
-
-  logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
-
-  try {
-    const submission = await runAnnotation(
-      ctx,
-      { content, contentKind: 'plan', entrypoint: 'plan_command', port },
-      deps,
-    );
-    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
-  } catch (err) {
-    if (err instanceof AnnotationInterruptedError) {
-      logger.info('plan review interrupted');
-      throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
-    }
-    abort(ctx, 'plan', 'runtime', getErrorMessage(err));
-  }
+  return ResultAsync.fromPromise(path ? Bun.file(path).text() : io.readStdin(), (err) =>
+    AbortError.input('plan', `failed to read plan from ${source}: ${getErrorMessage(err)}`),
+  )
+    .andThen((content) => {
+      if (content.trim().length === 0) return errAsync(AbortError.input('plan', 'plan content is empty'));
+      return okAsync(content);
+    })
+    .andThen((content) => {
+      logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
+      return ResultAsync.fromPromise(
+        runAnnotation(ctx, { content, contentKind: 'plan', entrypoint: 'plan_command', port }, deps),
+        (err) =>
+          err instanceof AnnotationInterruptedError
+            ? AbortError.cancelled('plan', 'plan review interrupted', { code: 'contextbridge.plan.sigint' })
+            : AbortError.runtime('plan', getErrorMessage(err)),
+      ).map((submission) => {
+        io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
+      });
+    });
 }
 
 export function registerPlan(ctx: CliContext, program: Command): void {
@@ -68,7 +61,7 @@ export function registerPlan(ctx: CliContext, program: Command): void {
     .argument('[path]', 'path to a file containing the plan (alternative to stdin)')
     .option('--port <number>', 'serve the plan review browser UI on a specific port', parsePortOption)
     .action(async (path: string | undefined, opts: { port?: number }) => {
-      await runPlan(ctx, { path, port: opts.port });
+      await handleCommandResult(ctx, runPlan(ctx, { path, port: opts.port }));
     });
 }
 

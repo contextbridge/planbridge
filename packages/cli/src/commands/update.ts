@@ -1,10 +1,16 @@
 import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
-import { type Command, CommanderError } from 'commander';
+import type { Command } from 'commander';
+import type { ResultAsync } from 'neverthrow';
 import type { CliContext } from '#src/context.ts';
 import type { HarnessInstaller, ManagedEntry } from '#src/installers/HarnessInstaller.ts';
 import { ALL_INSTALLERS } from '#src/installers/installers.ts';
+import { AbortError, abortable, handleCommandResult, logAbortError } from './abort.ts';
 
-export async function runUpdate(ctx: CliContext): Promise<void> {
+export function runUpdate(ctx: CliContext): ResultAsync<void, AbortError> {
+  return abortable('update', runUpdateUnsafe(ctx));
+}
+
+async function runUpdateUnsafe(ctx: CliContext): Promise<void> {
   const { io, logger, updater } = ctx;
 
   const notice = await updater.checkForUpdate({ forceRefresh: true });
@@ -20,7 +26,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
   switch (result.status) {
     case 'refused':
       io.writeStderr(`${result.message}\n`);
-      throw new CommanderError(1, `contextbridge.update.${result.reason}`, result.message);
+      throw AbortError.input('update', result.message, { code: `contextbridge.update.${result.reason}` });
 
     case 'recovery-needed':
       logger.warn(result.diagnostics, 'update: could not detect install method');
@@ -28,7 +34,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
       for (const command of result.fallbackCommands) {
         io.writeStdout(`${command}\n`);
       }
-      throw new CommanderError(1, `contextbridge.update.${result.reason}`, result.message);
+      throw AbortError.input('update', result.message, { code: `contextbridge.update.${result.reason}` });
 
     case 'skipped-already-latest':
       io.writeStderr(`contextbridge is up to date (v${result.currentVersion}).\n`);
@@ -42,7 +48,7 @@ export async function runUpdate(ctx: CliContext): Promise<void> {
     case 'error':
       logger.error({ cause: result.cause }, result.message);
       io.writeStderr(`${result.message}\n`);
-      throw new CommanderError(1, 'contextbridge.update.unexpected', result.message);
+      throw AbortError.runtime('update', result.message, { code: 'contextbridge.update.unexpected' });
 
     default:
       return assertNever(result);
@@ -56,7 +62,7 @@ export function registerUpdate(ctx: CliContext, program: Command): void {
       'Check for a newer release and re-run the install method that put this binary on your system (Homebrew or the install script).',
     )
     .action(async () => {
-      await runUpdate(ctx);
+      await handleCommandResult(ctx, runUpdate(ctx));
     });
 }
 
@@ -80,13 +86,12 @@ async function refreshInstalledHarnesses(ctx: CliContext): Promise<void> {
 }
 
 async function getInstallerRefreshScopes(ctx: CliContext, installer: HarnessInstaller): Promise<string[]> {
-  try {
-    const status = await installer.status(ctx);
-    return getRefreshScopes(status.managed);
-  } catch (err) {
-    ctx.logger.error({ err, harness: installer.descriptor.id }, 'post-update harness refresh failed');
+  const result = await installer.status(ctx);
+  if (result.isErr()) {
+    logAbortError(ctx, result.error, 'post-update harness refresh failed', { harness: installer.descriptor.id });
     return [];
   }
+  return getRefreshScopes(result.value.managed);
 }
 
 async function refreshInstallerScope(

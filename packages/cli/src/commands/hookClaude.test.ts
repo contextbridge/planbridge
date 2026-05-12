@@ -1,11 +1,10 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
 import { annotationArgs } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createAnnotationDependencies, createStubContext, expectErr, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
@@ -92,7 +91,7 @@ describe('hookClaude handler', () => {
     expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
   });
 
-  it('aborts when hook_event_name is unsupported', () => {
+  it('aborts when hook_event_name is unsupported', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write(
@@ -107,13 +106,14 @@ describe('hookClaude handler', () => {
     );
     io.stdin.end();
 
-    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookClaude(context, deps));
+    expect(err.message).toContain('unsupported hook_event_name: PreToolUse');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('unsupported hook_event_name: PreToolUse'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     expect(deps.calls).toEqual([]);
   });
 
-  it('aborts when PermissionRequest arrives for a tool other than ExitPlanMode', () => {
+  it('aborts when PermissionRequest arrives for a tool other than ExitPlanMode', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write(
@@ -128,25 +128,27 @@ describe('hookClaude handler', () => {
     );
     io.stdin.end();
 
-    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookClaude(context, deps));
+    expect(err.message).toContain('unsupported tool for PermissionRequest: Bash');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('unsupported tool for PermissionRequest: Bash'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     expect(deps.calls).toEqual([]);
   });
 
-  it('aborts on invalid JSON', () => {
+  it('aborts on invalid JSON', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write('{not-json');
     io.stdin.end();
 
-    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookClaude(context, deps));
+    expect(err.message).toContain('failed to parse hook event JSON');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('failed to parse hook event JSON'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     expect(deps.calls).toEqual([]);
   });
 
-  it('aborts when tool_input.plan is missing', () => {
+  it('aborts when tool_input.plan is missing', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write(
@@ -161,21 +163,23 @@ describe('hookClaude handler', () => {
     );
     io.stdin.end();
 
-    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookClaude(context, deps));
+    expect(err.message).toContain('invalid hook event payload');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('invalid hook event payload'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     expect(deps.calls).toEqual([]);
   });
 
-  it('aborts when required top-level fields are missing', () => {
+  it('aborts when required top-level fields are missing', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write(JSON.stringify({ hook_event_name: 'PermissionRequest' }));
     io.stdin.end();
 
-    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookClaude(context, deps));
+    expect(err.message).toContain('invalid hook event payload');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('invalid hook event payload'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
   });
 });
 

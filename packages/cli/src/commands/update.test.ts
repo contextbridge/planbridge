@@ -3,15 +3,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { CLAUDE_LEGACY_PLUGIN_ID, CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import {
   createStubContext,
+  expectErr,
+  expectOk,
   marketplaceListResult,
   pluginListResult,
   readErrorLogs,
   readWarnLogs,
 } from '#src/testHelpers/index.ts';
+import { AbortError } from './abort.ts';
 import { runUpdate } from './update.ts';
 
 const CLAUDE_BINARY = getHarness('claude').binaryName;
@@ -23,11 +25,11 @@ const FAKE_CONTEXTBRIDGE_PATH = '/usr/local/bin/contextbridge';
 describe('runUpdate', () => {
   it('prints "up to date" and exits 0 when there is no notice', async () => {
     const { context, io } = createStubContext();
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
     expect(io.stderr.text()).toContain('contextbridge is up to date');
   });
 
-  it('refuses on dev-build with no logger.error', () => {
+  it('refuses on dev-build with no logger.error', async () => {
     const { context, io, logs, updater } = createStubContext();
     // Dev-build detection happens inside UpdaterImpl; the FakeUpdater lets
     // us simulate it by returning a notice + refusal.
@@ -38,12 +40,13 @@ describe('runUpdate', () => {
       message: 'contextbridge is running as a dev build. Rebuild from source to update.',
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
     expect(io.stderr.text()).toContain('dev build');
     expect(readErrorLogs(logs)).toEqual([]);
   });
 
-  it('refuses on opt-out with no logger.error', () => {
+  it('refuses on opt-out with no logger.error', async () => {
     const { context, io, logs, updater } = createStubContext();
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
@@ -52,12 +55,13 @@ describe('runUpdate', () => {
       message: 'update check is disabled via CONTEXTBRIDGE_UPDATE_CHECK_DISABLED.',
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
     expect(io.stderr.text()).toContain('disabled');
     expect(readErrorLogs(logs)).toEqual([]);
   });
 
-  it('emits logger.warn with diagnostics AND prints fallback commands on recovery-needed', () => {
+  it('emits logger.warn with diagnostics AND prints fallback commands on recovery-needed', async () => {
     const { context, io, logs, updater } = createStubContext();
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
@@ -77,7 +81,8 @@ describe('runUpdate', () => {
       },
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
 
     // Both fallback commands printed to stdout so users can pipe/script them.
     expect(io.stdout.text()).toContain('brew upgrade --cask contextbridge/tap/cli');
@@ -96,7 +101,7 @@ describe('runUpdate', () => {
     expect(readErrorLogs(logs)).toEqual([]);
   });
 
-  it('prints alpha-channel fallback commands on recovery-needed for alpha builds', () => {
+  it('prints alpha-channel fallback commands on recovery-needed for alpha builds', async () => {
     const { context, io, updater } = createStubContext();
     updater.setCheckResult({
       currentVersion: '0.2.0-alpha.1',
@@ -120,7 +125,8 @@ describe('runUpdate', () => {
       },
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
 
     // Alpha variants must appear so users copy the right install command.
     expect(io.stdout.text()).toContain('brew upgrade --cask contextbridge/tap/cli@alpha');
@@ -132,7 +138,7 @@ describe('runUpdate', () => {
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({ status: 'skipped-already-latest', currentVersion: '0.2.0' });
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     expect(io.stderr.text()).toContain('up to date (v0.2.0)');
   });
@@ -146,7 +152,7 @@ describe('runUpdate', () => {
       exitCode: 0,
     });
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
     expect(io.stderr.text()).toContain('update complete');
   });
 
@@ -159,12 +165,12 @@ describe('runUpdate', () => {
       exitCode: 0,
     });
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     expect(io.stderr.text()).toContain('https://github.com/contextbridge/planbridge/releases/tag/v0.2.0');
   });
 
-  it('logger.error + throws CommanderError when the installer exits non-zero', () => {
+  it('logger.error + returns a typed error when the installer exits non-zero', async () => {
     const { context, io, logs, updater } = createStubContext();
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
@@ -173,12 +179,13 @@ describe('runUpdate', () => {
       cause: new Error('installer exited 17'),
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
     expect(io.stderr.text()).toContain('installer exited 17');
     expect(readErrorLogs(logs).some((r) => r.msg.includes('installer exited 17'))).toBe(true);
   });
 
-  it('logger.error + throws on error status', () => {
+  it('logger.error + returns a typed error on error status', async () => {
     const { context, logs, updater } = createStubContext();
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
     updater.setPerformResult({
@@ -187,7 +194,8 @@ describe('runUpdate', () => {
       cause: new Error('ECONNRESET'),
     });
 
-    expect(runUpdate(context)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runUpdate(context));
+    expect(err).toBeInstanceOf(AbortError);
     const errorLogs = readErrorLogs(logs);
     expect(errorLogs.length).toBe(1);
     expect(errorLogs[0]?.msg).toContain('ECONNRESET');
@@ -202,7 +210,7 @@ describe('runUpdate', () => {
       exitCode: 0,
     });
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
     expect(updater.checkForUpdateCalls).toEqual([{ forceRefresh: true }]);
     expect(updater.performUpdateCallCount).toBe(1);
   });
@@ -225,7 +233,7 @@ describe('runUpdate', () => {
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
@@ -250,7 +258,7 @@ describe('runUpdate', () => {
       .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }]));
     commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
@@ -275,7 +283,7 @@ describe('runUpdate', () => {
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'project' }]));
     commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
@@ -300,7 +308,7 @@ describe('runUpdate', () => {
       .resolves(pluginListResult([{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }]));
     commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude']).resolves();
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
@@ -330,7 +338,7 @@ describe('runUpdate', () => {
       );
       commandRunner.on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'codex']).resolves();
 
-      await runUpdate(context);
+      await expectOk(runUpdate(context));
 
       const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
       expect(spawnCall).toBeDefined();
@@ -353,7 +361,7 @@ describe('runUpdate', () => {
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'marketplace', 'list', '--json']).resolves(marketplaceListResult([]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     const spawnCalls = commandRunner.calls.filter((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCalls).toEqual([]);
@@ -374,8 +382,29 @@ describe('runUpdate', () => {
       .resolves(marketplaceListResult([{ name: CLAUDE_MARKETPLACE_NAME }]));
     commandRunner.on(CLAUDE_BINARY, ['plugin', 'list', '--json']).resolves(pluginListResult([]));
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
+    const spawnCalls = commandRunner.calls.filter((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
+    expect(spawnCalls).toEqual([]);
+  });
+
+  it('logs a warning and skips refresh when Codex is too old after update', async () => {
+    const { context, io, logs, commandRunner, updater } = createStubContext();
+    commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.128.0\n' });
+    updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
+    updater.setPerformResult({
+      status: 'executed',
+      command: ['brew', 'upgrade', '--cask', 'contextbridge/tap/cli'],
+      exitCode: 0,
+    });
+
+    await expectOk(runUpdate(context));
+
+    expect(io.stderr.text()).toContain('update complete');
+    expect(readWarnLogs(logs).some((r) => r.msg.includes('post-update harness refresh failed'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     const spawnCalls = commandRunner.calls.filter((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCalls).toEqual([]);
   });
@@ -400,7 +429,7 @@ describe('runUpdate', () => {
       .on(FAKE_CONTEXTBRIDGE_PATH, ['install', 'claude'])
       .resolves({ exitCode: 1, stderr: 'install failed' });
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     expect(io.stderr.text()).toContain('update complete');
     expect(readErrorLogs(logs).some((r) => r.msg.includes('post-update harness refresh failed'))).toBe(true);
@@ -423,7 +452,7 @@ describe('runUpdate', () => {
       .on(CLAUDE_BINARY, ['plugin', 'list', '--json'])
       .resolves(pluginListResult([{ id: CLAUDE_PLUGIN_ID, scope: 'user' }]));
 
-    await runUpdate(context);
+    await expectOk(runUpdate(context));
 
     expect(io.stderr.text()).toContain('update complete');
     expect(readErrorLogs(logs).some((r) => r.msg.includes('contextbridge not found on PATH'))).toBe(true);

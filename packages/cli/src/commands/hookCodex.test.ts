@@ -1,7 +1,6 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CodexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
 import {
@@ -10,7 +9,7 @@ import {
   codexTranscriptHookPromptLine,
   codexTranscriptPlanLine,
 } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createAnnotationDependencies, createStubContext, expectErr, readErrorLogs } from '#src/testHelpers/index.ts';
 import type { CodexStopHookPayload } from './codexHookSchema.ts';
 import { type HookCodexDependencies, extractLatestPlanFromTranscript, runHookCodex } from './hookCodex.ts';
 
@@ -242,18 +241,19 @@ describe('hookCodex handler', () => {
     expect(deps.transcriptReadCount).toBe(1);
   });
 
-  it('aborts on invalid JSON', () => {
+  it('aborts on invalid JSON', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write('{not-json');
     io.stdin.end();
 
-    expect(runHookCodex(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookCodex(context, deps));
+    expect(err.message).toContain('failed to parse hook event JSON');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('failed to parse hook event JSON'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
   });
 
-  it('aborts when the event payload is not a Codex Stop hook', () => {
+  it('aborts when the event payload is not a Codex Stop hook', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
     io.stdin.write(
@@ -266,9 +266,10 @@ describe('hookCodex handler', () => {
     );
     io.stdin.end();
 
-    expect(runHookCodex(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runHookCodex(context, deps));
+    expect(err.message).toContain('invalid hook event payload');
     expect(io.stdout.text()).toBe('');
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('invalid hook event payload'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
     expect(deps.calls).toEqual([]);
   });
 });

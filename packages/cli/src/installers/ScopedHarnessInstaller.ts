@@ -1,4 +1,7 @@
 import { type Command, Option } from 'commander';
+import { ResultAsync, okAsync } from 'neverthrow';
+import type { AbortError } from '#src/commands/abort.ts';
+import { handleCommandResult } from '#src/commands/abort.ts';
 import type { CliContext } from '#src/context.ts';
 import { HarnessInstaller, type InstallActionOptions } from './HarnessInstaller.ts';
 
@@ -17,16 +20,16 @@ export abstract class ScopedHarnessInstaller extends HarnessInstaller {
   protected abstract readonly installDescription: string;
   protected abstract readonly uninstallDescription: string;
 
-  async install(ctx: CliContext, options: ScopedInstallActionOptions): Promise<void> {
-    const scope = await this.resolveScope(ctx, options, 'install');
-    this.requireBinary(ctx, this.binaryMissingCode);
-    await this.runInstall(ctx, scope);
+  install(ctx: CliContext, options: ScopedInstallActionOptions): ResultAsync<void, AbortError> {
+    return this.resolveScope(ctx, options, 'install')
+      .andThen((scope) => this.requireBinary(ctx, this.binaryMissingCode).map(() => scope))
+      .andThen((scope) => this.runInstall(ctx, scope));
   }
 
-  async uninstall(ctx: CliContext, options: ScopedInstallActionOptions): Promise<void> {
-    const scope = await this.resolveScope(ctx, options, 'uninstall');
-    this.requireBinary(ctx, this.binaryMissingCode);
-    await this.runUninstall(ctx, scope);
+  uninstall(ctx: CliContext, options: ScopedInstallActionOptions): ResultAsync<void, AbortError> {
+    return this.resolveScope(ctx, options, 'uninstall')
+      .andThen((scope) => this.requireBinary(ctx, this.binaryMissingCode).map(() => scope))
+      .andThen((scope) => this.runUninstall(ctx, scope));
   }
 
   registerInstall(ctx: CliContext, parent: Command): void {
@@ -35,7 +38,7 @@ export abstract class ScopedHarnessInstaller extends HarnessInstaller {
       .description(this.installDescription)
       .addOption(this.createScopeOption('install'))
       .action(async (opts: { scope: InstallScope }) => {
-        await this.install(ctx, { yes: true, scope: opts.scope });
+        await handleCommandResult(ctx, this.install(ctx, { yes: true, scope: opts.scope }));
       });
   }
 
@@ -45,24 +48,24 @@ export abstract class ScopedHarnessInstaller extends HarnessInstaller {
       .description(this.uninstallDescription)
       .addOption(this.createScopeOption('uninstall'))
       .action(async (opts: { scope: InstallScope }) => {
-        await this.uninstall(ctx, { yes: true, scope: opts.scope });
+        await handleCommandResult(ctx, this.uninstall(ctx, { yes: true, scope: opts.scope }));
       });
   }
 
-  protected abstract runInstall(ctx: CliContext, scope: InstallScope): Promise<void>;
-  protected abstract runUninstall(ctx: CliContext, scope: InstallScope): Promise<void>;
+  protected abstract runInstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError>;
+  protected abstract runUninstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError>;
 
-  private async resolveScope(
+  private resolveScope(
     ctx: CliContext,
     { yes, scope }: ScopedInstallActionOptions,
     verb: 'install' | 'uninstall',
-  ): Promise<InstallScope> {
-    if (scope) return scope;
-    if (yes) return 'user';
+  ): ResultAsync<InstallScope, AbortError> {
+    if (scope) return okAsync(scope);
+    if (yes) return okAsync('user' as const);
     return this.promptForScope(ctx, verb);
   }
 
-  private promptForScope(ctx: CliContext, verb: 'install' | 'uninstall'): Promise<InstallScope> {
+  private promptForScope(ctx: CliContext, verb: 'install' | 'uninstall'): ResultAsync<InstallScope, AbortError> {
     const { prompter } = ctx;
     const action = verb === 'install' ? 'install into' : 'remove from';
     return prompter.select<InstallScope>({

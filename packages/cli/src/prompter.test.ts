@@ -1,21 +1,17 @@
 import { describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
+import { AbortError } from './commands/abort.ts';
 import { PROMPTER_NON_TTY_CODE, createClackPrompter } from './prompter.ts';
-import { FakeIo } from './testHelpers/index.ts';
+import { FakeIo, expectErr } from './testHelpers/index.ts';
 
 describe('createClackPrompter', () => {
-  it('throws a CommanderError directing the user to --yes when stdin is not a TTY', async () => {
+  it('returns a typed error directing the user to --yes when stdin is not a TTY', async () => {
     const io = new FakeIo();
     const prompter = createClackPrompter(io);
 
-    try {
-      await prompter.confirm({ message: 'proceed?' });
-      throw new Error('expected confirm() to reject');
-    } catch (err) {
-      expect(err).toBeInstanceOf(CommanderError);
-      const cmdErr = err as CommanderError;
-      expect(cmdErr.code).toBe(PROMPTER_NON_TTY_CODE);
-      expect(cmdErr.message).toContain('--yes');
-    }
+    const err = await expectErr(prompter.confirm({ message: 'proceed?' }));
+
+    expect(err).toBeInstanceOf(AbortError);
+    expect(err.code).toBe(PROMPTER_NON_TTY_CODE);
+    expect(err.message).toContain('--yes');
   });
 });

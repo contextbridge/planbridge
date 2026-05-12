@@ -1,6 +1,7 @@
 import { type InstallableHarness, getInstallableHarness } from '@contextbridge/harness';
-import { CommanderError } from 'commander';
+import type { ResultAsync } from 'neverthrow';
 import { z } from 'zod';
+import { AbortError, abortable } from '#src/commands/abort.ts';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from './detect.ts';
 import { type HarnessStatus, type ManagedEntry } from './HarnessInstaller.ts';
@@ -32,7 +33,11 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
   protected readonly uninstallDescription =
     'Uninstall the PlanBridge plugin from Claude Code via the `claude plugin` CLI.';
 
-  async status(ctx: CliContext): Promise<HarnessStatus> {
+  status(ctx: CliContext): ResultAsync<HarnessStatus, AbortError> {
+    return abortable('claudeInstaller', this.statusUnsafe(ctx));
+  }
+
+  private async statusUnsafe(ctx: CliContext): Promise<HarnessStatus> {
     const { binaryName } = this.descriptor;
     const detection = detectHarness(ctx, this.descriptor);
     if (!detection.binaryOnPath) {
@@ -54,7 +59,11 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     return { descriptor: this.descriptor, detected: true, installed: newScopes.length > 0, managed };
   }
 
-  protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {
+  protected runInstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError> {
+    return abortable('claudeInstaller', this.runInstallUnsafe(ctx, scope));
+  }
+
+  private async runInstallUnsafe(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io } = ctx;
     const { binaryName } = this.descriptor;
 
@@ -92,7 +101,11 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
     io.writeStderr(`Restart Claude Code for the plugin to load.\n`);
   }
 
-  protected async runUninstall(ctx: CliContext, scope: InstallScope): Promise<void> {
+  protected runUninstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError> {
+    return abortable('claudeInstaller', this.runUninstallUnsafe(ctx, scope));
+  }
+
+  private async runUninstallUnsafe(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io, logger } = ctx;
     const { binaryName } = this.descriptor;
 
@@ -143,14 +156,14 @@ async function isMarketplaceConfigured(ctx: CliContext, binaryName: string): Pro
 async function listPlugins(ctx: CliContext, binaryName: string): Promise<InstalledPlugin[]> {
   const { commandRunner } = ctx;
   const result = await commandRunner.run(binaryName, ['plugin', 'list', '--json']);
-  requireCleanExit(ctx, binaryName, result, 'plugin list');
+  requireCleanExit(binaryName, result, 'plugin list');
   return InstalledPluginsSchema.parse(JSON.parse(result.stdout));
 }
 
 async function listMarketplaces(ctx: CliContext, binaryName: string): Promise<ConfiguredMarketplace[]> {
   const { commandRunner } = ctx;
   const result = await commandRunner.run(binaryName, ['plugin', 'marketplace', 'list', '--json']);
-  requireCleanExit(ctx, binaryName, result, 'plugin marketplace list');
+  requireCleanExit(binaryName, result, 'plugin marketplace list');
   return ConfiguredMarketplacesSchema.parse(JSON.parse(result.stdout));
 }
 
@@ -170,20 +183,18 @@ async function runPluginCommand(
 
   if (result.exitCode !== 0) {
     const detail = result.stderr.trim() || `${binaryName} plugin ${label} exited ${result.exitCode}`;
-    logger.error(detail);
-    throw new CommanderError(result.exitCode, 'contextbridge.claudeInstaller.shellFailure', detail);
+    throw AbortError.runtime('claudeInstaller', detail, {
+      code: 'contextbridge.claudeInstaller.shellFailure',
+      exitCode: result.exitCode,
+    });
   }
 }
 
-function requireCleanExit(
-  ctx: CliContext,
-  binaryName: string,
-  result: { exitCode: number; stderr: string },
-  label: string,
-): void {
+function requireCleanExit(binaryName: string, result: { exitCode: number; stderr: string }, label: string): void {
   if (result.exitCode === 0) return;
-  const { logger } = ctx;
   const detail = result.stderr.trim() || `${binaryName} ${label} exited ${result.exitCode}`;
-  logger.error(detail);
-  throw new CommanderError(result.exitCode, 'contextbridge.claudeInstaller.listFailure', detail);
+  throw AbortError.runtime('claudeInstaller', detail, {
+    code: 'contextbridge.claudeInstaller.listFailure',
+    exitCode: result.exitCode,
+  });
 }

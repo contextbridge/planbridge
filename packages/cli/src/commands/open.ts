@@ -1,6 +1,7 @@
 import { resolve as resolvePath } from 'node:path';
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { type Command, CommanderError } from 'commander';
+import type { Command } from 'commander';
+import { ResultAsync, errAsync, okAsync } from 'neverthrow';
 import {
   type AnnotationDependencies,
   AnnotationInterruptedError,
@@ -9,55 +10,47 @@ import {
 import type { CliContext } from '#src/context.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { DOCUMENT_TEMPLATES } from '#src/formatters/document/templates.ts';
-import { abort } from './abort.ts';
+import { AbortError, handleCommandResult } from './abort.ts';
 
 export interface OpenArgs {
   path?: string;
 }
 
-export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: AnnotationDependencies): Promise<void> {
+export function runOpen(ctx: CliContext, args: OpenArgs, deps?: AnnotationDependencies): ResultAsync<void, AbortError> {
   const { io, logger } = ctx;
   const { path: argPath } = args;
 
   if (!argPath && io.stdinIsTTY === true) {
-    abort(
-      ctx,
-      'open',
-      'input',
-      'provide content via stdin (e.g. `cat doc.md | contextbridge open`) or a file path via [path]',
+    return errAsync(
+      AbortError.input(
+        'open',
+        'provide content via stdin (e.g. `cat doc.md | contextbridge open`) or a file path via [path]',
+      ),
     );
   }
 
   const source: 'file' | 'stdin' = argPath ? 'file' : 'stdin';
-  let content: string;
-  try {
-    content = argPath ? await Bun.file(argPath).text() : await io.readStdin();
-  } catch (err) {
-    abort(ctx, 'open', 'input', `failed to read content from ${source}: ${getErrorMessage(err)}`);
-  }
-
-  if (content.trim().length === 0) {
-    abort(ctx, 'open', 'input', 'content is empty');
-  }
-
   const sourcePath = argPath ? resolvePath(argPath) : undefined;
 
-  logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'open received');
-
-  try {
-    const submission = await runAnnotation(
-      ctx,
-      { content, contentKind: 'document', entrypoint: 'open_command', sourcePath },
-      deps,
-    );
-    io.writeStdout(formatAgentResponse(DOCUMENT_TEMPLATES, submission, content, { sourcePath }));
-  } catch (err) {
-    if (err instanceof AnnotationInterruptedError) {
-      logger.info('open session interrupted');
-      throw new CommanderError(130, 'contextbridge.open.sigint', 'open session interrupted');
-    }
-    abort(ctx, 'open', 'runtime', getErrorMessage(err));
-  }
+  return ResultAsync.fromPromise(argPath ? Bun.file(argPath).text() : io.readStdin(), (err) =>
+    AbortError.input('open', `failed to read content from ${source}: ${getErrorMessage(err)}`),
+  )
+    .andThen((content) => {
+      if (content.trim().length === 0) return errAsync(AbortError.input('open', 'content is empty'));
+      return okAsync(content);
+    })
+    .andThen((content) => {
+      logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'open received');
+      return ResultAsync.fromPromise(
+        runAnnotation(ctx, { content, contentKind: 'document', entrypoint: 'open_command', sourcePath }, deps),
+        (err) =>
+          err instanceof AnnotationInterruptedError
+            ? AbortError.cancelled('open', 'open session interrupted', { code: 'contextbridge.open.sigint' })
+            : AbortError.runtime('open', getErrorMessage(err)),
+      ).map((submission) => {
+        io.writeStdout(formatAgentResponse(DOCUMENT_TEMPLATES, submission, content, { sourcePath }));
+      });
+    });
 }
 
 export function registerOpen(ctx: CliContext, program: Command): void {
@@ -68,6 +61,6 @@ export function registerOpen(ctx: CliContext, program: Command): void {
     )
     .argument('[path]', 'path to a file containing the content to annotate (alternative to stdin)')
     .action(async (path: string | undefined) => {
-      await runOpen(ctx, { path });
+      await handleCommandResult(ctx, runOpen(ctx, { path }));
     });
 }

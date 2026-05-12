@@ -5,8 +5,9 @@ import { getErrorMessage, hasErrorCode } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
 import { isRecord } from '@contextbridge/shared/typeGuards';
 import { type BundledSkill, bundledSkills } from '@contextbridge/skills/codex';
-import { CommanderError } from 'commander';
+import type { ResultAsync } from 'neverthrow';
 import semver from 'semver';
+import { AbortError, abortable } from '#src/commands/abort.ts';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from './detect.ts';
 import { type HarnessStatus, type ManagedEntry } from './HarnessInstaller.ts';
@@ -35,7 +36,11 @@ export class CodexInstaller extends ScopedHarnessInstaller {
   protected readonly installDescription = 'Install the PlanBridge Stop hook into Codex CLI.';
   protected readonly uninstallDescription = 'Uninstall the PlanBridge Stop hook from Codex CLI.';
 
-  async status(ctx: CliContext): Promise<HarnessStatus> {
+  status(ctx: CliContext): ResultAsync<HarnessStatus, AbortError> {
+    return abortable('codexInstaller', this.statusUnsafe(ctx));
+  }
+
+  private async statusUnsafe(ctx: CliContext): Promise<HarnessStatus> {
     const detection = detectHarness(ctx, this.descriptor);
     if (!detection.binaryOnPath) {
       return { descriptor: this.descriptor, detected: false, installed: false, managed: [] };
@@ -63,7 +68,11 @@ export class CodexInstaller extends ScopedHarnessInstaller {
     return { descriptor: this.descriptor, detected: true, installed, managed };
   }
 
-  protected async runInstall(ctx: CliContext, scope: InstallScope): Promise<void> {
+  protected runInstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError> {
+    return abortable('codexInstaller', this.runInstallUnsafe(ctx, scope));
+  }
+
+  private async runInstallUnsafe(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io } = ctx;
     await requireSupportedCodexVersion(ctx, this.descriptor.binaryName);
 
@@ -91,7 +100,11 @@ export class CodexInstaller extends ScopedHarnessInstaller {
     }
   }
 
-  protected async runUninstall(ctx: CliContext, scope: InstallScope): Promise<void> {
+  protected runUninstall(ctx: CliContext, scope: InstallScope): ResultAsync<void, AbortError> {
+    return abortable('codexInstaller', this.runUninstallUnsafe(ctx, scope));
+  }
+
+  private async runUninstallUnsafe(ctx: CliContext, scope: InstallScope): Promise<void> {
     const { io } = ctx;
     const configDir = getOptionalCodexConfigDir(ctx, scope);
 
@@ -121,11 +134,9 @@ async function getCodexHookStatusAtScope(ctx: CliContext, scope: InstallScope): 
 function getCodexConfigDir(ctx: CliContext, scope: InstallScope): string {
   const configDir = getOptionalCodexConfigDir(ctx, scope);
   if (!configDir) {
-    throw new CommanderError(
-      1,
-      'contextbridge.codexInstaller.missingHome',
-      'HOME is required for user-scope Codex install',
-    );
+    throw AbortError.input('codexInstaller', 'HOME is required for user-scope Codex install', {
+      code: 'contextbridge.codexInstaller.missingHome',
+    });
   }
   return configDir;
 }
@@ -189,20 +200,16 @@ function parseHooksJson(source: string): Record<string, unknown> {
   const parsed = safeJsonParse(source).match(
     (value) => value,
     (err) => {
-      throw new CommanderError(
-        1,
-        'contextbridge.codexInstaller.invalidHooksJson',
-        `invalid Codex hooks.json: ${getErrorMessage(err)}`,
-      );
+      throw AbortError.input('codexInstaller', `invalid Codex hooks.json: ${getErrorMessage(err)}`, {
+        code: 'contextbridge.codexInstaller.invalidHooksJson',
+      });
     },
   );
 
   if (!isRecord(parsed)) {
-    throw new CommanderError(
-      1,
-      'contextbridge.codexInstaller.invalidHooksJson',
-      'Codex hooks.json must contain an object',
-    );
+    throw AbortError.input('codexInstaller', 'Codex hooks.json must contain an object', {
+      code: 'contextbridge.codexInstaller.invalidHooksJson',
+    });
   }
 
   return parsed;
@@ -233,11 +240,9 @@ function ensureHooksRoot(file: Record<string, unknown>): Record<string, unknown>
     return hooks;
   }
 
-  throw new CommanderError(
-    1,
-    'contextbridge.codexInstaller.invalidHooksJson',
-    'Codex hooks.json `hooks` field must contain an object',
-  );
+  throw AbortError.input('codexInstaller', 'Codex hooks.json `hooks` field must contain an object', {
+    code: 'contextbridge.codexInstaller.invalidHooksJson',
+  });
 }
 
 function getStopGroups(hooks: Record<string, unknown>): unknown[] {
@@ -294,11 +299,9 @@ function getOptionalHooksRoot(file: Record<string, unknown>): Record<string, unk
     return hooks;
   }
 
-  throw new CommanderError(
-    1,
-    'contextbridge.codexInstaller.invalidHooksJson',
-    'Codex hooks.json `hooks` field must contain an object',
-  );
+  throw AbortError.input('codexInstaller', 'Codex hooks.json `hooks` field must contain an object', {
+    code: 'contextbridge.codexInstaller.invalidHooksJson',
+  });
 }
 
 function isPlanBridgeHook(value: unknown): boolean {
@@ -306,23 +309,21 @@ function isPlanBridgeHook(value: unknown): boolean {
 }
 
 async function requireSupportedCodexVersion(ctx: CliContext, binaryName: string): Promise<void> {
-  const { logger } = ctx;
   const result = await runCodexCommand(ctx, binaryName, ['--version'], 'version check');
   const parsed = parseCodexVersion(result.stdout);
   if (!parsed) {
-    logger.error({ stdout: result.stdout }, 'could not determine Codex CLI version');
-    throw new CommanderError(
-      1,
-      'contextbridge.codexInstaller.unsupportedVersion',
+    throw AbortError.input(
+      'codexInstaller',
       `Could not determine Codex CLI version from \`${binaryName} --version\`. Update Codex CLI to ${MINIMUM_CODEX_VERSION} or newer, then re-run install.`,
+      { code: 'contextbridge.codexInstaller.unsupportedVersion' },
     );
   }
 
   if (!semver.gte(parsed, MINIMUM_CODEX_VERSION)) {
-    throw new CommanderError(
-      1,
-      'contextbridge.codexInstaller.unsupportedVersion',
+    throw AbortError.input(
+      'codexInstaller',
       `Codex CLI ${parsed} is installed, but PlanBridge requires Codex CLI ${MINIMUM_CODEX_VERSION} or newer. Update Codex CLI, then re-run install.`,
+      { code: 'contextbridge.codexInstaller.unsupportedVersion' },
     );
   }
 }
@@ -347,8 +348,10 @@ async function runCodexCommand(
 
   if (result.exitCode !== 0) {
     const detail = result.stderr.trim() || `${binaryName} ${label} exited ${result.exitCode}`;
-    logger.error(detail);
-    throw new CommanderError(result.exitCode, 'contextbridge.codexInstaller.shellFailure', detail);
+    throw AbortError.runtime('codexInstaller', detail, {
+      code: 'contextbridge.codexInstaller.shellFailure',
+      exitCode: result.exitCode,
+    });
   }
 
   return result;

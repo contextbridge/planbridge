@@ -1,3 +1,5 @@
+import { type ResultAsync, errAsync, okAsync } from 'neverthrow';
+import { AbortError } from '#src/commands/abort.ts';
 import type { ConfirmOptions, Prompter, SelectOptions, SelectValue } from '#src/prompter.ts';
 
 export class FakePrompter implements Prompter {
@@ -14,21 +16,25 @@ export class FakePrompter implements Prompter {
     this.selectAnswers.push(...answers);
   }
 
-  confirm(options: ConfirmOptions): Promise<boolean> {
+  confirm(options: ConfirmOptions): ResultAsync<boolean, AbortError> {
     this.calls.push(options);
     const next = this.confirmAnswers.shift();
     if (next === undefined) {
-      return Promise.reject(new Error(`FakePrompter: no scripted confirm answer for "${options.message}"`));
+      return errAsync(
+        AbortError.runtime('prompter', `FakePrompter: no scripted confirm answer for "${options.message}"`),
+      );
     }
-    return Promise.resolve(next);
+    return okAsync(next);
   }
 
-  select<T extends SelectValue>(options: SelectOptions<T>): Promise<T> {
+  select<T extends SelectValue>(options: SelectOptions<T>): ResultAsync<T, AbortError> {
     this.selectCalls.push(options);
     const next = this.selectAnswers.shift();
     if (next === undefined) {
-      return Promise.reject(new Error(`FakePrompter: no scripted select answer for "${options.message}"`));
+      return errAsync(
+        AbortError.runtime('prompter', `FakePrompter: no scripted select answer for "${options.message}"`),
+      );
     }
-    return Promise.resolve(next as T);
+    return okAsync(next as T);
   }
 }

@@ -1,5 +1,7 @@
 import type { InstallableHarness } from '@contextbridge/harness';
-import { type Command, CommanderError } from 'commander';
+import type { Command } from 'commander';
+import { type Result, type ResultAsync, err, ok } from 'neverthrow';
+import { AbortError } from '#src/commands/abort.ts';
 import type { CliContext } from '#src/context.ts';
 
 export interface HarnessStatus {
@@ -22,20 +24,20 @@ export interface InstallActionOptions {
 
 export abstract class HarnessInstaller {
   abstract readonly descriptor: InstallableHarness;
-  abstract status(ctx: CliContext): Promise<HarnessStatus>;
-  abstract install(ctx: CliContext, options: InstallActionOptions): Promise<void>;
-  abstract uninstall(ctx: CliContext, options: InstallActionOptions): Promise<void>;
+  abstract status(ctx: CliContext): ResultAsync<HarnessStatus, AbortError>;
+  abstract install(ctx: CliContext, options: InstallActionOptions): ResultAsync<void, AbortError>;
+  abstract uninstall(ctx: CliContext, options: InstallActionOptions): ResultAsync<void, AbortError>;
   abstract registerInstall(ctx: CliContext, parent: Command): void;
   abstract registerUninstall(ctx: CliContext, parent: Command): void;
 
-  protected requireBinary(ctx: CliContext, code: string): void {
+  protected requireBinary(ctx: CliContext, code: string): Result<void, AbortError> {
     const { commandRunner } = ctx;
     const { binaryName } = this.descriptor;
 
-    if (commandRunner.which(binaryName)) return;
+    if (commandRunner.which(binaryName)) return ok(undefined);
 
     const message = this.binaryNotFoundMessage();
-    throw new CommanderError(1, code, message);
+    return err(AbortError.input(this.descriptor.id, message, { code }));
   }
 
   private binaryNotFoundMessage(): string {

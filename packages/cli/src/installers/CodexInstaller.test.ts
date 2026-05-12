@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { getHarness } from '@contextbridge/harness';
 import { bundledSkills } from '@contextbridge/skills/codex';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
+import { AbortError } from '#src/commands/abort.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createStubContext, expectErr, expectOk, expectOkValue } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
 
 const CODEX_BINARY = getHarness('codex').binaryName;
@@ -28,7 +28,7 @@ describe('CodexInstaller', () => {
     it('installs user-scope hook configuration and enables the feature flag', async () => {
       const { installer, context, io } = createCodexInstallerContext(tmp);
 
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
       const hooks = readHooksJson(join(tmp, '.codex', 'hooks.json'));
       expect(hooks.hooks.Stop[0]?.hooks[0]).toMatchObject({
@@ -49,7 +49,7 @@ describe('CodexInstaller', () => {
       const project = join(tmp, 'project');
       const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
 
-      await installer.install(context, { yes: true, scope: 'project' });
+      await expectOk(installer.install(context, { yes: true, scope: 'project' }));
 
       const hooks = readHooksJson(join(project, '.codex', 'hooks.json'));
       expect(hooks.hooks.Stop[0]?.hooks[0]).toMatchObject({ command: 'contextbridge hook codex' });
@@ -67,19 +67,20 @@ describe('CodexInstaller', () => {
       });
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      await installer.install(context, { yes: true });
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
+      await expectOk(installer.install(context, { yes: true }));
 
       const hooks = readHooksJson(join(configDir, 'hooks.json'));
       const commands = hooks.hooks.Stop.flatMap((group) => group.hooks.map((hook) => hook.command));
       expect(commands).toEqual(['echo other', 'contextbridge hook codex']);
     });
 
-    it('aborts before writing config when codex is not on PATH', () => {
+    it('aborts before writing config when codex is not on PATH', async () => {
       const { installer, context, commandRunner } = createCodexInstallerContext(tmp);
       commandRunner.setWhich(CODEX_BINARY, null);
 
-      expect(installer.install(context, { yes: true })).rejects.toThrow('Install Codex CLI first');
+      const err = await expectErr(installer.install(context, { yes: true }));
+      expect(err.message).toContain('Install Codex CLI first');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
     });
 
@@ -90,7 +91,7 @@ describe('CodexInstaller', () => {
       writeFileSync(configPath, '[features\nbroken');
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
       expect(readHooksJson(join(configDir, 'hooks.json')).hooks.Stop[0]?.hooks[0]).toMatchObject({
         command: 'contextbridge hook codex',
@@ -98,7 +99,7 @@ describe('CodexInstaller', () => {
       expect(readFileSync(configPath, 'utf8')).toBe('[features\nbroken');
     });
 
-    it('does not run feature commands when hooks.json has an invalid hooks root', () => {
+    it('does not run feature commands when hooks.json has an invalid hooks root', async () => {
       const configDir = join(tmp, '.codex');
       const configPath = join(configDir, 'config.toml');
       const hooksPath = join(configDir, 'hooks.json');
@@ -107,52 +108,45 @@ describe('CodexInstaller', () => {
       writeHooksJson(hooksPath, { hooks: [] });
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      expect(installer.install(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
+      const err = await expectErr(installer.install(context, { yes: true }));
+      expect(err).toBeInstanceOf(AbortError);
       expect(readFileSync(configPath, 'utf8')).toBe('[features]\nunified_exec = true\n');
       expect(readFileSync(hooksPath, 'utf8')).toBe('{"hooks":[]}');
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
     });
 
-    it('fails before writing files when Codex is too old', () => {
+    it('fails before writing files when Codex is too old', async () => {
       const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
 
-      const installPromise = installer.install(context, { yes: true });
-      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
-      expect(installPromise).rejects.toThrow('requires Codex CLI 0.129.0 or newer');
+      const err = await expectErr(installer.install(context, { yes: true }));
+      expect(err.message).toContain('requires Codex CLI 0.129.0 or newer');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(0);
     });
 
-    it('fails before writing files when Codex version output is unparseable', () => {
-      const { installer, context, logs } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
+    it('fails before writing files when Codex version output is unparseable', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'weird\n' });
 
-      const installPromise = installer.install(context, { yes: true });
-      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
-      expect(installPromise).rejects.toThrow('Could not determine Codex CLI version');
+      const err = await expectErr(installer.install(context, { yes: true }));
+      expect(err.message).toContain('Could not determine Codex CLI version');
       expect(existsSync(join(tmp, '.codex'))).toBe(false);
-      expect(
-        readErrorLogs(logs).some(
-          (record) => record.msg === 'could not determine Codex CLI version' && record['stdout'] === 'weird\n',
-        ),
-      ).toBe(true);
     });
 
-    it('fails when Codex feature commands fail', () => {
+    it('fails when Codex feature commands fail', async () => {
       const { installer, context } = createCodexInstallerContext(
         tmp,
         {},
         { enableHooksResult: { exitCode: 2, stderr: 'nope' } },
       );
 
-      const installPromise = installer.install(context, { yes: true });
-      expect(installPromise).rejects.toBeInstanceOf(CommanderError);
-      expect(installPromise).rejects.toThrow(/^nope$/);
+      const err = await expectErr(installer.install(context, { yes: true }));
+      expect(err.message).toBe('nope');
     });
 
     it('writes the skill to ~/.agents/skills/planbridge-open/SKILL.md on user-scope install', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
       const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
       expect(existsSync(skillPath)).toBe(true);
@@ -163,7 +157,7 @@ describe('CodexInstaller', () => {
       const project = join(tmp, 'project');
       const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
 
-      await installer.install(context, { yes: true, scope: 'project' });
+      await expectOk(installer.install(context, { yes: true, scope: 'project' }));
 
       const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
       expect(existsSync(skillPath)).toBe(true);
@@ -173,8 +167,8 @@ describe('CodexInstaller', () => {
     it('skill install is idempotent', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      await installer.install(context, { yes: true });
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
+      await expectOk(installer.install(context, { yes: true }));
 
       const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
       expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
@@ -200,7 +194,7 @@ describe('CodexInstaller', () => {
       });
       const { installer, context, io } = createCodexInstallerContext(tmp);
 
-      await installer.uninstall(context, { yes: true });
+      await expectOk(installer.uninstall(context, { yes: true }));
 
       const hooks = readHooksJson(join(configDir, 'hooks.json'));
       expect(hooks.hooks.Stop).toHaveLength(1);
@@ -208,14 +202,15 @@ describe('CodexInstaller', () => {
       expect(io.stderr.text()).toContain('PlanBridge hook removed from Codex CLI (scope: user)');
     });
 
-    it('rejects an invalid hooks root without rewriting hooks.json', () => {
+    it('rejects an invalid hooks root without rewriting hooks.json', async () => {
       const configDir = join(tmp, '.codex');
       const hooksPath = join(configDir, 'hooks.json');
       mkdirSync(configDir, { recursive: true });
       writeHooksJson(hooksPath, { hooks: [] });
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      expect(installer.uninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
+      const err = await expectErr(installer.uninstall(context, { yes: true }));
+      expect(err).toBeInstanceOf(AbortError);
       expect(readFileSync(hooksPath, 'utf8')).toBe('{"hooks":[]}');
     });
 
@@ -224,9 +219,9 @@ describe('CodexInstaller', () => {
       await mkdir(join(skillsDir, 'some-other-tool'), { recursive: true });
       await writeFile(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'other tool skill');
       const { installer, context } = createCodexInstallerContext(tmp);
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
-      await installer.uninstall(context, { yes: true });
+      await expectOk(installer.uninstall(context, { yes: true }));
 
       expect(existsSync(join(skillsDir, 'planbridge-open'))).toBe(false);
       expect(readFileSync(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'utf8')).toBe('other tool skill');
@@ -235,9 +230,9 @@ describe('CodexInstaller', () => {
     it('project-scope uninstall does not remove the skill', async () => {
       const project = join(tmp, 'project');
       const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
-      await installer.install(context, { yes: true, scope: 'project' });
+      await expectOk(installer.install(context, { yes: true, scope: 'project' }));
 
-      await installer.uninstall(context, { yes: true, scope: 'project' });
+      await expectOk(installer.uninstall(context, { yes: true, scope: 'project' }));
 
       const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
       expect(existsSync(skillPath)).toBe(true);
@@ -246,7 +241,7 @@ describe('CodexInstaller', () => {
     it('user-scope uninstall is idempotent when skill is already gone', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      await installer.uninstall(context, { yes: true });
+      await expectOk(installer.uninstall(context, { yes: true }));
     });
   });
 
@@ -255,7 +250,7 @@ describe('CodexInstaller', () => {
       const { installer, context, commandRunner } = createCodexInstallerContext(tmp);
       commandRunner.setWhich(CODEX_BINARY, null);
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
 
       expect(status).toMatchObject({
         descriptor: { id: 'codex' },
@@ -267,9 +262,9 @@ describe('CodexInstaller', () => {
 
     it('reports an installed hook and skill when both are present', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
       expect(status).toMatchObject({
         descriptor: { id: 'codex' },
         detected: true,
@@ -287,7 +282,7 @@ describe('CodexInstaller', () => {
       writePlanBridgeHooksJson(join(configDir, 'hooks.json'));
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
 
       expect(status.detected).toBe(true);
       expect(status.installed).toBe(true);
@@ -299,42 +294,45 @@ describe('CodexInstaller', () => {
       mkdirSync(configDir, { recursive: true });
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
 
       expect(status.detected).toBe(true);
       expect(status.installed).toBe(false);
       expect(status.managed).toEqual([]);
     });
 
-    it('bubbles invalid hooks.json as a CommanderError', () => {
+    it('bubbles invalid hooks.json as a typed error', async () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'hooks.json'), '{ bad json');
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
+      const err = await expectErr(installer.status(context));
+      expect(err).toBeInstanceOf(AbortError);
     });
 
-    it('bubbles invalid hooks.json shape as a CommanderError', () => {
+    it('bubbles invalid hooks.json shape as a typed error', async () => {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeHooksJson(join(configDir, 'hooks.json'), { hooks: [] });
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
+      const err = await expectErr(installer.status(context));
+      expect(err).toBeInstanceOf(AbortError);
     });
 
-    it('reports status unavailable when Codex is too old', () => {
+    it('reports status unavailable when Codex is too old', async () => {
       const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
 
-      expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
+      const err = await expectErr(installer.status(context));
+      expect(err).toBeInstanceOf(AbortError);
     });
 
     it('reports the skill as a ManagedEntry when installed', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
-      await installer.install(context, { yes: true });
+      await expectOk(installer.install(context, { yes: true }));
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
 
       expect(status.managed).toContainEqual({ kind: 'skill', identifier: 'planbridge-open', scope: 'user' });
       expect(status.installed).toBe(true);
@@ -343,7 +341,7 @@ describe('CodexInstaller', () => {
     it('does not report the skill when not installed', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
 
-      const status = await installer.status(context);
+      const status = await expectOkValue(installer.status(context));
 
       expect(status.managed.some((m) => m.kind === 'skill')).toBe(false);
     });

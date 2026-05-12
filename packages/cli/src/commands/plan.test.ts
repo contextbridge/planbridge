@@ -5,13 +5,13 @@ import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchem
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { CommanderError } from 'commander';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { environment } from '#src/testFactories.ts';
 import {
   createAnnotationDependencies,
   createStubContext,
+  expectErr,
   readErrorLogs,
   readLogs,
   readWarnLogs,
@@ -72,44 +72,48 @@ describe('plan handler', () => {
     expect(deps.payloads[0]?.content).toBe('from positional path');
   });
 
-  it('errors cleanly when the file does not exist', () => {
+  it('errors cleanly when the file does not exist', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.isTTY = true;
 
-    expect(runPlan(context, { path: join(tmp, 'missing.md') })).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runPlan(context, { path: join(tmp, 'missing.md') }));
+    expect(err.message).toContain('failed to read plan from file');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('failed to read plan from file'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
-  it('errors when neither a path nor piped stdin is supplied', () => {
+  it('errors when neither a path nor piped stdin is supplied', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.isTTY = true;
 
-    expect(runPlan(context, {})).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runPlan(context, {}));
+    expect(err.message).toContain('provide plan content via stdin');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('provide plan content via stdin'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
-  it('errors when the plan content is empty / whitespace-only', () => {
+  it('errors when the plan content is empty / whitespace-only', async () => {
     const { context, io, logs } = createStubContext();
     io.stdin.write('   \n\t  \n');
     io.stdin.end();
 
-    expect(runPlan(context, {})).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runPlan(context, {}));
+    expect(err.message).toContain('plan content is empty');
     expect(io.stdout.text()).toBe('');
-    expect(readWarnLogs(logs).some((r) => r.msg.includes('plan content is empty'))).toBe(true);
+    expect(readWarnLogs(logs)).toEqual([]);
   });
 
-  it('closes the server and surfaces a runtime error when the browser open fails', () => {
+  it('closes the server and surfaces a runtime error when the browser open fails', async () => {
     const { context, io, logs } = createStubContext({ openUrl: () => Promise.reject(new Error('open failed')) });
     const deps = createAnnotationDependencies();
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
-    expect(runPlan(context, {}, deps)).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(runPlan(context, {}, deps));
+    expect(err.message).toContain('open failed');
     expect(io.stdout.text()).toBe('');
     expect(deps.closed).toBe(true);
-    expect(readErrorLogs(logs).some((r) => r.msg.includes('open failed'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
   });
 
   it('closes the server and exits cleanly (without error-level logs) when SIGINT is received', async () => {
@@ -122,11 +126,11 @@ describe('plan handler', () => {
     await deps.sigintHandlerRegistered;
     deps.triggerSigint();
 
-    expect(reviewPromise).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(reviewPromise);
+    expect(err.kind).toBe('cancelled');
     expect(io.stdout.text()).toBe('');
     expect(deps.closed).toBe(true);
-    // Interrupt path logs at info level so pinoIntegration doesn't forward it to Sentry.
-    expect(readLogs(logs).some((r) => r.msg === 'plan review interrupted')).toBe(true);
+    expect(readLogs(logs).filter((record) => record.level >= 40)).toEqual([]);
     expect(readErrorLogs(logs)).toEqual([]);
   });
 
@@ -181,7 +185,8 @@ describe('plan handler', () => {
     await deps.sigintHandlerRegistered;
     deps.triggerSigint();
 
-    expect(reviewPromise).rejects.toBeInstanceOf(CommanderError);
+    const err = await expectErr(reviewPromise);
+    expect(err.kind).toBe('cancelled');
     expect(telemetry.exceptions).toEqual([]);
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });

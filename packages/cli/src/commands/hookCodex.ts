@@ -1,11 +1,12 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage, toError } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
-import { type Command, CommanderError } from 'commander';
-import { ResultAsync, err, ok } from 'neverthrow';
+import type { Command } from 'commander';
+import { ResultAsync, err, ok, okAsync } from 'neverthrow';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type CodexStopResponse, codexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
+import { AbortError, handleCommandResult } from './abort.ts';
 import {
   type CodexStopHookPayload,
   CodexStopHookPayloadSchema,
@@ -25,13 +26,14 @@ const TRANSCRIPT_TAIL_READ_BYTES = 1024 * 1024;
 // invalid per the spec. When we have no continuation to deliver, write `{}` — a valid JSON object
 // with none of the recognized action keys (`decision`, `continue`, `reason`), which leaves Codex's
 // default Stop behavior intact. See https://developers.openai.com/codex/hooks#stop.
-export async function runHookCodex(ctx: CliContext, deps: HookCodexDependencies = {}): Promise<void> {
+export function runHookCodex(ctx: CliContext, deps: HookCodexDependencies = {}): ResultAsync<void, AbortError> {
   const { io } = ctx;
 
-  const payload = await readAndValidatePayload(ctx);
-  const response = await handleStop(ctx, payload, deps);
-
-  io.writeStdout(`${JSON.stringify(response ?? {})}\n`);
+  return readAndValidatePayload(ctx)
+    .andThen((payload) => handleStop(ctx, payload, deps))
+    .map((response) => {
+      io.writeStdout(`${JSON.stringify(response ?? {})}\n`);
+    });
 }
 
 export function registerHookCodex(ctx: CliContext, hookCommand: Command): void {
@@ -41,7 +43,7 @@ export function registerHookCodex(ctx: CliContext, hookCommand: Command): void {
       'Adapter for Codex CLI Stop hook — reads event JSON on stdin, reviews the latest proposed plan, and emits a Stop continuation on stdout',
     )
     .action(async () => {
-      await runHookCodex(ctx);
+      await handleCommandResult(ctx, runHookCodex(ctx));
     });
 }
 
@@ -63,31 +65,28 @@ export function extractLatestPlanFromTranscript(transcript: string, turnId: stri
   return null;
 }
 
-async function readAndValidatePayload(ctx: CliContext): Promise<CodexStopHookPayload> {
+function readAndValidatePayload(ctx: CliContext): ResultAsync<CodexStopHookPayload, AbortError> {
   const { io } = ctx;
-  const raw = await io.readStdin();
-
-  return safeJsonParse(raw)
-    .mapErr((e) => `failed to parse hook event JSON: ${getErrorMessage(e)}`)
-    .andThen((value) => {
-      const parsed = CodexStopHookPayloadSchema.safeParse(value);
-      if (parsed.success) return ok(parsed.data);
-      const summary = parsed.error.issues
-        .map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`)
-        .join('; ');
-      return err(`invalid hook event payload: ${summary}`);
-    })
-    .match(
-      (data) => data,
-      (message) => abort(ctx, 'input', message),
-    );
+  return ResultAsync.fromPromise(io.readStdin(), (e) => AbortError.runtime('hookCodex', getErrorMessage(e))).andThen(
+    (raw) =>
+      safeJsonParse(raw)
+        .mapErr((e) => AbortError.input('hookCodex', `failed to parse hook event JSON: ${getErrorMessage(e)}`))
+        .andThen((value) => {
+          const parsed = CodexStopHookPayloadSchema.safeParse(value);
+          if (parsed.success) return ok(parsed.data);
+          const summary = parsed.error.issues
+            .map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`)
+            .join('; ');
+          return err(AbortError.input('hookCodex', `invalid hook event payload: ${summary}`));
+        }),
+  );
 }
 
-async function handleStop(
+function handleStop(
   ctx: CliContext,
   payload: CodexStopHookPayload,
   deps: HookCodexDependencies,
-): Promise<CodexStopResponse | null> {
+): ResultAsync<CodexStopResponse | null, AbortError> {
   const { logger } = ctx;
   const { runReview = runAnnotation } = deps;
 
@@ -95,29 +94,26 @@ async function handleStop(
     logger.debug({ hook: payload.hook_event_name }, 'codex hook inspecting active Stop continuation');
   }
 
-  const planContent = await resolvePlanContent(ctx, payload, deps);
+  return resolvePlanContent(ctx, payload, deps).andThen((planContent) => {
+    if (!planContent) {
+      logger.debug({ hook: payload.hook_event_name }, 'codex hook found no proposed plan');
+      return okAsync(null);
+    }
 
-  if (!planContent) {
-    logger.debug({ hook: payload.hook_event_name }, 'codex hook found no proposed plan');
-    return null;
-  }
+    logger.info({ bytes: Buffer.byteLength(planContent, 'utf8') }, 'codex hook received');
 
-  logger.info({ bytes: Buffer.byteLength(planContent, 'utf8') }, 'codex hook received');
-
-  return ResultAsync.fromPromise(
-    runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_codex' }),
-    toError,
-  ).match(
-    (submission: AnnotationSubmission) => codexStopResponse(submission, planContent),
-    (e) => abort(ctx, 'runtime', getErrorMessage(e)),
-  );
+    return ResultAsync.fromPromise(
+      runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_codex' }),
+      (e) => AbortError.runtime('hookCodex', getErrorMessage(e)),
+    ).map((submission: AnnotationSubmission) => codexStopResponse(submission, planContent));
+  });
 }
 
-async function resolvePlanContent(
+function resolvePlanContent(
   ctx: CliContext,
   payload: CodexStopHookPayload,
   deps: HookCodexDependencies,
-): Promise<string | null> {
+): ResultAsync<string | null, AbortError> {
   const { logger } = ctx;
   const { readTranscript = readTranscriptFile } = deps;
   const {
@@ -129,20 +125,17 @@ async function resolvePlanContent(
 
   if (!stopHookActive) {
     const assistantMessagePlan = extractPlanFromAssistantMessage(lastAssistantMessage);
-    if (assistantMessagePlan) return assistantMessagePlan;
+    if (assistantMessagePlan) return okAsync(assistantMessagePlan);
   }
 
-  if (!transcriptPath) return null;
+  if (!transcriptPath) return okAsync(null);
 
   return ResultAsync.fromPromise(readTranscript(transcriptPath), toError)
     .map((transcript) => extractLatestPlanFromTranscript(transcript, turnId))
-    .match(
-      (plan) => plan,
-      (e) => {
-        logger.error({ err: e, transcript_path: transcriptPath }, 'failed to read codex transcript');
-        return null;
-      },
-    );
+    .orElse((e) => {
+      logger.error({ err: e, transcript_path: transcriptPath }, 'failed to read codex transcript');
+      return okAsync(null);
+    });
 }
 
 function readTranscriptFile(path: string): Promise<string> {
@@ -171,10 +164,4 @@ function isPlanReviewHookPrompt(value: unknown): boolean {
   return parsed.data.payload.content.some(
     (item) => item.text.includes('<hook_prompt') && item.text.includes('# Plan review:'),
   );
-}
-
-function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {
-  const { logger } = ctx;
-  logger.error(message);
-  throw new CommanderError(1, `contextbridge.hookCodex.${kind}Error`, message);
 }

@@ -4,7 +4,9 @@ import {
   isCancel as clackIsCancel,
   select as clackSelect,
 } from '@clack/prompts';
-import { CommanderError } from 'commander';
+import { getErrorMessage } from '@contextbridge/shared/errors';
+import { type Result, ResultAsync, err, errAsync, ok, okAsync } from 'neverthrow';
+import { AbortError } from '#src/commands/abort.ts';
 import type { Io } from '#src/IoImpl.ts';
 
 export const PROMPTER_CANCELLED_CODE = 'contextbridge.prompter.cancelled';
@@ -30,53 +32,68 @@ export interface SelectOptions<T extends SelectValue> {
 }
 
 export interface Prompter {
-  confirm(options: ConfirmOptions): Promise<boolean>;
-  select<T extends SelectValue>(options: SelectOptions<T>): Promise<T>;
+  confirm(options: ConfirmOptions): ResultAsync<boolean, AbortError>;
+  select<T extends SelectValue>(options: SelectOptions<T>): ResultAsync<T, AbortError>;
 }
 
 export function createClackPrompter(io: Io): Prompter {
   return {
-    async confirm({ message, default: defaultValue = true }) {
-      assertTty(io);
-      const result = await clackConfirm({
-        message,
-        initialValue: defaultValue,
-        input: io.stdin,
-        output: io.stderr,
+    confirm({ message, default: defaultValue = true }) {
+      const tty = assertTty(io);
+      if (tty.isErr()) return errAsync(tty.error);
+      return ResultAsync.fromPromise(
+        clackConfirm({
+          message,
+          initialValue: defaultValue,
+          input: io.stdin,
+          output: io.stderr,
+        }),
+        (e) => AbortError.runtime('prompter', getErrorMessage(e)),
+      ).andThen((result) => {
+        if (clackIsCancel(result)) {
+          return errAsync(AbortError.cancelled('prompter', 'Cancelled.', { code: PROMPTER_CANCELLED_CODE }));
+        }
+        return okAsync(result);
       });
-      if (clackIsCancel(result)) {
-        throw new CommanderError(130, PROMPTER_CANCELLED_CODE, 'Cancelled.');
-      }
-      return result;
     },
-    async select<T extends SelectValue>({ message, choices, default: defaultValue }: SelectOptions<T>): Promise<T> {
-      assertTty(io);
+    select<T extends SelectValue>({
+      message,
+      choices,
+      default: defaultValue,
+    }: SelectOptions<T>): ResultAsync<T, AbortError> {
+      const tty = assertTty(io);
+      if (tty.isErr()) return errAsync(tty.error);
       const options: ClackOption<T>[] = choices.map((c) =>
         c.hint === undefined
           ? ({ value: c.value, label: c.label } as ClackOption<T>)
           : ({ value: c.value, label: c.label, hint: c.hint } as ClackOption<T>),
       );
-      const result = await clackSelect<T>({
-        message,
-        options,
-        initialValue: defaultValue,
-        input: io.stdin,
-        output: io.stderr,
+      return ResultAsync.fromPromise(
+        clackSelect<T>({
+          message,
+          options,
+          initialValue: defaultValue,
+          input: io.stdin,
+          output: io.stderr,
+        }),
+        (e) => AbortError.runtime('prompter', getErrorMessage(e)),
+      ).andThen((result) => {
+        if (clackIsCancel(result)) {
+          return errAsync(AbortError.cancelled('prompter', 'Cancelled.', { code: PROMPTER_CANCELLED_CODE }));
+        }
+        return okAsync(result);
       });
-      if (clackIsCancel(result)) {
-        throw new CommanderError(130, PROMPTER_CANCELLED_CODE, 'Cancelled.');
-      }
-      return result;
     },
   };
 }
 
-function assertTty(io: Io): void {
+function assertTty(io: Io): Result<void, AbortError> {
   if (io.stdinIsTTY !== true) {
-    throw new CommanderError(
-      1,
-      PROMPTER_NON_TTY_CODE,
-      'Cannot prompt in a non-interactive session. Pass `--yes` to skip confirmations.',
+    return err(
+      AbortError.input('prompter', 'Cannot prompt in a non-interactive session. Pass `--yes` to skip confirmations.', {
+        code: PROMPTER_NON_TTY_CODE,
+      }),
     );
   }
+  return ok(undefined);
 }

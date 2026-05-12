@@ -1,6 +1,9 @@
 import type { Command } from 'commander';
+import type { ResultAsync } from 'neverthrow';
 import type { CliContext } from '#src/context.ts';
 import { ALL_INSTALLERS } from '#src/installers/installers.ts';
+import type { AbortError } from './abort.ts';
+import { handleCommandResult } from './abort.ts';
 import { runHarnessOperation } from './harnessOperation.ts';
 
 export interface UninstallOptions {
@@ -8,9 +11,9 @@ export interface UninstallOptions {
   force?: boolean;
 }
 
-export async function runUninstall(ctx: CliContext, options: UninstallOptions = {}): Promise<void> {
+export function runUninstall(ctx: CliContext, options: UninstallOptions = {}): ResultAsync<void, AbortError> {
   const { yes = false, force = false } = options;
-  await runHarnessOperation(ctx, 'uninstall', { yes, force });
+  return runHarnessOperation(ctx, 'uninstall', { yes, force });
 }
 
 export function registerUninstall(ctx: CliContext, program: Command): void {
@@ -22,7 +25,7 @@ export function registerUninstall(ctx: CliContext, program: Command): void {
     .option('-y, --yes', 'skip confirmation prompts', false)
     .option('--force', 'run uninstall even when PlanBridge is not wired up', false)
     .action(async (opts: UninstallOptions) => {
-      await runUninstall(ctx, opts);
+      await handleCommandResult(ctx, runUninstall(ctx, opts));
     });
 
   for (const installer of ALL_INSTALLERS) {
