@@ -16,7 +16,7 @@ describe('PLAN_TEMPLATES (plan-flavored formatAgentResponse output)', () => {
     expect(output).toMatchInlineSnapshot(`
 "# Plan review: approved
 
-The human reviewed this plan and approved it with no changes. Proceed to implement the plan as written — do not re-plan, re-summarize, or ask for further confirmation.
+The user reviewed this plan and approved it with no changes. Proceed to implement the plan as written — do not re-plan, re-summarize, or ask for further confirmation.
 "
 `);
   });
@@ -96,7 +96,7 @@ The human reviewed this plan and approved it with no changes. Proceed to impleme
     expect(output).toMatchInlineSnapshot(`
 "# Plan review: changes requested
 
-The human reviewed this plan and **did not approve it**. You MUST revise the plan to address every comment below, then submit the revised plan for another review before starting any implementation work.
+The user reviewed this plan and **did not approve it**. You MUST revise the plan to address every comment below, then submit the revised plan for another review before starting any implementation work.
 
 Rules:
 
@@ -108,10 +108,10 @@ Rules:
 ## General feedback
 
 > General guidance first.
-> — human, 2026-04-20T12:33:56Z
+> — user, 2026-04-20T12:33:56Z
 
 > Another global thread.
-> — human, 2026-04-20T12:36:56Z
+> — user, 2026-04-20T12:36:56Z
 
 ## Annotation (lines 9–12)
 
@@ -125,10 +125,10 @@ The comment below applies to the following section of the plan:
 \`\`\`\`
 
 > Let's add Stage C.
-> — human, 2026-04-20T12:34:56Z
+> — user, 2026-04-20T12:34:56Z
 
 > Reply: Agreed.
-> — human, 2026-04-20T12:35:56Z
+> — user, 2026-04-20T12:35:56Z
 "
 `);
   });
