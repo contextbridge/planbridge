@@ -282,6 +282,88 @@ describe('App', () => {
     expect(link).toHaveAttribute('rel', 'noreferrer');
   });
 
+  it('lets a plain click on a link navigate without opening the annotation popover', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    await waitFor(() => {
+      expect(link).toHaveAttribute('data-target-id');
+    });
+
+    let defaultPrevented: boolean | undefined;
+    link.addEventListener(
+      'click',
+      (event) => {
+        defaultPrevented = event.defaultPrevented;
+        event.preventDefault();
+      },
+      { once: true },
+    );
+
+    await user.click(link);
+
+    expect(defaultPrevented).toBe(false);
+    expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+  });
+
+  it('opens the annotation popover when text inside a link is drag-selected', async () => {
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, text.length);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+  });
+
+  it('clicking a link that already has an annotation opens the editor instead of navigating', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, text.length);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    await screen.findByTestId(annotationPopoverTestIds.container);
+
+    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Link comment');
+    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+    });
+
+    const rect = link.getBoundingClientRect();
+    fireEvent.click(link, {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    });
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Link comment');
+  });
+
   it('sets the document title from the payload title', async () => {
     renderApp({
       initialPayload: { contentKind: 'plan', content: '# My Plan\n\nbody', title: 'My Plan' },
