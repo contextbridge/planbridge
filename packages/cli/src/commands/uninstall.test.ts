@@ -29,7 +29,7 @@ describe('runUninstall', () => {
     expect(marketplaceRemoveCalls).toHaveLength(1);
     expect(marketplaceRemoveCalls[0]?.args).toEqual(['plugin', 'marketplace', 'remove', CLAUDE_MARKETPLACE_NAME]);
     expect(prompter.calls).toEqual([]);
-    expect(io.stderr.text()).toContain('Uninstalled 1 of 1 detected harness');
+    expect(io.stderr.text()).toContain('Uninstalled 1 of 1 detected harnesses');
   });
 
   it('skips harnesses where PlanBridge is not installed and notes them in the summary', async () => {
