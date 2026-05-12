@@ -9,6 +9,7 @@ import type { CliContext } from '#src/context.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { readStreamToString } from '#src/streams.ts';
+import { abort } from './abort.ts';
 
 export interface PlanArgs {
   path?: string;
@@ -21,6 +22,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   if (!path && io.stdin.isTTY === true) {
     abort(
       ctx,
+      'plan',
       'input',
       'provide plan content via stdin (e.g. `cat plan.md | contextbridge plan`) or a file path via [path]',
     );
@@ -31,11 +33,11 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   try {
     content = path ? await Bun.file(path).text() : await readStreamToString(io.stdin);
   } catch (err) {
-    abort(ctx, 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
+    abort(ctx, 'plan', 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
   }
 
   if (content.trim().length === 0) {
-    abort(ctx, 'input', 'plan content is empty');
+    abort(ctx, 'plan', 'input', 'plan content is empty');
   }
 
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
@@ -48,7 +50,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
       logger.info('plan review interrupted');
       throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
     }
-    abort(ctx, 'runtime', getErrorMessage(err));
+    abort(ctx, 'plan', 'runtime', getErrorMessage(err));
   }
 }
 
@@ -62,16 +64,4 @@ export function registerPlan(ctx: CliContext, program: Command): void {
     .action(async (path: string | undefined) => {
       await runPlan(ctx, { path });
     });
-}
-
-function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {
-  const { logger } = ctx;
-  // 'input' is user-recoverable — logged at warn so Sentry's pinoIntegration
-  // (error/fatal only) doesn't forward it. 'runtime' is a genuine failure.
-  if (kind === 'input') {
-    logger.warn(message);
-  } else {
-    logger.error(message);
-  }
-  throw new CommanderError(1, `contextbridge.plan.${kind}Error`, message);
 }

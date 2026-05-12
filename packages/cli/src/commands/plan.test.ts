@@ -1,14 +1,20 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import type { AnnotationDependencies } from '#src/annotation/runAnnotation.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
-import { createStubContext, readErrorLogs, readLogs, readWarnLogs } from '#src/testHelpers/index.ts';
+import {
+  createAnnotationDependencies,
+  createDeferred,
+  createStubContext,
+  readErrorLogs,
+  readLogs,
+  readWarnLogs,
+} from '#src/testHelpers/index.ts';
 import { runPlan } from './plan.ts';
 
 describe('plan handler', () => {
@@ -26,7 +32,7 @@ describe('plan handler', () => {
     const openedUrls: string[] = [];
     const { context, io } = createStubContext({ openUrl: (url) => (openedUrls.push(url), Promise.resolve()) });
     const expectedSubmission = annotationSubmission.build();
-    const deps = createPlanDependencies({ submission: expectedSubmission });
+    const deps = createAnnotationDependencies({ submission: expectedSubmission });
     io.stdin.write('# My plan\n\nStep 1.\n');
     io.stdin.end();
 
@@ -42,7 +48,7 @@ describe('plan handler', () => {
     writeFileSync(planPath, '# From positional path\n');
 
     const { context, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.isTTY = true;
 
     await runPlan(context, { path: planPath }, deps);
@@ -56,7 +62,7 @@ describe('plan handler', () => {
     writeFileSync(planPath, 'from positional path');
 
     const { context, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('from stdin');
     io.stdin.end();
 
@@ -95,7 +101,7 @@ describe('plan handler', () => {
 
   it('closes the server and surfaces a runtime error when the browser open fails', () => {
     const { context, io, logs } = createStubContext({ openUrl: () => Promise.reject(new Error('open failed')) });
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -107,7 +113,7 @@ describe('plan handler', () => {
 
   it('closes the server and exits cleanly (without error-level logs) when SIGINT is received', async () => {
     const { context, io, logs } = createStubContext();
-    const deps = createPlanDependencies({ result: createDeferred<AnnotationSubmission>().promise });
+    const deps = createAnnotationDependencies({ result: createDeferred<AnnotationSubmission>().promise });
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -125,7 +131,7 @@ describe('plan handler', () => {
 
   it('captures plan_review_started and plan_review_submitted analytics events', async () => {
     const { context, analytics, io } = createStubContext();
-    const deps = createPlanDependencies();
+    const deps = createAnnotationDependencies();
     io.stdin.write('# My plan\n\nStep 1.\n');
     io.stdin.end();
 
@@ -144,7 +150,7 @@ describe('plan handler', () => {
 
   it('does not report SIGINT to telemetry', async () => {
     const { context, analytics, telemetry, io } = createStubContext();
-    const deps = createPlanDependencies({ result: createDeferred<AnnotationSubmission>().promise });
+    const deps = createAnnotationDependencies({ result: createDeferred<AnnotationSubmission>().promise });
     io.stdin.write('# Plan\n');
     io.stdin.end();
 
@@ -157,73 +163,3 @@ describe('plan handler', () => {
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
 });
-
-function createPlanDependencies(
-  options: {
-    submission?: AnnotationSubmission;
-    result?: Promise<AnnotationSubmission>;
-  } = {},
-): AnnotationDependencies & {
-  payloads: AnnotationPayload[];
-  closed: boolean;
-  sigintHandlerRegistered: Promise<void>;
-  submission: AnnotationSubmission;
-  triggerSigint(): void;
-} {
-  const payloads: AnnotationPayload[] = [];
-  const submission = options.submission ?? annotationSubmission.build();
-  const sigintRegistration = createDeferred<void>();
-  let closed = false;
-  let sigintHandler: (() => void) | null = null;
-
-  return {
-    payloads,
-    sigintHandlerRegistered: sigintRegistration.promise,
-    get closed() {
-      return closed;
-    },
-    submission,
-    triggerSigint() {
-      if (!sigintHandler) {
-        throw new Error('SIGINT handler was not registered');
-      }
-
-      sigintHandler();
-    },
-    loadHtml: () => Promise.resolve('<html><body>annotation</body></html>'),
-    startReviewServer: (_ctx, { payload }) => {
-      payloads.push(payload);
-      return {
-        port: 4312,
-        url: 'http://localhost:4312',
-        result: options.result ?? Promise.resolve(submission),
-        close: () => {
-          closed = true;
-          return Promise.resolve();
-        },
-      };
-    },
-    registerSigintHandler: (handler) => {
-      sigintHandler = handler;
-      sigintRegistration.resolve();
-      return () => {
-        sigintHandler = null;
-      };
-    },
-  };
-}
-
-function createDeferred<T>(): {
-  promise: Promise<T>;
-  resolve: (value: T | PromiseLike<T>) => void;
-  reject: (reason?: unknown) => void;
-} {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-
-  return { promise, resolve, reject };
-}

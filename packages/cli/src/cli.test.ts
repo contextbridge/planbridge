@@ -22,7 +22,9 @@ describe('runCli', () => {
 
   it.each<{ argv: string[]; contains: string }>([
     { argv: ['--help'], contains: 'plan' },
+    { argv: ['--help'], contains: 'open' },
     { argv: ['plan', '--help'], contains: '[path]' },
+    { argv: ['open', '--help'], contains: '[path]' },
   ])('$argv renders help text containing "$contains"', async ({ argv, contains }) => {
     const { context, io } = createStubContext();
     const exitCode = await runCli(context, argv);
@@ -36,6 +38,16 @@ describe('runCli', () => {
   it('routes argv into the plan subcommand', async () => {
     const { context, io } = createStubContext();
     const exitCode = await runCli(context, ['plan', '--bogus']);
+    expect(exitCode).not.toBe(0);
+    expect(io.stderr.text()).toContain('--bogus');
+  });
+
+  // Open-handler behavior lives in open.test.ts. Here we only verify argv
+  // routes into the open subcommand — an unknown flag on `open` surfaces as
+  // a CommanderError with a non-zero exit.
+  it('routes argv into the open subcommand', async () => {
+    const { context, io } = createStubContext();
+    const exitCode = await runCli(context, ['open', '--bogus']);
     expect(exitCode).not.toBe(0);
     expect(io.stderr.text()).toContain('--bogus');
   });

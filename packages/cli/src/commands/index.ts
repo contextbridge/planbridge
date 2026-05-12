@@ -4,6 +4,7 @@ import type { CliContext } from '#src/context.ts';
 import { registerHookClaude } from './hookClaude.ts';
 import { registerHookCodex } from './hookCodex.ts';
 import { registerInstall } from './install.ts';
+import { registerOpen } from './open.ts';
 import { registerPlan } from './plan.ts';
 import { registerUninstall } from './uninstall.ts';
 import { registerUpdate } from './update.ts';
@@ -22,6 +23,7 @@ export function createProgram(ctx: CliContext): Command {
     .addHelpText('after', `\nDocs: ${QUICKSTART_URL}`);
 
   registerPlan(ctx, program);
+  registerOpen(ctx, program);
   registerUpdate(ctx, program);
 
   const hookCommand = program
