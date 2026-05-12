@@ -36,10 +36,13 @@ describe('open handler', () => {
 
     await runOpen(context, {}, deps);
 
-    expect(io.stdout.text()).toBe(formatAgentResponse(DOCUMENT_TEMPLATES, submission, deps.payloads[0]!.content));
-    expect(deps.payloads[0]?.contentKind).toBe('document');
-    expect(deps.payloads[0]?.metadata?.entrypoint).toBe('open_command');
-    expect(deps.payloads[0]?.metadata?.sourcePath).toBeUndefined();
+    const [payload] = deps.payloads;
+    expect(payload).toMatchObject({
+      contentKind: 'document',
+      metadata: { entrypoint: 'open_command' },
+    });
+    expect(payload?.metadata?.sourcePath).toBeUndefined();
+    expect(io.stdout.text()).toBe(formatAgentResponse(DOCUMENT_TEMPLATES, submission, payload!.content));
   });
 
   it('reads content from a positional path and includes resolved sourcePath in metadata + stdout', async () => {
@@ -53,9 +56,10 @@ describe('open handler', () => {
 
     await runOpen(context, { path: file }, deps);
 
-    expect(deps.payloads[0]?.metadata?.sourcePath).toBe(resolve(file));
+    const [payload] = deps.payloads;
+    expect(payload).toMatchObject({ metadata: { sourcePath: resolve(file) } });
     expect(io.stdout.text()).toBe(
-      formatAgentResponse(DOCUMENT_TEMPLATES, submission, deps.payloads[0]!.content, { sourcePath: resolve(file) }),
+      formatAgentResponse(DOCUMENT_TEMPLATES, submission, payload!.content, { sourcePath: resolve(file) }),
     );
   });
 
@@ -68,7 +72,8 @@ describe('open handler', () => {
     io.stdin.isTTY = true;
 
     await runOpen(context, { path: file }, deps);
-    expect(deps.payloads[0]?.metadata?.sourcePath).toBe(resolve(file));
+    const [payload] = deps.payloads;
+    expect(payload).toMatchObject({ metadata: { sourcePath: resolve(file) } });
   });
 
   it('errors cleanly when neither a path nor piped stdin is supplied', () => {

@@ -5,7 +5,12 @@ import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { DOCUMENT_TEMPLATES } from './templates.ts';
 
 describe('formatAgentResponse with DOCUMENT_TEMPLATES', () => {
-  const content = '# Heading\n\nSome paragraph.\n\nAnother paragraph.\n';
+  const content = `# Heading
+
+Some paragraph.
+
+Another paragraph.
+`;
 
   it('renders approved with no annotations and no sourcePath', () => {
     const submission: AnnotationSubmission = { status: 'approved', threads: [] };
