@@ -16,6 +16,7 @@ export function createStoryAppContext(overrides?: Partial<AnnotationAppContextVa
     }),
     fetchPayload: () => Promise.resolve({ content: '', contentKind: 'plan' }),
     fetchUpdateNotice: () => Promise.resolve(null),
+    triggerUpdate: () => Promise.resolve({ status: 'success' }),
     submitAnnotation: () => Promise.resolve(),
     autoCloseDelaySeconds: 3,
     ...overrides,

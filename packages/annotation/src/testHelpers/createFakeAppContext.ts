@@ -6,6 +6,7 @@ import {
 } from '@contextbridge/context/testHelpers';
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import type { UpdateOutcome } from '@contextbridge/shared/updateOutcomeSchema';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 import type { AnnotationAppContext } from '../useAppContext.ts';
@@ -23,6 +24,7 @@ export interface FakeAppContextResult {
   submitAnnotation: Mock<(submission: AnnotationSubmission) => Promise<void>>;
   fetchPayload: Mock<() => Promise<AnnotationPayload>>;
   fetchUpdateNotice: Mock<() => Promise<UpdateNotice | null>>;
+  triggerUpdate: Mock<() => Promise<UpdateOutcome>>;
   analytics: FakeAnalytics;
   telemetry: FakeFrontendTelemetry;
 }
@@ -34,6 +36,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     .fn<() => Promise<AnnotationPayload>>()
     .mockResolvedValue({ content: '', contentKind: 'plan' });
   const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(null);
+  const triggerUpdate = vi.fn<() => Promise<UpdateOutcome>>().mockResolvedValue({ status: 'success' });
   const context: AnnotationAppContext = {
     ...fakeFrontendContext({
       scheduleTimeout: timers.scheduleTimeout,
@@ -41,6 +44,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     }),
     fetchPayload,
     fetchUpdateNotice,
+    triggerUpdate,
     submitAnnotation,
     autoCloseDelaySeconds: 3,
     ...overrides,
@@ -51,6 +55,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     submitAnnotation,
     fetchPayload,
     fetchUpdateNotice,
+    triggerUpdate,
     analytics: context.analytics as FakeAnalytics,
     telemetry: context.telemetry as FakeFrontendTelemetry,
   };

@@ -40,7 +40,7 @@ export interface AppProps {
 }
 
 export function App({ initialPayload, initialThreads, initialGlobalComment }: AppProps = {}) {
-  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo } = useAnnotationAppContext();
+  const { fetchPayload, fetchUpdateNotice, triggerUpdate, analytics, buildInfo } = useAnnotationAppContext();
   const [payload, setPayload] = useState<AnnotationPayload | null>(initialPayload ?? null);
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(null);
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false);
@@ -178,7 +178,11 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
           </div>
 
           {updateNotice && !updateNoticeDismissed ? (
-            <UpdateNoticeCard notice={updateNotice} onDismiss={() => setUpdateNoticeDismissed(true)} />
+            <UpdateNoticeCard
+              notice={updateNotice}
+              onDismiss={() => setUpdateNoticeDismissed(true)}
+              onUpdate={triggerUpdate}
+            />
           ) : null}
         </main>
       )}

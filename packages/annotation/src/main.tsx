@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
+import { triggerUpdate } from './triggerUpdate.ts';
 import type { AnnotationAppContext as AnnotationAppContextValue } from './useAppContext.ts';
 import { AnnotationAppContext } from './useAppContext.ts';
 
@@ -32,6 +33,7 @@ async function bootstrap(target: HTMLElement): Promise<void> {
     ...base,
     fetchPayload,
     fetchUpdateNotice: () => fetchUpdateNotice(base.fetcher),
+    triggerUpdate: () => triggerUpdate(base.fetcher),
     submitAnnotation,
     autoCloseDelaySeconds: 3,
   };

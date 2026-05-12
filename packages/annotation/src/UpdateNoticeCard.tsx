@@ -1,31 +1,59 @@
 import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import type { UpdateOutcome } from '@contextbridge/shared/updateOutcomeSchema';
 import { Alert, AlertDescription, AlertTitle } from '@contextbridge/ui/components/ui/alert';
 import { Button } from '@contextbridge/ui/components/ui/button';
-import { Sparkles, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { Loader2, Sparkles, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAnnotationAppContext } from './useAppContext.ts';
 
 const UPDATE_COMMAND = 'contextbridge update';
 
 export const updateNoticeCardTestIds = {
   container: 'update-notice-card',
-  copyButton: 'update-notice-card-copy',
+  updateButton: 'update-notice-card-update',
+  updatingIndicator: 'update-notice-card-updating',
+  copyFallbackButton: 'update-notice-card-copy-fallback',
+  failureMessage: 'update-notice-card-failure-message',
   dismissButton: 'update-notice-card-dismiss',
   changelogLink: 'update-notice-card-changelog',
 };
 
+type ReportedOutcome = 'success' | 'failed_recoverable' | 'failed_unrecoverable';
+
+type CardState =
+  | { kind: 'idle' }
+  | { kind: 'updating' }
+  | { kind: 'failed'; message: string; recoverable: boolean };
+
 export interface UpdateNoticeCardProps {
   notice: UpdateNotice;
   onDismiss: () => void;
+  onUpdate: () => Promise<UpdateOutcome>;
 }
 
-export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
+export function UpdateNoticeCard({ notice, onDismiss, onUpdate }: UpdateNoticeCardProps) {
   const { analytics } = useAnnotationAppContext();
+  const [state, setState] = useState<CardState>({ kind: 'idle' });
 
   useEffect(() => {
     analytics.capture('update_notice_viewed', { latest_version: notice.latestVersion });
   }, [analytics, notice.latestVersion]);
+
+  const handleUpdate = async () => {
+    analytics.capture('update_triggered', { latest_version: notice.latestVersion });
+    setState({ kind: 'updating' });
+    const outcome = await onUpdate();
+    analytics.capture('update_completed', {
+      latest_version: notice.latestVersion,
+      outcome: classifyOutcome(outcome),
+    });
+    if (outcome.status === 'success') {
+      onDismiss();
+      return;
+    }
+    setState({ kind: 'failed', message: outcome.message, recoverable: outcome.recoverable });
+  };
 
   const handleCopy = () => {
     analytics.capture('update_command_copied', { latest_version: notice.latestVersion });
@@ -58,19 +86,50 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
             v{notice.latestVersion}
           </a>
         </AlertTitle>
-        <AlertDescription className="text-muted-foreground text-xs">
-          You&apos;re on v{notice.currentVersion}. Run to upgrade:
-        </AlertDescription>
-        <div className="col-start-2 mt-1.5 flex items-center gap-1.5">
-          <code className="bg-muted flex-1 truncate rounded px-1.5 py-0.5 font-mono text-xs">{UPDATE_COMMAND}</code>
-          <Button
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={handleCopy}
-            data-testid={updateNoticeCardTestIds.copyButton}
+        {state.kind === 'failed' ? (
+          <AlertDescription
+            data-testid={updateNoticeCardTestIds.failureMessage}
+            className="text-muted-foreground text-xs"
           >
-            Copy command
-          </Button>
+            {state.message}
+          </AlertDescription>
+        ) : (
+          <AlertDescription className="text-muted-foreground text-xs">
+            You&apos;re on v{notice.currentVersion}.
+          </AlertDescription>
+        )}
+        <div className="col-start-2 mt-1.5 flex items-center justify-end">
+          {state.kind === 'idle' ? (
+            <Button
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => void handleUpdate()}
+              data-testid={updateNoticeCardTestIds.updateButton}
+            >
+              Update Now
+            </Button>
+          ) : null}
+          {state.kind === 'updating' ? (
+            <Button
+              size="sm"
+              disabled
+              className="h-6 px-2 text-xs"
+              data-testid={updateNoticeCardTestIds.updatingIndicator}
+            >
+              <Loader2 className="size-3 animate-spin" />
+              <span className="ml-1">Updating…</span>
+            </Button>
+          ) : null}
+          {state.kind === 'failed' && state.recoverable ? (
+            <Button
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={handleCopy}
+              data-testid={updateNoticeCardTestIds.copyFallbackButton}
+            >
+              Copy Command
+            </Button>
+          ) : null}
         </div>
         <Button
           size="icon"
@@ -85,4 +144,9 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
       </Alert>
     </div>
   );
+}
+
+function classifyOutcome(outcome: UpdateOutcome): ReportedOutcome {
+  if (outcome.status === 'success') return 'success';
+  return outcome.recoverable ? 'failed_recoverable' : 'failed_unrecoverable';
 }
