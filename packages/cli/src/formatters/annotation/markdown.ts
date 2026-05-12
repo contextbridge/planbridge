@@ -16,9 +16,10 @@ export function formatAgentResponse(
   templates: AnnotationTemplates,
   submission: AnnotationSubmission,
   content: string,
+  opts: { sourcePath?: string } = {},
 ): string {
   if (submission.status === 'approved') {
-    return templates.approved({});
+    return templates.approved({ source: opts.sourcePath });
   }
 
   const contentLines = content.split('\n');
@@ -45,7 +46,7 @@ export function formatAgentResponse(
   }
 
   const body = sections.map((section) => section.trimEnd()).join('\n\n');
-  return `${templates.changesRequested({ body }).trimEnd()}\n`;
+  return `${templates.changesRequested({ body, source: opts.sourcePath }).trimEnd()}\n`;
 }
 
 function renderThreadsAsBlockquotes(threads: CommentThread[]): string {

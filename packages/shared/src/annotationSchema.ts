@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { instantFromString } from './time.ts';
 
-export const ContentKindSchema = z.enum(['plan']);
+export const ContentKindSchema = z.enum(['plan', 'document']);
 export type ContentKind = z.infer<typeof ContentKindSchema>;
 
 export const AnnotationStatusSchema = z.enum(['approved', 'changes_requested']);
@@ -130,7 +130,7 @@ export const AnnotationSubmissionSchema = z.object({
 });
 export type AnnotationSubmission = z.infer<typeof AnnotationSubmissionSchema>;
 
-export const AnnotationEntrypointSchema = z.enum(['plan_command', 'hook_claude', 'hook_codex']);
+export const AnnotationEntrypointSchema = z.enum(['plan_command', 'hook_claude', 'hook_codex', 'open_command']);
 export type AnnotationEntrypoint = z.infer<typeof AnnotationEntrypointSchema>;
 
 export const AnnotationPayloadSchema = z.object({
@@ -144,6 +144,7 @@ export const AnnotationPayloadSchema = z.object({
   metadata: z
     .object({
       entrypoint: AnnotationEntrypointSchema,
+      sourcePath: z.string().trim().nonempty().optional(),
     })
     .optional(),
 });

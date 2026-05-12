@@ -1,9 +1,8 @@
-import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
-import { annotationSubmission } from '@contextbridge/shared/testFactories';
+import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { describe, expect, it } from 'bun:test';
 import { annotationArgs } from '#src/testFactories.ts';
-import { createStubContext } from '#src/testHelpers/index.ts';
-import { type AnnotationDependencies, runAnnotation } from './runAnnotation.ts';
+import { createAnnotationDependencies, createDeferred, createStubContext } from '#src/testHelpers/index.ts';
+import { runAnnotation } from './runAnnotation.ts';
 
 describe('runAnnotation', () => {
   it('opens the browser and returns the submitted review', async () => {
@@ -63,80 +62,26 @@ describe('runAnnotation', () => {
     expect(deps.sigintHandlerRemoved).toBe(true);
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
-});
 
-function createAnnotationDependencies(
-  options: {
-    result?: Promise<AnnotationSubmission>;
-  } = {},
-): AnnotationDependencies & {
-  closeCount: number;
-  payloads: AnnotationPayload[];
-  sigintHandlerRegistered: Promise<void>;
-  sigintHandlerRemoved: boolean;
-  submission: AnnotationSubmission;
-  triggerSigint(): void;
-} {
-  const payloads: AnnotationPayload[] = [];
-  const submission = annotationSubmission.build();
-  const sigintRegistration = createDeferred<void>();
-  let closeCount = 0;
-  let sigintHandler: (() => void) | null = null;
-  let sigintHandlerRemoved = false;
-
-  return {
-    get closeCount() {
-      return closeCount;
-    },
-    payloads,
-    sigintHandlerRegistered: sigintRegistration.promise,
-    get sigintHandlerRemoved() {
-      return sigintHandlerRemoved;
-    },
-    submission,
-    triggerSigint() {
-      if (!sigintHandler) {
-        throw new Error('SIGINT handler was not registered');
-      }
-
-      sigintHandler();
-    },
-    loadHtml: () => Promise.resolve('<html><body>annotation</body></html>'),
-    startReviewServer: (_ctx, { payload }) => {
-      payloads.push(payload);
-      return {
-        port: 4312,
-        url: 'http://localhost:4312',
-        result: options.result ?? Promise.resolve(submission),
-        close: () => {
-          closeCount += 1;
-          return Promise.resolve();
-        },
-      };
-    },
-    registerSigintHandler: (handler) => {
-      sigintHandler = handler;
-      sigintHandlerRemoved = false;
-      sigintRegistration.resolve();
-      return () => {
-        sigintHandlerRemoved = true;
-        sigintHandler = null;
-      };
-    },
-  };
-}
-
-function createDeferred<T>(): {
-  promise: Promise<T>;
-  resolve: (value: T | PromiseLike<T>) => void;
-  reject: (reason?: unknown) => void;
-} {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
+  it('places sourcePath in payload.metadata.sourcePath when provided', () => {
+    const { context } = createStubContext();
+    const deps = createAnnotationDependencies();
+    expect(
+      runAnnotation(
+        context,
+        { content: '# doc', contentKind: 'document', entrypoint: 'open_command', sourcePath: '/abs/doc.md' },
+        deps,
+      ),
+    ).resolves.toEqual(deps.submission);
+    expect(deps.payloads[0]?.metadata?.sourcePath).toBe('/abs/doc.md');
   });
 
-  return { promise, resolve, reject };
-}
+  it('omits sourcePath from payload.metadata when not provided', () => {
+    const { context } = createStubContext();
+    const deps = createAnnotationDependencies();
+    expect(
+      runAnnotation(context, { content: '# doc', contentKind: 'document', entrypoint: 'open_command' }, deps),
+    ).resolves.toEqual(deps.submission);
+    expect(deps.payloads[0]?.metadata?.sourcePath).toBeUndefined();
+  });
+});

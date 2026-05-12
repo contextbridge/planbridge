@@ -122,17 +122,68 @@ describe('AnnotationPayloadSchema', () => {
   });
 
   it('rejects an unknown contentKind', () => {
-    expect(() => AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'document' })).toThrow();
+    expect(() => AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'file' })).toThrow();
   });
 
   it('rejects a missing contentKind', () => {
     expect(() => AnnotationPayloadSchema.parse({ content: 'x' })).toThrow();
   });
+
+  it('accepts contentKind: document', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: '# doc', contentKind: 'document' });
+    expect(parsed.contentKind).toBe('document');
+  });
+
+  it('accepts open_command entrypoint metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# doc',
+      contentKind: 'document',
+      metadata: { entrypoint: 'open_command' },
+    });
+    expect(parsed.metadata?.entrypoint).toBe('open_command');
+  });
+
+  it('accepts metadata.sourcePath', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# doc',
+      contentKind: 'document',
+      metadata: { entrypoint: 'open_command', sourcePath: '/abs/path/to/doc.md' },
+    });
+    expect(parsed.metadata?.sourcePath).toBe('/abs/path/to/doc.md');
+  });
+
+  it('rejects an empty sourcePath', () => {
+    expect(() =>
+      AnnotationPayloadSchema.parse({
+        content: '# doc',
+        contentKind: 'document',
+        metadata: { entrypoint: 'open_command', sourcePath: '' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a whitespace-only sourcePath', () => {
+    expect(() =>
+      AnnotationPayloadSchema.parse({
+        content: '# doc',
+        contentKind: 'document',
+        metadata: { entrypoint: 'open_command', sourcePath: '   ' },
+      }),
+    ).toThrow();
+  });
 });
 
 describe('ContentKindSchema', () => {
-  it("accepts 'plan'", () => {
+  it('parses plan', () => {
     expect(ContentKindSchema.parse('plan')).toBe('plan');
+  });
+
+  it('parses document', () => {
+    expect(ContentKindSchema.parse('document')).toBe('document');
+  });
+
+  it('rejects unknown kinds', () => {
+    expect(() => ContentKindSchema.parse('file')).toThrow();
   });
 });
 
