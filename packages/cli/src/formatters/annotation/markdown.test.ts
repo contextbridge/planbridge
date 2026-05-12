@@ -309,10 +309,10 @@ function buildFakeTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED-MARKER', { noEscape: true }),
     changesRequested: Handlebars.compile('CHANGES-MARKER\n{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('ANNOTATION-MARKER {{range}} {{sourceSlice}} {{highlighted}}\n{{thread}}', {
+    annotationSection: Handlebars.compile('ANNOTATION-MARKER {{range}} {{sourceSlice}} {{highlighted}}\n{{comments}}', {
       noEscape: true,
     }),
-    generalFeedbackSection: Handlebars.compile('GLOBAL-MARKER\n{{threads}}', { noEscape: true }),
+    generalFeedbackSection: Handlebars.compile('GLOBAL-MARKER\n{{comments}}', { noEscape: true }),
   };
 }
 
@@ -320,8 +320,8 @@ function buildSourceSliceTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED', { noEscape: true }),
     changesRequested: Handlebars.compile('{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('SOURCE-START<{{sourceSlice}}>SOURCE-END\n{{thread}}', { noEscape: true }),
-    generalFeedbackSection: Handlebars.compile('{{threads}}', { noEscape: true }),
+    annotationSection: Handlebars.compile('SOURCE-START<{{sourceSlice}}>SOURCE-END\n{{comments}}', { noEscape: true }),
+    generalFeedbackSection: Handlebars.compile('{{comments}}', { noEscape: true }),
   };
 }
 
@@ -329,8 +329,8 @@ function buildRangeTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED', { noEscape: true }),
     changesRequested: Handlebars.compile('{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('RANGE<{{range}}>\n{{thread}}', { noEscape: true }),
-    generalFeedbackSection: Handlebars.compile('{{threads}}', { noEscape: true }),
+    annotationSection: Handlebars.compile('RANGE<{{range}}>\n{{comments}}', { noEscape: true }),
+    generalFeedbackSection: Handlebars.compile('{{comments}}', { noEscape: true }),
   };
 }
 
@@ -338,8 +338,8 @@ function buildHighlightedTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED', { noEscape: true }),
     changesRequested: Handlebars.compile('{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('HIGHLIGHTED<{{highlighted}}>\n{{thread}}', { noEscape: true }),
-    generalFeedbackSection: Handlebars.compile('{{threads}}', { noEscape: true }),
+    annotationSection: Handlebars.compile('HIGHLIGHTED<{{highlighted}}>\n{{comments}}', { noEscape: true }),
+    generalFeedbackSection: Handlebars.compile('{{comments}}', { noEscape: true }),
   };
 }
 
@@ -347,8 +347,8 @@ function buildThreadEchoTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED', { noEscape: true }),
     changesRequested: Handlebars.compile('{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('ANNOTATION\n{{thread}}', { noEscape: true }),
-    generalFeedbackSection: Handlebars.compile('GLOBAL\n{{threads}}', { noEscape: true }),
+    annotationSection: Handlebars.compile('ANNOTATION\n{{comments}}', { noEscape: true }),
+    generalFeedbackSection: Handlebars.compile('GLOBAL\n{{comments}}', { noEscape: true }),
   };
 }
 

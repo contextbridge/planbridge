@@ -4,7 +4,12 @@ import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CodexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
-import { codexStopHookPayload, codexTranscriptHookPromptLine, codexTranscriptPlanLine } from '#src/testFactories.ts';
+import {
+  annotationArgs,
+  codexStopHookPayload,
+  codexTranscriptHookPromptLine,
+  codexTranscriptPlanLine,
+} from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import type { CodexStopHookPayload } from './codexHookSchema.ts';
 import { type HookCodexDependencies, extractLatestPlanFromTranscript, runHookCodex } from './hookCodex.ts';
@@ -23,7 +28,7 @@ describe('hookCodex handler', () => {
 
     expect(io.stdout.text().trim()).toBe('{}');
     expect(deps.calls).toEqual([
-      { content: '# Approved Plan\n\nStep 1.', contentKind: 'plan', entrypoint: 'hook_codex' },
+      annotationArgs.build({ content: '# Approved Plan\n\nStep 1.', entrypoint: 'hook_codex' }),
     ]);
   });
 
@@ -108,7 +113,7 @@ describe('hookCodex handler', () => {
     await runHookCodex(context, deps);
 
     expect(deps.calls).toEqual([
-      { content: '# Direct Plan\n\n- Step 1', contentKind: 'plan', entrypoint: 'hook_codex' },
+      annotationArgs.build({ content: '# Direct Plan\n\n- Step 1', entrypoint: 'hook_codex' }),
     ]);
     expect(deps.transcriptReadCount).toBe(0);
     expect(io.stdout.text().trim()).toBe('{}');
@@ -133,7 +138,7 @@ describe('hookCodex handler', () => {
 
     await runHookCodex(context, deps);
 
-    expect(deps.calls).toEqual([{ content: '# Latest Plan', contentKind: 'plan', entrypoint: 'hook_codex' }]);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Latest Plan', entrypoint: 'hook_codex' })]);
     expect(deps.transcriptReadCount).toBe(0);
     expect(io.stdout.text().trim()).toBe('{}');
   });
@@ -150,7 +155,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ content: '# Current Plan', contentKind: 'plan', entrypoint: 'hook_codex' }]);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Current Plan', entrypoint: 'hook_codex' })]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 
@@ -167,7 +172,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ content: '# Plan', contentKind: 'plan', entrypoint: 'hook_codex' }]);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Plan', entrypoint: 'hook_codex' })]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 
@@ -201,7 +206,7 @@ describe('hookCodex handler', () => {
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
     expect(parsed.decision).toBe('block');
-    expect(deps.calls).toEqual([{ content: '# Revised Plan', contentKind: 'plan', entrypoint: 'hook_codex' }]);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Revised Plan', entrypoint: 'hook_codex' })]);
     expect(deps.transcriptReadCount).toBe(1);
   });
 

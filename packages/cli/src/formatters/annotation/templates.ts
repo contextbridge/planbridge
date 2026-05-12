@@ -9,7 +9,7 @@ export interface AnnotationTemplates {
     range: string;
     sourceSlice: string;
     highlighted: string | undefined;
-    thread: string;
+    comments: string;
   }>;
-  generalFeedbackSection: HandlebarsTemplateDelegate<{ threads: string }>;
+  generalFeedbackSection: HandlebarsTemplateDelegate<{ comments: string }>;
 }

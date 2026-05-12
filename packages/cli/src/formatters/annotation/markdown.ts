@@ -29,7 +29,7 @@ export function formatAgentResponse(
   );
 
   if (globalThreads.length > 0) {
-    sections.push(templates.generalFeedbackSection({ threads: renderThreadsAsBlockquotes(globalThreads) }));
+    sections.push(templates.generalFeedbackSection({ comments: renderThreadsAsBlockquotes(globalThreads) }));
   }
 
   for (const thread of annotationThreads) {
@@ -39,7 +39,7 @@ export function formatAgentResponse(
         range: formatLineRange(sourceLines),
         sourceSlice: sliceSource(contentLines, sourceLines),
         highlighted: formatHighlighted(quote.exact),
-        thread: renderThreadsAsBlockquotes([thread]),
+        comments: renderThreadsAsBlockquotes([thread]),
       }),
     );
   }

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
+import { annotationArgs } from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
@@ -28,7 +29,7 @@ describe('hookClaude handler', () => {
     await runHookClaude(context, deps);
 
     expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, '# Plan\n\nStep 1.\n'))}\n`);
-    expect(deps.calls).toEqual([{ content: '# Plan\n\nStep 1.\n', contentKind: 'plan', entrypoint: 'hook_claude' }]);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Plan\n\nStep 1.\n', entrypoint: 'hook_claude' })]);
   });
 
   it('emits a deny envelope with the markdown feedback when changes are requested', async () => {
