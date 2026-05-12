@@ -35,7 +35,7 @@ export function SubmitBar({ submission, source }: SubmitBarProps) {
         >
           {isCodexApproval ? (
             <>
-              <span>Plan approved.</span>
+              <span>Approved.</span>
               <strong className="block" data-testid={submitBarTestIds.codexHandoffNotice}>
                 Return to Codex to confirm implementation.
               </strong>

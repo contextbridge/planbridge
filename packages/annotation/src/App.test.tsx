@@ -43,7 +43,7 @@ describe('App', () => {
   it('shows an empty state when the plan content is blank', () => {
     renderApp({ initialPayload: { contentKind: 'plan', content: '' } });
 
-    expect(screen.getByTestId(appTestIds.emptyState)).toHaveTextContent('No plan content was provided.');
+    expect(screen.getByTestId(appTestIds.emptyState)).toHaveTextContent('No content was provided.');
   });
 
   it('renders the update-notice card when /update-notice resolves with a notice', async () => {
@@ -292,7 +292,32 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(document.title).toBe('Plan Review — PlanBridge');
+      expect(document.title).toBe('Review — PlanBridge');
+    });
+  });
+
+  it('uses the basename of metadata.sourcePath in the document title when present', async () => {
+    const payload: AnnotationPayload = {
+      content: '# A doc\n',
+      contentKind: 'document',
+      metadata: { entrypoint: 'open_command', sourcePath: '/abs/path/to/draft.md' },
+    };
+    renderApp({ initialPayload: payload });
+    await waitFor(() => {
+      expect(document.title).toBe('draft.md — PlanBridge');
+    });
+  });
+
+  it('falls back to payload title when no sourcePath is set', async () => {
+    const payload: AnnotationPayload = {
+      content: '# A doc\n',
+      contentKind: 'document',
+      title: 'A doc',
+      metadata: { entrypoint: 'open_command' },
+    };
+    renderApp({ initialPayload: payload });
+    await waitFor(() => {
+      expect(document.title).toBe('A doc — PlanBridge');
     });
   });
 

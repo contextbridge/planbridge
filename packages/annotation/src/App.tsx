@@ -64,7 +64,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
         setPayload(next);
         analytics.capture('plan_review_viewed', { bytes: next.content.length });
       })
-      .catch(() => setPayload({ content: '(unable to load plan)', contentKind: 'plan' }));
+      .catch(() => setPayload({ content: '(unable to load content)', contentKind: 'document' }));
   }, [initialPayload, fetchPayload, analytics]);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
       .catch(() => {});
   }, [fetchUpdateNotice]);
 
-  const documentTitle = payload?.title ? `${payload.title} — PlanBridge` : 'Plan Review — PlanBridge';
+  const documentTitle = resolveDocumentTitle(payload);
 
   return (
     <>
@@ -89,7 +89,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
           />
           <div className="mx-auto max-w-4xl px-6 py-16">
             <p className="text-sm text-muted-foreground" data-testid={appTestIds.loading}>
-              Loading plan review…
+              Loading…
             </p>
           </div>
         </main>
@@ -126,7 +126,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                     className="rounded-md border border-dashed border-border px-4 py-8 text-sm text-muted-foreground"
                     data-testid={appTestIds.emptyState}
                   >
-                    No plan content was provided.
+                    No content was provided.
                   </div>
                 )}
               </section>
@@ -184,4 +184,13 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
       )}
     </>
   );
+}
+
+const DEFAULT_DOCUMENT_TITLE = 'Review — PlanBridge';
+
+function resolveDocumentTitle(payload: AnnotationPayload | null): string {
+  if (!payload) return DEFAULT_DOCUMENT_TITLE;
+  const sourcePath = payload.metadata?.sourcePath;
+  const stem = sourcePath ? sourcePath.split('/').pop() || sourcePath : payload.title;
+  return stem ? `${stem} — PlanBridge` : DEFAULT_DOCUMENT_TITLE;
 }
