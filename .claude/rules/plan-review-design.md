@@ -1,8 +1,8 @@
 ---
 paths:
-  - "packages/plan/**/*.tsx"
-  - "packages/plan/**/*.ts"
-  - "packages/plan/**/*.css"
+  - "packages/annotation/**/*.tsx"
+  - "packages/annotation/**/*.ts"
+  - "packages/annotation/**/*.css"
 ---
 
 # Plan review UI design language

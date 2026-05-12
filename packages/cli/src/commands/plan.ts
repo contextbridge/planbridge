@@ -1,19 +1,20 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError } from 'commander';
-import type { CliContext } from '#src/context.ts';
-import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
 import {
-  type PlanReviewDependencies,
-  PlanReviewInterruptedError,
-  runPlanReview,
-} from '#src/planReview/runPlanReview.ts';
+  type AnnotationDependencies,
+  AnnotationInterruptedError,
+  runAnnotation,
+} from '#src/annotation/runAnnotation.ts';
+import type { CliContext } from '#src/context.ts';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { readStreamToString } from '#src/streams.ts';
 
 export interface PlanArgs {
   path?: string;
 }
 
-export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReviewDependencies): Promise<void> {
+export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
   const { io, logger } = ctx;
   const { path } = args;
 
@@ -40,10 +41,10 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReview
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
 
   try {
-    const submission = await runPlanReview(ctx, { planContent: content, source }, deps);
-    io.stdout.write(formatAsMarkdown(submission, content));
+    const submission = await runAnnotation(ctx, { content, contentKind: 'plan', entrypoint: 'plan_command' }, deps);
+    io.stdout.write(formatAgentResponse(PLAN_TEMPLATES, submission, content));
   } catch (err) {
-    if (err instanceof PlanReviewInterruptedError) {
+    if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');
       throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
     }

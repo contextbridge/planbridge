@@ -1,0 +1,166 @@
+import { describe, expect, it } from 'bun:test';
+import {
+  AnnotationEntrypointSchema,
+  AnnotationPayloadSchema,
+  AnnotationSubmissionSchema,
+  ContentKindSchema,
+} from './annotationSchema.ts';
+import { annotationAnchor, annotationThread, commentMessage, globalThread } from './testFactories.ts';
+import { Temporal, instantFromString, instantToString } from './time.ts';
+
+describe('AnnotationSubmissionSchema', () => {
+  it('accepts an approval with no threads', () => {
+    const parsed = AnnotationSubmissionSchema.parse({ status: 'approved' });
+    expect(parsed.status).toBe('approved');
+    expect(parsed.threads).toEqual([]);
+  });
+
+  it('accepts an annotation thread with authored messages', () => {
+    const parsed = AnnotationSubmissionSchema.parse({
+      status: 'changes_requested',
+      threads: [annotationThread.build()],
+    });
+
+    expect(parsed.threads).toHaveLength(1);
+    expect(parsed.threads[0]?.subject.kind).toBe('annotation');
+    expect(parsed.threads[0]?.messages[0]?.author.id).toBe('local-user');
+  });
+
+  it('accepts a global thread', () => {
+    const parsed = AnnotationSubmissionSchema.parse({
+      status: 'changes_requested',
+      threads: [globalThread.build()],
+    });
+
+    expect(parsed.threads[0]?.subject.kind).toBe('global');
+  });
+
+  it('rejects a thread with no messages', () => {
+    expect(() =>
+      AnnotationSubmissionSchema.parse({
+        status: 'changes_requested',
+        threads: [{ id: 'thr_01', subject: { kind: 'global' }, messages: [] }],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects an invalid createdAt string', () => {
+    expect(() =>
+      AnnotationSubmissionSchema.parse({
+        status: 'changes_requested',
+        threads: [annotationThread.build({ messages: [commentMessage.build({ createdAt: 'today' })] })],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a backwards position range', () => {
+    expect(() =>
+      AnnotationSubmissionSchema.parse({
+        status: 'approved',
+        threads: [
+          annotationThread.build({
+            subject: { kind: 'annotation', anchor: annotationAnchor.build({ position: { start: 10, end: 3 } }) },
+          }),
+        ],
+      }),
+    ).toThrow();
+  });
+});
+
+describe('AnnotationPayloadSchema', () => {
+  it('accepts content with no metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', contentKind: 'plan' });
+    expect(parsed.metadata).toBeUndefined();
+    expect(parsed.title).toBeUndefined();
+  });
+
+  it('accepts content with entrypoint metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+      metadata: { entrypoint: 'plan_command' },
+    });
+    expect(parsed.metadata?.entrypoint).toBe('plan_command');
+  });
+
+  it('accepts hook_claude entrypoint metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+      metadata: { entrypoint: 'hook_claude' },
+    });
+    expect(parsed.metadata?.entrypoint).toBe('hook_claude');
+  });
+
+  it('accepts hook_codex entrypoint metadata', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+      metadata: { entrypoint: 'hook_codex' },
+    });
+    expect(parsed.metadata?.entrypoint).toBe('hook_codex');
+  });
+
+  it('accepts a title', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: '# plan', contentKind: 'plan', title: '  plan  ' });
+    expect(parsed.title).toBe('plan');
+  });
+
+  it('accepts a null title', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: 'no heading', contentKind: 'plan', title: null });
+    expect(parsed.title).toBeNull();
+  });
+
+  it('coalesces an empty title to null', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'plan', title: '' });
+    expect(parsed.title).toBeNull();
+  });
+
+  it('coalesces a whitespace-only title to null', () => {
+    const parsed = AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'plan', title: '   ' });
+    expect(parsed.title).toBeNull();
+  });
+
+  it('rejects an unknown contentKind', () => {
+    expect(() => AnnotationPayloadSchema.parse({ content: 'x', contentKind: 'document' })).toThrow();
+  });
+
+  it('rejects a missing contentKind', () => {
+    expect(() => AnnotationPayloadSchema.parse({ content: 'x' })).toThrow();
+  });
+});
+
+describe('ContentKindSchema', () => {
+  it("accepts 'plan'", () => {
+    expect(ContentKindSchema.parse('plan')).toBe('plan');
+  });
+});
+
+describe('AnnotationEntrypointSchema', () => {
+  it('accepts plan_command', () => {
+    expect(AnnotationEntrypointSchema.parse('plan_command')).toBe('plan_command');
+  });
+
+  it('accepts hook_claude', () => {
+    expect(AnnotationEntrypointSchema.parse('hook_claude')).toBe('hook_claude');
+  });
+
+  it('accepts hook_codex', () => {
+    expect(AnnotationEntrypointSchema.parse('hook_codex')).toBe('hook_codex');
+  });
+
+  it("rejects the old 'file' value", () => {
+    expect(() => AnnotationEntrypointSchema.parse('file')).toThrow();
+  });
+
+  it("rejects the old 'stdin' value", () => {
+    expect(() => AnnotationEntrypointSchema.parse('stdin')).toThrow();
+  });
+});
+
+describe('time helpers', () => {
+  it('round-trips an instant string', () => {
+    const instant = Temporal.Instant.from('2026-04-20T12:34:56.000Z');
+    expect(instantFromString(instantToString(instant)).epochNanoseconds).toBe(instant.epochNanoseconds);
+  });
+});
