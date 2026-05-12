@@ -48,7 +48,7 @@ stdin / [path]  ─▶  contextbridge plan
                        { status: "approved" | "changes_requested", annotations: [...] }
 ```
 
-The loop is kind-agnostic: it serves a markdown document into the annotation UI and emits a structured result on stdout. The `plan` subcommand is the only user-facing entrypoint today and is tuned for plan-mode handoffs from Claude Code and Codex hooks; additional sibling entrypoints (e.g., `contextbridge open` per issue #51) will land on the same loop. The CLI process owns the server and the browser lifecycle. When the user submits in the browser, the server shuts down and the CLI emits its structured result to stdout. That stdout contract is what harness hooks (Claude `exitPlanMode`, Codex Stop hook, etc.) consume.
+The loop is kind-agnostic: it serves a markdown document into the annotation UI and emits a structured result on stdout. Sibling entrypoints on this same loop today: `plan` (plan-mode handoffs from Claude Code and Codex hooks) and `open` (manual annotation of a markdown file or piped content, surfaced as `/planbridge:open` in Claude and `$planbridge-open` in Codex). The CLI process owns the server and the browser lifecycle. When the user submits in the browser, the server shuts down and the CLI emits its structured result to stdout. That stdout contract is what harness hooks (Claude `exitPlanMode`, Codex Stop hook, etc.) consume.
 
 ## Build: embedded annotation UI
 
