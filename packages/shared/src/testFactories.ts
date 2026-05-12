@@ -6,6 +6,7 @@ import type {
   CommentThread,
   StoredAnnotationAnchor,
 } from './annotationSchema.ts';
+import type { UpdateOutcome } from './updateOutcomeSchema.ts';
 
 export const LOCAL_AUTHOR = {
   id: 'local-user',
@@ -72,4 +73,8 @@ export const globalThread = Factory.define<CommentThread>(() => {
 export const annotationSubmission = Factory.define<AnnotationSubmission>(() => ({
   status: 'changes_requested',
   threads: [globalThread.build(), annotationThread.build()],
+}));
+
+export const updateOutcome = Factory.define<UpdateOutcome>(() => ({
+  status: 'success',
 }));

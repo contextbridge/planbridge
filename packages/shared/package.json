@@ -13,7 +13,8 @@
     "./time": "./src/time.ts",
     "./typeGuards": "./src/typeGuards.ts",
     "./types": "./src/types.ts",
-    "./updateNoticeSchema": "./src/updateNoticeSchema.ts"
+    "./updateNoticeSchema": "./src/updateNoticeSchema.ts",
+    "./updateOutcomeSchema": "./src/updateOutcomeSchema.ts"
   },
   "imports": {
     "#src/*": "./src/*"
