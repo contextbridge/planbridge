@@ -5,6 +5,8 @@
 
 ### ⚠ BREAKING CHANGES
 
+Codex recently changed their experimental hooks flag in 0.129.0. In PlanBridge v0.4.0, you must use Codex v0.129.0+.
+
 * compatibility with Codex 0.129.0+ ([#65](https://github.com/contextbridge/planbridge/issues/65))
 
 ### Features
