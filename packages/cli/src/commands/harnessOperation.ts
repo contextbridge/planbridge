@@ -65,7 +65,7 @@ export async function runHarnessOperation(
   for (const installer of ALL_INSTALLERS) {
     const detection = detectHarness(ctx, installer.descriptor);
     if (!detection.binaryOnPath) {
-      io.stderr.write(
+      io.writeStderr(
         `${formatStatusLine({ descriptor: installer.descriptor, detected: false, installed: false, managed: [] })}\n`,
       );
       continue;
@@ -73,13 +73,13 @@ export async function runHarnessOperation(
 
     try {
       const status = await installer.status(ctx);
-      io.stderr.write(`${formatStatusLine(status)}\n`);
+      io.writeStderr(`${formatStatusLine(status)}\n`);
       if (status.detected) {
         detected.push({ installer, status });
       }
     } catch (err) {
       const { displayName, id } = installer.descriptor;
-      io.stderr.write(`${formatStatusFailureLine(displayName, err)}\n`);
+      io.writeStderr(`${formatStatusFailureLine(displayName, err)}\n`);
       if (!(err instanceof CommanderError)) {
         logger.error({ err, harness: id }, 'status failed');
       }
@@ -116,7 +116,7 @@ export async function runHarnessOperation(
         default: true,
       });
       if (!proceed) {
-        io.stderr.write(`${displayName}: skipped\n`);
+        io.writeStderr(`${displayName}: skipped\n`);
         continue;
       }
     }
@@ -137,7 +137,7 @@ export async function runHarnessOperation(
 
   const detectedNoun = `detected harness${detected.length === 1 ? '' : 'es'}`;
   const skippedSuffix = skippedCount > 0 ? ` (${skippedCount} ${labels.skippedNote}, skipped)` : '';
-  io.stderr.write(`${labels.pastTense} ${completedCount} of ${detected.length} ${detectedNoun}${skippedSuffix}.\n`);
+  io.writeStderr(`${labels.pastTense} ${completedCount} of ${detected.length} ${detectedNoun}${skippedSuffix}.\n`);
 
   if (failures.length > 0) {
     throw new CommanderError(1, labels.failureCode, `${labels.failureMessagePrefix}: ${failures.join(', ')}`);

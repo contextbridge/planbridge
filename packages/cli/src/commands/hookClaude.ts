@@ -4,7 +4,6 @@ import { type Command, CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type ClaudeHookResponse, claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
-import { readStreamToString } from '#src/streams.ts';
 import { type ClaudeHookPayload, ClaudeHookPayloadSchema } from './claudeHookSchema.ts';
 
 export interface HookClaudeDependencies {
@@ -17,7 +16,7 @@ export async function runHookClaude(ctx: CliContext, deps: HookClaudeDependencie
   const payload = await readAndValidatePayload(ctx);
   const response = await dispatchHookEvent(ctx, payload, deps);
 
-  io.stdout.write(`${JSON.stringify(response)}\n`);
+  io.writeStdout(`${JSON.stringify(response)}\n`);
 }
 
 export function registerHookClaude(ctx: CliContext, hookCommand: Command): void {
@@ -33,7 +32,7 @@ export function registerHookClaude(ctx: CliContext, hookCommand: Command): void 
 
 async function readAndValidatePayload(ctx: CliContext): Promise<ClaudeHookPayload> {
   const { io } = ctx;
-  const raw = await readStreamToString(io.stdin);
+  const raw = await io.readStdin();
 
   let parsed: unknown;
   try {

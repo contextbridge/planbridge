@@ -17,8 +17,8 @@ export function createProgram(ctx: CliContext): Command {
     .version(buildInfo.version)
     .exitOverride()
     .configureOutput({
-      writeOut: (s) => io.stdout.write(s),
-      writeErr: (s) => io.stderr.write(s),
+      writeOut: (s) => io.writeStdout(s),
+      writeErr: (s) => io.writeStderr(s),
     })
     .addHelpText('after', `\nDocs: ${QUICKSTART_URL}`);
 

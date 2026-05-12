@@ -84,13 +84,13 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
         '--scope',
         scope,
       ]);
-      io.stderr.write(
+      io.writeStderr(
         `PlanBridge plugin renamed from ${CLAUDE_LEGACY_PLUGIN_ID} to ${CLAUDE_PLUGIN_ID} — migrated automatically.\n`,
       );
     }
 
-    io.stderr.write(`✓ PlanBridge plugin installed for Claude Code (scope: ${scope}).\n`);
-    io.stderr.write(`Restart Claude Code for the plugin to load.\n`);
+    io.writeStderr(`✓ PlanBridge plugin installed for Claude Code (scope: ${scope}).\n`);
+    io.writeStderr(`Restart Claude Code for the plugin to load.\n`);
   }
 
   protected async runUninstall(ctx: CliContext, scope: InstallScope): Promise<void> {
@@ -120,7 +120,7 @@ export class ClaudeInstaller extends ScopedHarnessInstaller {
       logger.info(`${CLAUDE_MARKETPLACE_NAME} marketplace is not configured; skipping marketplace remove`);
     }
 
-    io.stderr.write(`✓ PlanBridge plugin removed from Claude Code (scope: ${scope}).\n`);
+    io.writeStderr(`✓ PlanBridge plugin removed from Claude Code (scope: ${scope}).\n`);
   }
 }
 

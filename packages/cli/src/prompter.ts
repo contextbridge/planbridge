@@ -5,7 +5,7 @@ import {
   select as clackSelect,
 } from '@clack/prompts';
 import { CommanderError } from 'commander';
-import type { Io } from '#src/IoImpl.ts';
+import type { Io, IoImpl } from '#src/IoImpl.ts';
 
 export const PROMPTER_CANCELLED_CODE = 'contextbridge.prompter.cancelled';
 export const PROMPTER_NON_TTY_CODE = 'contextbridge.prompter.nonTty';
@@ -34,7 +34,7 @@ export interface Prompter {
   select<T extends SelectValue>(options: SelectOptions<T>): Promise<T>;
 }
 
-export function createClackPrompter(io: Io): Prompter {
+export function createClackPrompter(io: IoImpl): Prompter {
   return {
     async confirm({ message, default: defaultValue = true }) {
       assertTty(io);
@@ -72,7 +72,7 @@ export function createClackPrompter(io: Io): Prompter {
 }
 
 function assertTty(io: Io): void {
-  if (!io.stdin.isTTY) {
+  if (io.stdinIsTTY !== true) {
     throw new CommanderError(
       1,
       PROMPTER_NON_TTY_CODE,

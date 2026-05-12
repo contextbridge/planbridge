@@ -17,12 +17,12 @@ export async function runInstallStatus(ctx: CliContext, options: InstallStatusOp
   }
 
   if (json) {
-    io.stdout.write(`${JSON.stringify(statuses, null, 2)}\n`);
+    io.writeStdout(`${JSON.stringify(statuses, null, 2)}\n`);
     return;
   }
 
   for (const status of statuses) {
-    io.stderr.write(`${formatStatusLine(status)}\n`);
+    io.writeStderr(`${formatStatusLine(status)}\n`);
   }
 }
 
