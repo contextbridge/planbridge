@@ -1,14 +1,17 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
+import { bundledSkills } from '#src/bundledSkills.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, readErrorLogs, readWarnLogs } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
 import { getDescriptor } from './registry.ts';
 
 const CODEX_BINARY = getDescriptor('codex').binaryName;
+const bundledOpenSkill = bundledSkills.find((skill) => skill.name === 'open')?.body ?? '';
 
 describe('CodexInstaller', () => {
   let tmp: string;
@@ -169,6 +172,37 @@ describe('CodexInstaller', () => {
         ),
       ).toBe(true);
     });
+
+    it('writes the skill to ~/.agents/skills/planbridge-open/SKILL.md on user-scope install', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp);
+
+      await installer.install(context, { yes: true });
+
+      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
+      expect(existsSync(skillPath)).toBe(true);
+      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+    });
+
+    it('writes the skill at user level even on project-scope install', async () => {
+      const project = join(tmp, 'project');
+      const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
+
+      await installer.install(context, { yes: true, scope: 'project' });
+
+      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
+      expect(existsSync(skillPath)).toBe(true);
+      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+    });
+
+    it('skill install is idempotent', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp);
+
+      await installer.install(context, { yes: true });
+      await installer.install(context, { yes: true });
+
+      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
+      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+    });
   });
 
   describe('uninstall', () => {
@@ -208,6 +242,36 @@ describe('CodexInstaller', () => {
       expect(installer.uninstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
       expect(readFileSync(hooksPath, 'utf8')).toBe('{"hooks":[]}');
     });
+
+    it('user-scope uninstall removes planbridge-open/ but leaves sibling skill dirs intact', async () => {
+      const skillsDir = join(tmp, '.agents', 'skills');
+      await mkdir(join(skillsDir, 'some-other-tool'), { recursive: true });
+      await writeFile(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'other tool skill');
+      const { installer, context } = createCodexInstallerContext(tmp);
+      await installer.install(context, { yes: true });
+
+      await installer.uninstall(context, { yes: true });
+
+      expect(existsSync(join(skillsDir, 'planbridge-open'))).toBe(false);
+      expect(readFileSync(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'utf8')).toBe('other tool skill');
+    });
+
+    it('project-scope uninstall does not remove the skill', async () => {
+      const project = join(tmp, 'project');
+      const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
+      await installer.install(context, { yes: true, scope: 'project' });
+
+      await installer.uninstall(context, { yes: true, scope: 'project' });
+
+      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
+      expect(existsSync(skillPath)).toBe(true);
+    });
+
+    it('user-scope uninstall is idempotent when skill is already gone', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp);
+
+      await installer.uninstall(context, { yes: true });
+    });
   });
 
   describe('status', () => {
@@ -225,7 +289,7 @@ describe('CodexInstaller', () => {
       });
     });
 
-    it('reports an installed hook when hooks.json is present and Codex is supported', async () => {
+    it('reports an installed hook and skill when both are present', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
       await installer.install(context, { yes: true });
 
@@ -234,7 +298,10 @@ describe('CodexInstaller', () => {
         descriptor: { id: 'codex' },
         detected: true,
         installed: true,
-        managed: [{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }],
+        managed: [
+          { kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' },
+          { kind: 'skill', identifier: 'planbridge-open', scope: 'user' },
+        ],
       });
     });
 
@@ -285,6 +352,24 @@ describe('CodexInstaller', () => {
       const { installer, context } = createCodexInstallerContext(tmp, {}, { versionStdout: 'codex-cli 0.128.0\n' });
 
       expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
+    });
+
+    it('reports the skill as a ManagedEntry when installed', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp);
+      await installer.install(context, { yes: true });
+
+      const status = await installer.status(context);
+
+      expect(status.managed).toContainEqual({ kind: 'skill', identifier: 'planbridge-open', scope: 'user' });
+      expect(status.installed).toBe(true);
+    });
+
+    it('does not report the skill when not installed', async () => {
+      const { installer, context } = createCodexInstallerContext(tmp);
+
+      const status = await installer.status(context);
+
+      expect(status.managed.some((m) => m.kind === 'skill')).toBe(false);
     });
   });
 });

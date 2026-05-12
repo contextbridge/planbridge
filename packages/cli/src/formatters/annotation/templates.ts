@@ -3,8 +3,8 @@ import type Handlebars from 'handlebars';
 type HandlebarsTemplateDelegate<T> = Handlebars.TemplateDelegate<T>;
 
 export interface AnnotationTemplates {
-  approved: HandlebarsTemplateDelegate<Record<string, never>>;
-  changesRequested: HandlebarsTemplateDelegate<{ body: string }>;
+  approved: HandlebarsTemplateDelegate<{ source?: string }>;
+  changesRequested: HandlebarsTemplateDelegate<{ body: string; source?: string }>;
   annotationSection: HandlebarsTemplateDelegate<{
     range: string;
     sourceSlice: string;

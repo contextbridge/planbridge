@@ -271,6 +271,29 @@ describe('formatAgentResponse (annotation engine)', () => {
     expect(result).not.toMatch(/HIGHLIGHTED<.+>/);
   });
 
+  it('threads opts.sourcePath into the approved and changesRequested templates as `source`', () => {
+    const captured: Array<{ name: string; data: Record<string, unknown> }> = [];
+    const recordingTemplate =
+      (name: string): Handlebars.TemplateDelegate<Record<string, unknown>> =>
+      (data: Record<string, unknown>) => {
+        captured.push({ name, data });
+        return name;
+      };
+
+    const stubTemplates: AnnotationTemplates = {
+      approved: recordingTemplate('approved'),
+      changesRequested: recordingTemplate('changesRequested'),
+      annotationSection: recordingTemplate('annotationSection'),
+      generalFeedbackSection: recordingTemplate('generalFeedbackSection'),
+    };
+
+    formatAgentResponse(stubTemplates, { status: 'approved', threads: [] }, '# doc', { sourcePath: '/abs/doc.md' });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]?.name).toBe('approved');
+    expect(captured[0]?.data).toEqual({ source: '/abs/doc.md' });
+  });
+
   it('renders thread messages in chronological order regardless of input order', () => {
     const submission: AnnotationSubmission = {
       status: 'changes_requested',

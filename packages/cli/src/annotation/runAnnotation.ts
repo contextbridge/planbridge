@@ -24,6 +24,7 @@ export interface RunAnnotationArgs {
   content: string;
   contentKind: ContentKind;
   entrypoint: AnnotationEntrypoint;
+  sourcePath?: string;
 }
 
 export interface AnnotationDependencies {
@@ -52,7 +53,10 @@ export async function runAnnotation(
     content: args.content,
     title: extractDocumentTitle(args.content),
     contentKind: args.contentKind,
-    metadata: { entrypoint: args.entrypoint },
+    metadata: {
+      entrypoint: args.entrypoint,
+      ...(args.sourcePath ? { sourcePath: args.sourcePath } : {}),
+    },
   };
   analytics.capture('plan_review_started', { source: args.entrypoint });
 
