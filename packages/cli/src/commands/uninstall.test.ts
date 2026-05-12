@@ -98,7 +98,7 @@ describe('runUninstall', () => {
 
     expect(prompter.calls).toEqual([{ message: 'Remove PlanBridge from Claude Code?', default: true }]);
     expect(io.stderr.text()).toContain('Claude Code: skipped');
-    expect(io.stderr.text()).toContain('Uninstalled 0 of 1 detected harness');
+    expect(io.stderr.text()).toContain('Uninstalled 0 of 1 detected harnesses');
   });
 
   it('throws when no supported harnesses are detected', () => {
