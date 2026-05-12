@@ -197,6 +197,7 @@ function createPlanDependencies(
         port: 4312,
         url: 'http://localhost:4312',
         result: options.result ?? Promise.resolve(submission),
+        awaitInFlightUpdate: () => Promise.resolve(),
         close: () => {
           closed = true;
           return Promise.resolve();

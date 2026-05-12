@@ -10,7 +10,9 @@ import type {
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import type { UpdateOutcome } from '@contextbridge/shared/updateOutcomeSchema';
 import type { CliContext } from '#src/context.ts';
+import { toUpdateOutcome } from '#src/updater/toUpdateOutcome.ts';
 import { extractDocumentTitle } from './extractDocumentTitle.ts';
 
 export class AnnotationInterruptedError extends Error {
@@ -19,6 +21,8 @@ export class AnnotationInterruptedError extends Error {
     this.name = 'AnnotationInterruptedError';
   }
 }
+
+const UPDATE_DRAIN_TIMEOUT_MS = 60_000;
 
 export interface RunAnnotationArgs {
   content: string;
@@ -35,6 +39,7 @@ export interface AnnotationDependencies {
       payload: AnnotationPayload;
       config: FrontendConfig;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
+      performUpdate?: () => Promise<UpdateOutcome>;
     },
   ): RunningServer;
   registerSigintHandler(handler: () => void): () => void;
@@ -78,6 +83,7 @@ export async function runAnnotation(
       payload,
       config: frontendConfig,
       checkForUpdate: () => updater.checkForUpdate().catch(() => null),
+      performUpdate: () => updater.performUpdate().then(toUpdateOutcome),
     });
     removeSigintHandler = deps.registerSigintHandler(() => {
       if (sigintHandled) {
@@ -104,20 +110,28 @@ export async function runAnnotation(
     await closeServer();
   }
 
-  function closeServer(): Promise<void> {
+  async function closeServer(): Promise<void> {
     if (!server) {
-      return Promise.resolve();
+      return;
     }
 
-    closePromise ??= server.close();
-    return closePromise;
+    const target = server;
+    closePromise ??= (async () => {
+      try {
+        await target.awaitInFlightUpdate(UPDATE_DRAIN_TIMEOUT_MS);
+      } catch (err) {
+        logger.warn({ err }, 'awaitInFlightUpdate failed; closing anyway');
+      }
+      await target.close();
+    })();
+    await closePromise;
   }
 }
 
 const defaultAnnotationDependencies: AnnotationDependencies = {
   loadHtml: () => import('./bundledAnnotationHtml.ts').then((m) => m.bundledAnnotationHtml),
-  startReviewServer: (ctx, { html, payload, config, checkForUpdate }) =>
-    startServer(ctx, { html, payload, config, checkForUpdate }),
+  startReviewServer: (ctx, { html, payload, config, checkForUpdate, performUpdate }) =>
+    startServer(ctx, { html, payload, config, checkForUpdate, performUpdate }),
   registerSigintHandler: (handler) => {
     process.on('SIGINT', handler);
     return () => {

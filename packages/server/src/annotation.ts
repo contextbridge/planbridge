@@ -5,11 +5,13 @@ import {
 } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
+import type { UpdateOutcome } from '@contextbridge/shared/updateOutcomeSchema';
 import type { ServerContext } from './context.ts';
 
 const UPDATE_NOTICE_TIMEOUT_MS = 3_000;
 
 export type CheckForUpdate = () => Promise<UpdateNotice | null>;
+export type PerformUpdate = () => Promise<UpdateOutcome>;
 
 export interface StartServerOptions {
   /** Annotation UI bundle. Awaited lazily on the first GET /. */
@@ -18,17 +20,20 @@ export interface StartServerOptions {
   readonly config: FrontendConfig;
   readonly port?: number;
   readonly checkForUpdate?: CheckForUpdate;
+  readonly performUpdate?: PerformUpdate;
 }
 
 export interface RunningServer {
   readonly port: number;
   readonly url: string;
   readonly result: Promise<AnnotationSubmission>;
+  awaitInFlightUpdate(timeoutMs?: number): Promise<void>;
   close(): Promise<void>;
 }
 
 export interface AnnotationServerApp {
   readonly result: Promise<AnnotationSubmission>;
+  awaitInFlightUpdate(timeoutMs?: number): Promise<void>;
   fetch: (req: Request) => Promise<Response>;
 }
 
@@ -48,12 +53,13 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
     port,
     url,
     result: app.result,
+    awaitInFlightUpdate: (timeoutMs) => app.awaitInFlightUpdate(timeoutMs),
     close: () => server.stop(true),
   };
 }
 
 export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerOptions): AnnotationServerApp {
-  const { html, payload, config, checkForUpdate } = opts;
+  const { html, payload, config, checkForUpdate, performUpdate } = opts;
   const { logger } = ctx;
 
   let resolveResult!: (r: AnnotationSubmission) => void;
@@ -61,8 +67,32 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
     resolveResult = resolve;
   });
 
+  let updateInFlight: Promise<UpdateOutcome> | null = null;
+
+  function startUpdate(callback: PerformUpdate): Promise<UpdateOutcome> {
+    const next = callback()
+      .catch((err: unknown) => {
+        logger.error({ err }, 'performUpdate threw');
+        return FALLBACK_UPDATE_FAILURE;
+      })
+      .finally(() => {
+        updateInFlight = null;
+      });
+    updateInFlight = next;
+    return next;
+  }
+
   return {
     result,
+    async awaitInFlightUpdate(timeoutMs?: number) {
+      const pending = updateInFlight;
+      if (!pending) return;
+      if (timeoutMs == null) {
+        await pending.catch(() => {});
+        return;
+      }
+      await Promise.race([pending.catch(() => {}), new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
+    },
     fetch: async (req) => {
       const url = new URL(req.url);
       if (req.method === 'GET' && url.pathname === '/') {
@@ -83,6 +113,12 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
       if (req.method === 'GET' && url.pathname === '/update-notice') {
         const notice = await resolveUpdateNotice(checkForUpdate);
         return Response.json(notice);
+      }
+      if (req.method === 'POST' && url.pathname === '/update') {
+        if (!performUpdate) return new Response('not found', { status: 404 });
+        const pending = updateInFlight ?? startUpdate(performUpdate);
+        const outcome = await pending;
+        return Response.json(outcome);
       }
       if (req.method === 'POST' && url.pathname === '/submit') {
         let body: unknown;
@@ -108,6 +144,12 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
     },
   };
 }
+
+const FALLBACK_UPDATE_FAILURE: UpdateOutcome = {
+  status: 'failed',
+  message: 'Update failed unexpectedly. Try running `contextbridge update` in your terminal.',
+  recoverable: true,
+};
 
 async function resolveUpdateNotice(checkForUpdate: CheckForUpdate | undefined): Promise<UpdateNotice | null> {
   if (!checkForUpdate) return null;

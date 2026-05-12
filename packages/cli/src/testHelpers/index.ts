@@ -14,5 +14,9 @@ export { FakeUpdater } from './FakeUpdater.ts';
 export { MemoryStream } from './MemoryStream.ts';
 export { type TestContext, createStubContext } from './createStubContext.ts';
 export { parseStdoutJson } from './parseStdoutJson.ts';
-export { createAnnotationDependencies } from './annotationFakes.ts';
+export {
+  type AnnotationDependencyFake,
+  createAnnotationDependencies,
+  createAnnotationDependencyFake,
+} from './annotationFakes.ts';
 export { type LogRecord, readErrorLogs, readLogs, readWarnLogs } from './readLogs.ts';

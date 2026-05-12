@@ -3,7 +3,8 @@ import type { AnnotationPayload } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { annotationThread, globalThread } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
-import { describe, expect, it } from 'bun:test';
+import type { UpdateOutcome } from '@contextbridge/shared/updateOutcomeSchema';
+import { describe, expect, it, mock } from 'bun:test';
 import { createAnnotationServerApp, startServer } from './annotation.ts';
 
 describe('createAnnotationServerApp', () => {
@@ -225,5 +226,151 @@ describe('startServer', () => {
     } finally {
       await running.close();
     }
+  });
+
+  it('returns 404 for POST /update when no performUpdate callback is wired', async () => {
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+    });
+
+    const res = await app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+
+    expect(res.status).toBe(404);
+  });
+
+  it('returns the UpdateOutcome from performUpdate on POST /update', async () => {
+    const performUpdate = mock(() =>
+      Promise.resolve<UpdateOutcome>({ status: 'failed', message: 'broken', recoverable: true }),
+    );
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    const res = await app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: 'failed', message: 'broken', recoverable: true });
+    expect(performUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('deduplicates concurrent POST /update requests via a single in-flight promise', async () => {
+    let resolvePerform!: (outcome: UpdateOutcome) => void;
+    const performUpdate = mock(
+      () =>
+        new Promise<UpdateOutcome>((resolve) => {
+          resolvePerform = resolve;
+        }),
+    );
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    const first = app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+    const second = app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+    // Yield once so both routes register their await on the same in-flight promise
+    // before we resolve it.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    resolvePerform({ status: 'success' });
+
+    const [firstRes, secondRes] = await Promise.all([first, second]);
+    expect(await firstRes.json()).toEqual({ status: 'success' });
+    expect(await secondRes.json()).toEqual({ status: 'success' });
+    expect(performUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a recoverable failure when performUpdate throws', async () => {
+    const performUpdate = mock(() => Promise.reject(new Error('boom')));
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    const res = await app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { status: string; message: string; recoverable: boolean };
+    expect(body.status).toBe('failed');
+    expect(body.recoverable).toBe(true);
+    expect(body.message).toMatch(/contextbridge update/);
+  });
+
+  it('clears the in-flight slot after the update settles', async () => {
+    const performUpdate = mock(() => Promise.resolve<UpdateOutcome>({ status: 'success' }));
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    await app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+    await app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+
+    expect(performUpdate).toHaveBeenCalledTimes(2);
+  });
+
+  it('awaitInFlightUpdate resolves immediately when nothing is in flight', async () => {
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+    });
+
+    await app.awaitInFlightUpdate();
+  });
+
+  it('awaitInFlightUpdate waits for a pending update to settle', async () => {
+    let resolvePerform!: (outcome: UpdateOutcome) => void;
+    const performUpdate = mock(
+      () =>
+        new Promise<UpdateOutcome>((resolve) => {
+          resolvePerform = resolve;
+        }),
+    );
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    void app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+    // Yield once so the route can register the in-flight promise.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    let resolved = false;
+    const wait = app.awaitInFlightUpdate().then(() => {
+      resolved = true;
+    });
+    expect(resolved).toBe(false);
+
+    resolvePerform({ status: 'success' });
+    await wait;
+    expect(resolved).toBe(true);
+  });
+
+  it('awaitInFlightUpdate resolves on timeout without throwing if the update is still pending', async () => {
+    const performUpdate = mock(() => new Promise<UpdateOutcome>(() => {}));
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+      performUpdate,
+    });
+
+    void app.fetch(new Request('http://localhost/update', { method: 'POST' }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await app.awaitInFlightUpdate(20);
   });
 });

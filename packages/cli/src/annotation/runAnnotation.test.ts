@@ -63,6 +63,16 @@ describe('runAnnotation', () => {
     expect(deps.sigintHandlerRemoved).toBe(true);
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
   });
+
+  it('drains the in-flight update before closing the server', async () => {
+    const { context } = createStubContext();
+    const deps = createAnnotationDependencies();
+
+    await runAnnotation(context, annotationArgs.build(), deps);
+
+    expect(deps.awaitInFlightUpdateCalls).toEqual([60_000]);
+    expect(deps.closeCount).toBe(1);
+  });
 });
 
 function createAnnotationDependencies(
@@ -72,12 +82,14 @@ function createAnnotationDependencies(
 ): AnnotationDependencies & {
   closeCount: number;
   payloads: AnnotationPayload[];
+  awaitInFlightUpdateCalls: Array<number | undefined>;
   sigintHandlerRegistered: Promise<void>;
   sigintHandlerRemoved: boolean;
   submission: AnnotationSubmission;
   triggerSigint(): void;
 } {
   const payloads: AnnotationPayload[] = [];
+  const awaitInFlightUpdateCalls: Array<number | undefined> = [];
   const submission = annotationSubmission.build();
   const sigintRegistration = createDeferred<void>();
   let closeCount = 0;
@@ -89,6 +101,7 @@ function createAnnotationDependencies(
       return closeCount;
     },
     payloads,
+    awaitInFlightUpdateCalls,
     sigintHandlerRegistered: sigintRegistration.promise,
     get sigintHandlerRemoved() {
       return sigintHandlerRemoved;
@@ -108,6 +121,10 @@ function createAnnotationDependencies(
         port: 4312,
         url: 'http://localhost:4312',
         result: options.result ?? Promise.resolve(submission),
+        awaitInFlightUpdate: (timeoutMs) => {
+          awaitInFlightUpdateCalls.push(timeoutMs);
+          return Promise.resolve();
+        },
         close: () => {
           closeCount += 1;
           return Promise.resolve();
