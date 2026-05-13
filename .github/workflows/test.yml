@@ -32,6 +32,8 @@ jobs:
         run: bun run lint
       - name: Typecheck
         run: bun run typecheck
+      - name: Skills drift check
+        run: bun run skills:check
 
   test:
     name: Test
