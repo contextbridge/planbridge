@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
+import { annotatedMarkdownTestIds } from '../AnnotatedMarkdown.tsx';
 import type { AppProps } from '../App.tsx';
 import { App } from '../App.tsx';
 import type { AnnotationAppContext as AnnotationAppContextValue } from '../useAppContext.ts';
@@ -23,4 +24,25 @@ export function renderApp(
     </ErrorBoundary>,
   );
   return { result, ...fake };
+}
+
+type DragArgs = {
+  target: Text;
+  from: number;
+  to: number;
+};
+
+export function drag({ target, from, to }: DragArgs): void {
+  const range = document.createRange();
+  range.setStart(target, from);
+  range.setEnd(target, to);
+
+  const selection = window.getSelection();
+  if (!selection) {
+    throw new Error('Expected browser selection API to be available.');
+  }
+
+  selection.removeAllRanges();
+  selection.addRange(range);
+  fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
 }

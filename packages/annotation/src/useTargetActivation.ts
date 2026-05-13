@@ -69,6 +69,10 @@ export function useTargetActivation(args: {
         return;
       }
 
+      if (shouldDeferToDefaultAction(source)) {
+        return;
+      }
+
       const range = resolveTokenRange(source, container) ?? index.targetToRange(target.id);
       if (!range) {
         return;
@@ -135,6 +139,22 @@ function resolveTokenRange(source: EventTarget | null, container: HTMLElement): 
   const range = document.createRange();
   range.selectNodeContents(token);
   return range;
+}
+
+function shouldDeferToDefaultAction(source: EventTarget | null): boolean {
+  if (!(source instanceof Element)) {
+    return false;
+  }
+  return isLink(source) && hasCollapsedSelection();
+}
+
+function isLink(element: Element): boolean {
+  return element.closest('a[href]') !== null;
+}
+
+function hasCollapsedSelection(): boolean {
+  const selection = window.getSelection();
+  return !selection || selection.isCollapsed;
 }
 
 function clearTargetActivationState(container: HTMLElement | null): void {

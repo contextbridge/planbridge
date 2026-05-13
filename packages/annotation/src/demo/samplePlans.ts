@@ -5,7 +5,7 @@ This change consolidates our session-token handling into a single well-tested mo
 ## Goals
 
 - Eliminate the three duplicated JWT-parsing code paths that drifted over the last year.
-- Introduce a Zod-validated cookie schema so malformed tokens surface with actionable errors.
+- Introduce a [Zod](https://zod.dev)-validated cookie schema so malformed tokens surface with actionable errors.
 - Give the security team a single integration point for future changes (rotation, revocation, audit logging).
 
 ## Non-goals

@@ -10,7 +10,7 @@ import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
 import { appTestIds } from './App.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
-import { renderApp } from './testHelpers/renderApp.tsx';
+import { drag, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -219,14 +219,7 @@ describe('App', () => {
     const stringToken = document.querySelector<HTMLElement>('pre code.hljs .hljs-string')!;
     const text = stringToken.firstChild as Text;
 
-    const range = document.createRange();
-    range.setStart(text, 3);
-    range.setEnd(text, 5);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    drag({ target: text, from: 3, to: 5 });
 
     await screen.findByTestId(annotationPopoverTestIds.container);
 
@@ -280,6 +273,75 @@ describe('App', () => {
     expect(link).toHaveAttribute('href', 'https://example.com');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noreferrer');
+  });
+
+  it('lets a plain click on a link navigate without opening the annotation popover', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    await waitFor(() => {
+      expect(link).toHaveAttribute('data-target-id');
+    });
+
+    let defaultPrevented: boolean | undefined;
+    link.addEventListener(
+      'click',
+      (event) => {
+        defaultPrevented = event.defaultPrevented;
+        event.preventDefault();
+      },
+      { once: true },
+    );
+
+    await user.click(link);
+
+    expect(defaultPrevented).toBe(false);
+    expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+  });
+
+  it('opens the annotation popover when text inside a link is drag-selected', async () => {
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    drag({ target: text, from: 0, to: text.length });
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+  });
+
+  it('clicking a link that already has an annotation opens the editor instead of navigating', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    drag({ target: text, from: 0, to: text.length });
+    await screen.findByTestId(annotationPopoverTestIds.container);
+
+    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Link comment');
+    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+    });
+
+    const rect = link.getBoundingClientRect();
+    fireEvent.click(link, {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    });
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Link comment');
   });
 
   it('sets the document title from the payload title', async () => {
