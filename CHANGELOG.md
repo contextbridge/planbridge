@@ -2,6 +2,25 @@
 
 ## [0.5.0](https://github.com/contextbridge/planbridge/compare/v0.4.0...v0.5.0) (2026-05-13)
 
+The big news with 0.5.0 is the addition of the `contextbridge open` command. With this command, you can use the PlanBridge UI to markup
+any file or content. We also shipped Claude (`/planbridge:open`) and Codex (`$planbridge-open`) skills to make it easy to trigger directly
+from your TUI.
+
+This means you can do cool things like:
+
+- Review and annotate [`superpowers`](https://github.com/obra/superpowers) plans:
+  ```
+  /planbridge:open docs/superpowers/plans/2026-05-12-open-command.md
+  ```
+
+- Review and annotate something the agent said (e.g., if it proposed a commit message):
+  ```
+  /planbridge:open the proposed commit message
+  ```
+
+We've got lots more features coming soon that will build on this foundation!
+
+Learn more about the `contextbridge open` command [on the docs site](https://plan.contextbridge.ai/usage/open/).
 
 ### Features
 
@@ -12,7 +31,6 @@
 
 ### Bug Fixes
 
-* checkout before paths-filter in zizmor workflow ([bc74450](https://github.com/contextbridge/planbridge/commit/bc74450eed314ef5b1b7e865122633fb74a22ffd))
 * let plain link clicks navigate instead of opening the annotation popover ([#92](https://github.com/contextbridge/planbridge/issues/92)) ([28245a1](https://github.com/contextbridge/planbridge/commit/28245a11adbe13e522bffdab45d9e32be7f0690a))
 * stop disabling deprecated codex_hooks feature flag ([#104](https://github.com/contextbridge/planbridge/issues/104)) ([74038f0](https://github.com/contextbridge/planbridge/commit/74038f088f8d59f2fcaed0f21f1167c650be825a))
 
