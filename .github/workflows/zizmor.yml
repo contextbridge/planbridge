@@ -20,20 +20,37 @@ jobs:
       actions: read # zizmor reads workflow run metadata for online audits
       security-events: write # upload SARIF to GitHub code scanning
     steps:
+      # Audit only when something zizmor cares about changed. Keeps the job a
+      # required check that always reports a status, while skipping the
+      # API-heavy audit (and SARIF upload) on unrelated PRs.
+      - name: Detect workflow changes
+        id: changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            github:
+              - '.github/**'
+              - 'zizmor.yml'
+
       - name: Checkout
+        if: steps.changes.outputs.github == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
       - name: Install uv
+        if: steps.changes.outputs.github == 'true'
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
       - name: Run zizmor
+        if: steps.changes.outputs.github == 'true'
         run: uvx zizmor --format=sarif .github/ > zizmor.sarif
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload zizmor SARIF to code scanning
+        if: steps.changes.outputs.github == 'true'
         uses: github/codeql-action/upload-sarif@3ce22a6e336a7fcc318bc58ae1986395bdc83ba7 # v4.35.4
         with:
           sarif_file: zizmor.sarif
