@@ -2,9 +2,9 @@ import { Database as BunSqliteDatabase } from 'bun:sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { migrate as drizzleMigrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { Result } from 'neverthrow';
-import { storageMigrationsJournal, storageMigrationsTable } from '../../generated/migrations.ts';
 import { ensureStorageDirectory } from '../paths.ts';
 import { StorageError, toStorageError } from '../storageError.ts';
+import { storageMigrationsJournal, storageMigrationsTable } from './migrations.ts';
 import * as schema from './schema/index.ts';
 
 export interface CreateDbOptions {

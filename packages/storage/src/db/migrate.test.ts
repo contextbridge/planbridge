@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { migrate as drizzleMigrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { withDb } from '#src/testHelpers/index.ts';
-import { storageMigrationsJournal, storageMigrationsTable } from '../../generated/migrations.ts';
+import { storageMigrationsJournal, storageMigrationsTable } from './migrations.ts';
 
 describe('storage migrations', () => {
   test('migrates a fresh database and records applied migrations', async () => {
