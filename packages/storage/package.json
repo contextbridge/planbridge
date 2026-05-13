@@ -14,7 +14,7 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate --config drizzle.config.ts && bun run scripts/generateMigrations.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:check": "drizzle-kit check --config drizzle.config.ts"
   },
   "dependencies": {
