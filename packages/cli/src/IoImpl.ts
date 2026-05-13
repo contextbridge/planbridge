@@ -1,34 +1,41 @@
-import type { Readable, Writable } from 'node:stream';
+import { type Readable, type Writable } from 'node:stream';
 import { readStreamToString } from '#src/streams.ts';
 
+export interface Writer extends Writable {
+  readonly isTTY?: boolean;
+}
+
+export interface Reader extends Readable {
+  readonly isTTY?: boolean;
+}
+
 export interface Io {
+  /**
+   * Raw stdout stream. Prefer `writeStdout(chunk)` — this field exists for
+   * library adapters (clack, pino, CommandRunner wiring) and tests that need
+   * stream-level access. Handler code should not reach into it.
+   */
+  readonly stdout: Writer;
+  /**
+   * Raw stderr stream. Prefer `writeStderr(chunk)` — same rationale as `stdout`.
+   */
+  readonly stderr: Writer;
+  /**
+   * Raw stdin stream. Prefer `readStdin()` — same rationale as `stdout`.
+   */
+  readonly stdin: Reader;
   readonly stdinIsTTY?: boolean;
   readStdin(): Promise<string>;
   writeStdout(chunk: string): void;
   writeStderr(chunk: string): void;
 }
 
-type IoStreams = {
-  readonly stdout: Writable & Writer;
-  readonly stderr: Writable & Writer;
-  readonly stdin: Readable & Reader;
-};
+export class IoImpl implements Io {
+  readonly stdout: Writer;
+  readonly stderr: Writer;
+  readonly stdin: Reader;
 
-export interface Writer {
-  write(chunk: string): boolean | void;
-  readonly isTTY?: boolean;
-}
-
-export interface Reader extends AsyncIterable<string | Buffer> {
-  readonly isTTY?: boolean;
-}
-
-export class IoImpl implements Io, IoStreams {
-  readonly stdout: Writable & { isTTY?: boolean };
-  readonly stderr: Writable & { isTTY?: boolean };
-  readonly stdin: Readable & { isTTY?: boolean };
-
-  constructor(streams: Partial<IoStreams> = {}) {
+  constructor(streams: Partial<Pick<Io, 'stdout' | 'stderr' | 'stdin'>> = {}) {
     // This is the one place that's allowed to touch the real process streams —
     // everything downstream receives them through ctx.io.
     /* eslint-disable no-restricted-properties */
