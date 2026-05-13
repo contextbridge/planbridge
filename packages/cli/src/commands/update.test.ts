@@ -1,10 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { CLAUDE_LEGACY_PLUGIN_ID, CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_LEGACY_PLUGIN_ID, CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import {
   createStubContext,
   marketplaceListResult,
@@ -14,8 +14,8 @@ import {
 } from '#src/testHelpers/index.ts';
 import { runUpdate } from './update.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 // Arbitrary fake path returned from `commandRunner.which('contextbridge')` so tests
 // can stub the refresh-spawn target separately from process.execPath.
 const FAKE_CONTEXTBRIDGE_PATH = '/usr/local/bin/contextbridge';

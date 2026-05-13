@@ -1,8 +1,8 @@
 import { GITHUB_REPO_URL } from '@contextbridge/shared/links';
 import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
-import type { HarnessInstaller, ManagedEntry } from '#src/harnesses/HarnessInstaller.ts';
-import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
+import type { HarnessInstaller, ManagedEntry } from '#src/installers/HarnessInstaller.ts';
+import { ALL_INSTALLERS } from '#src/installers/installers.ts';
 
 export async function runUpdate(ctx: CliContext): Promise<void> {
   const { io, logger, updater } = ctx;

@@ -1,3 +1,4 @@
+import type { HarnessDescriptor } from '@contextbridge/harness';
 import { Factory } from 'fishery';
 import type { RunAnnotationArgs } from '#src/annotation/runAnnotation.ts';
 import type {
@@ -6,7 +7,6 @@ import type {
   CodexTranscriptPlanLine,
 } from '#src/commands/codexHookSchema.ts';
 import type { Environment } from '#src/environment.ts';
-import type { HarnessDescriptor } from '#src/harnesses/types.ts';
 
 export const codexStopHookPayload = Factory.define<CodexStopHookPayload>(() => ({
   session_id: 'sess_123',

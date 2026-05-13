@@ -1,11 +1,10 @@
+import { type InstallableHarness, getInstallableHarness } from '@contextbridge/harness';
 import { CommanderError } from 'commander';
 import { z } from 'zod';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from './detect.ts';
 import { type HarnessStatus, type ManagedEntry } from './HarnessInstaller.ts';
-import { getSupportedDescriptor } from './registry.ts';
 import { INSTALL_SCOPES, type InstallScope, ScopedHarnessInstaller } from './ScopedHarnessInstaller.ts';
-import type { SupportedHarnessDescriptor } from './types.ts';
 
 export const CLAUDE_PLUGIN_ID = 'planbridge@contextbridge';
 export const CLAUDE_LEGACY_PLUGIN_ID = 'cli@contextbridge';
@@ -26,7 +25,7 @@ const ConfiguredMarketplacesSchema = z.array(ConfiguredMarketplaceSchema);
 type ConfiguredMarketplace = z.infer<typeof ConfiguredMarketplaceSchema>;
 
 export class ClaudeInstaller extends ScopedHarnessInstaller {
-  readonly descriptor: SupportedHarnessDescriptor = getSupportedDescriptor('claude');
+  readonly descriptor: InstallableHarness = getInstallableHarness('claude');
   protected readonly binaryMissingCode = 'contextbridge.claudeInstaller.missingClaude';
   protected readonly configDirName = '.claude';
   protected readonly installDescription = 'Install the PlanBridge plugin into Claude Code via the `claude plugin` CLI.';

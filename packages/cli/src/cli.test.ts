@@ -1,16 +1,16 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 
 describe('runCli', () => {
   it('prints the version on --version', async () => {

@@ -2,16 +2,16 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
+import { bundledSkills } from '@contextbridge/skills/codex';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { bundledSkills } from '#src/bundledSkills.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
-import { getDescriptor } from './registry.ts';
 
-const CODEX_BINARY = getDescriptor('codex').binaryName;
-const bundledOpenSkill = bundledSkills.find((skill) => skill.name === 'open')?.body ?? '';
+const CODEX_BINARY = getHarness('codex').binaryName;
+const bundledOpenSkill = bundledSkills.find((skill) => skill.installId === 'planbridge-open')?.body ?? '';
 
 describe('CodexInstaller', () => {
   let tmp: string;

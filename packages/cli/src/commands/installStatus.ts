@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import type { CliContext } from '#src/context.ts';
-import type { HarnessStatus } from '#src/harnesses/HarnessInstaller.ts';
-import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
+import type { HarnessStatus } from '#src/installers/HarnessInstaller.ts';
+import { ALL_INSTALLERS } from '#src/installers/installers.ts';
 
 export interface InstallStatusOptions {
   json?: boolean;

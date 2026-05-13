@@ -4,7 +4,7 @@ import { reportHarnessDiscovery } from '@contextbridge/instrumentation/node';
 import { type Command, CommanderError } from 'commander';
 import { createProgram } from '#src/commands/index.ts';
 import { type CliContext, createContext } from '#src/context.ts';
-import { detectHarnesses } from '#src/harnesses/detect.ts';
+import { detectHarnesses } from '#src/installers/detect.ts';
 
 export async function runCli(ctx: CliContext, argv: string[]): Promise<number> {
   const { logger, analytics, distinctId, telemetry } = ctx;

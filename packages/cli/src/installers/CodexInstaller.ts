@@ -1,17 +1,16 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { type InstallableHarness, getInstallableHarness } from '@contextbridge/harness';
 import { getErrorMessage, hasErrorCode } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
 import { isRecord } from '@contextbridge/shared/typeGuards';
+import { type BundledSkill, bundledSkills } from '@contextbridge/skills/codex';
 import { CommanderError } from 'commander';
 import semver from 'semver';
-import { type BundledSkill, bundledSkills } from '#src/bundledSkills.ts';
 import type { CliContext } from '#src/context.ts';
 import { detectHarness } from './detect.ts';
 import { type HarnessStatus, type ManagedEntry } from './HarnessInstaller.ts';
-import { getSupportedDescriptor } from './registry.ts';
 import { INSTALL_SCOPES, type InstallScope, ScopedHarnessInstaller } from './ScopedHarnessInstaller.ts';
-import type { SupportedHarnessDescriptor } from './types.ts';
 
 const CODEX_HOOK_COMMAND = 'contextbridge hook codex';
 const CODEX_HOOK_TIMEOUT_SECONDS = 345600;
@@ -20,7 +19,6 @@ const CODEX_HOOK_STATUS_MESSAGE = 'Opening PlanBridge';
 const MINIMUM_CODEX_VERSION = '0.129.0';
 
 const STOP_HOOK_KEY = 'Stop';
-const SKILL_ID_PREFIX = 'planbridge-';
 const AGENTS_SKILLS_DIR = '.agents/skills';
 
 const PLANBRIDGE_STOP_HOOK = {
@@ -31,7 +29,7 @@ const PLANBRIDGE_STOP_HOOK = {
 } as const;
 
 export class CodexInstaller extends ScopedHarnessInstaller {
-  readonly descriptor: SupportedHarnessDescriptor = getSupportedDescriptor('codex');
+  readonly descriptor: InstallableHarness = getInstallableHarness('codex');
   protected readonly binaryMissingCode = 'contextbridge.codexInstaller.missingCodex';
   protected readonly configDirName = '.codex';
   protected readonly installDescription = 'Install the PlanBridge Stop hook into Codex CLI.';
@@ -57,7 +55,7 @@ export class CodexInstaller extends ScopedHarnessInstaller {
 
     for (const skill of bundledSkills) {
       if (await isSkillInstalled(ctx, skill)) {
-        managed.push({ kind: 'skill', identifier: skillId(skill.name), scope: 'user' });
+        managed.push({ kind: 'skill', identifier: skill.installId, scope: 'user' });
         installed = true;
       }
     }
@@ -87,9 +85,9 @@ export class CodexInstaller extends ScopedHarnessInstaller {
       `Restart Codex CLI, open /hooks, verify the Stop hook runs \`${CODEX_HOOK_COMMAND}\`, and press t.\n`,
     );
     io.writeStderr(`Walkthrough: https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook\n`);
-    for (const { name } of bundledSkills) {
-      io.writeStderr(`✓ PlanBridge skill installed at ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/SKILL.md.\n`);
-      io.writeStderr(`Invoke in Codex as $${skillId(name)}.\n`);
+    for (const { installId } of bundledSkills) {
+      io.writeStderr(`✓ PlanBridge skill installed at ~/${AGENTS_SKILLS_DIR}/${installId}/SKILL.md.\n`);
+      io.writeStderr(`Invoke in Codex as $${installId}.\n`);
     }
   }
 
@@ -104,9 +102,9 @@ export class CodexInstaller extends ScopedHarnessInstaller {
     io.writeStderr(`✓ PlanBridge hook removed from Codex CLI (scope: ${scope}).\n`);
 
     if (scope === 'user') {
-      for (const { name } of bundledSkills) {
-        await removeSkill(ctx, name);
-        io.writeStderr(`✓ PlanBridge skill removed from ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/.\n`);
+      for (const { installId } of bundledSkills) {
+        await removeSkill(ctx, installId);
+        io.writeStderr(`✓ PlanBridge skill removed from ~/${AGENTS_SKILLS_DIR}/${installId}/.\n`);
       }
     }
   }
@@ -366,24 +364,20 @@ function parseCodexVersion(source: string): string | null {
   return null;
 }
 
-function skillId(name: string): string {
-  return `${SKILL_ID_PREFIX}${name}`;
-}
-
 function getAgentsSkillsDir(ctx: CliContext): string {
   return join(ctx.env.HOME ?? '', AGENTS_SKILLS_DIR);
 }
 
-function getSkillDir(ctx: CliContext, name: string): string {
-  return join(getAgentsSkillsDir(ctx), skillId(name));
+function getSkillDir(ctx: CliContext, installId: string): string {
+  return join(getAgentsSkillsDir(ctx), installId);
 }
 
-function getSkillPath(ctx: CliContext, name: string): string {
-  return join(getSkillDir(ctx, name), 'SKILL.md');
+function getSkillPath(ctx: CliContext, installId: string): string {
+  return join(getSkillDir(ctx, installId), 'SKILL.md');
 }
 
-async function isSkillInstalled(ctx: CliContext, { name, body }: BundledSkill): Promise<boolean> {
-  const skillPath = getSkillPath(ctx, name);
+async function isSkillInstalled(ctx: CliContext, { installId, body }: BundledSkill): Promise<boolean> {
+  const skillPath = getSkillPath(ctx, installId);
   try {
     const existing = await readFile(skillPath, 'utf8');
     return existing === body;
@@ -393,12 +387,12 @@ async function isSkillInstalled(ctx: CliContext, { name, body }: BundledSkill): 
   }
 }
 
-async function writeSkill(ctx: CliContext, { name, body }: BundledSkill): Promise<void> {
-  const skillPath = getSkillPath(ctx, name);
+async function writeSkill(ctx: CliContext, { installId, body }: BundledSkill): Promise<void> {
+  const skillPath = getSkillPath(ctx, installId);
   await mkdir(dirname(skillPath), { recursive: true });
   await writeFile(skillPath, body);
 }
 
-async function removeSkill(ctx: CliContext, name: string): Promise<void> {
-  await rm(getSkillDir(ctx, name), { recursive: true, force: true });
+async function removeSkill(ctx: CliContext, installId: string): Promise<void> {
+  await rm(getSkillDir(ctx, installId), { recursive: true, force: true });
 }
