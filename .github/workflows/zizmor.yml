@@ -20,6 +20,13 @@ jobs:
       actions: read # zizmor reads workflow run metadata for online audits
       security-events: write # upload SARIF to GitHub code scanning
     steps:
+      # paths-filter needs a git checkout — it runs `git branch --show-current`
+      # before any API fallback, and fails outside a working tree.
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
       # Audit only when something zizmor cares about changed. Keeps the job a
       # required check that always reports a status, while skipping the
       # API-heavy audit (and SARIF upload) on unrelated PRs.
@@ -32,12 +39,6 @@ jobs:
             github:
               - '.github/**'
               - 'zizmor.yml'
-
-      - name: Checkout
-        if: steps.changes.outputs.github == 'true'
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
 
       - name: Install uv
         if: steps.changes.outputs.github == 'true'
