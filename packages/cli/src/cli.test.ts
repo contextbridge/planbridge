@@ -119,7 +119,6 @@ describe('runCli', () => {
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
     commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
     commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
-    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
@@ -129,7 +128,6 @@ describe('runCli', () => {
         hooks: { Stop: [{ hooks: [{ command: 'contextbridge hook codex' }] }] },
       });
       expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'enable', 'hooks'])).toHaveLength(1);
-      expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('scope: user');
     } finally {
       rmSync(tmp, { recursive: true, force: true });
@@ -145,7 +143,6 @@ describe('runCli', () => {
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
     commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
     commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
-    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
