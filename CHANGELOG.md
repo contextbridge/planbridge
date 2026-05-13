@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/contextbridge/planbridge/compare/v0.4.0...v0.5.0) (2026-05-13)
+
+
+### Features
+
+* add 'contextbridge open' subcommand and planbridge-open skill ([#83](https://github.com/contextbridge/planbridge/issues/83)) ([0d1854f](https://github.com/contextbridge/planbridge/commit/0d1854f1d128cfb3c408e65171b72dd05552c4a2))
+* align prompt reviewer noun with LLM user/assistant parlance ([#89](https://github.com/contextbridge/planbridge/issues/89)) ([ccf1bd1](https://github.com/contextbridge/planbridge/commit/ccf1bd1105c2781fe84faed8d70ccf90ee6d4afc))
+* **storage:** Add SQLite DB for local-only storage to support future features like plan diff and  git diff.  ([#96](https://github.com/contextbridge/planbridge/issues/96)) ([b80fdfb](https://github.com/contextbridge/planbridge/commit/b80fdfb8b3bf31f37d2884caaf0fc57b1063ae00))
+
+
+### Bug Fixes
+
+* checkout before paths-filter in zizmor workflow ([bc74450](https://github.com/contextbridge/planbridge/commit/bc74450eed314ef5b1b7e865122633fb74a22ffd))
+* let plain link clicks navigate instead of opening the annotation popover ([#92](https://github.com/contextbridge/planbridge/issues/92)) ([28245a1](https://github.com/contextbridge/planbridge/commit/28245a11adbe13e522bffdab45d9e32be7f0690a))
+* stop disabling deprecated codex_hooks feature flag ([#104](https://github.com/contextbridge/planbridge/issues/104)) ([74038f0](https://github.com/contextbridge/planbridge/commit/74038f088f8d59f2fcaed0f21f1167c650be825a))
+
 ## [0.4.0](https://github.com/contextbridge/planbridge/compare/v0.3.0...v0.4.0) (2026-05-11)
 
 
