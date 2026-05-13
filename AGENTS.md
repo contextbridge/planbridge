@@ -19,9 +19,12 @@ planbridge/
 ├── packages/                  # public bun workspace ("workspaces": ["packages/*"])
 │   ├── cli/                   # @contextbridge/cli — the `contextbridge` binary
 │   ├── context/               # @contextbridge/context — shared BaseContext + FrontendContext
+│   ├── harness/               # @contextbridge/harness — canonical HarnessDescriptor + registry
 │   ├── instrumentation/       # @contextbridge/instrumentation — PostHog + Sentry wrappers (node + browser)
 │   ├── shared/                # @contextbridge/shared — types + zod schemas shared across packages
 │   ├── server/                # @contextbridge/server — local Bun.serve HTTP library
+│   ├── skills/                # @contextbridge/skills — SKILL.md sources + per-harness codegen + drift check
+│   ├── storage/               # @contextbridge/storage — local SQLite + Drizzle schema
 │   ├── ui/                    # @contextbridge/ui — shared CSS, fonts, cn(), shadcn components
 │   └── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
 ├── tools/                     # private git submodule for employees/trusted CI only
