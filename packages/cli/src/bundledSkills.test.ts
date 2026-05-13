@@ -11,9 +11,10 @@ describe('bundled skills', () => {
   });
 
   for (const { name, body } of bundledSkills) {
-    it(`embedded ${name} skill matches the Claude plugin SKILL.md`, () => {
+    it(`embedded ${name} skill matches the Claude plugin SKILL.md except for the Codex command name`, () => {
       const claudeSource = readFileSync(join(repoRoot, 'harnessIntegrations/claude/skills', name, 'SKILL.md'), 'utf8');
-      expect(body).toBe(claudeSource);
+      expect(body).toBe(claudeSource.replace(`name: ${name}`, `name: planbridge-${name}`));
+      expect(body).toContain(`name: planbridge-${name}`);
     });
   }
 });

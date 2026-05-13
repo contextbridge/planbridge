@@ -156,7 +156,9 @@ describe('CodexInstaller', () => {
 
       const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
       expect(existsSync(skillPath)).toBe(true);
-      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+      const installedSkill = readFileSync(skillPath, 'utf8');
+      expect(installedSkill).toBe(bundledOpenSkill);
+      expect(installedSkill).toContain('name: planbridge-open');
     });
 
     it('writes the skill at user level even on project-scope install', async () => {
