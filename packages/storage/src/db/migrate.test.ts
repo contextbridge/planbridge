@@ -13,7 +13,7 @@ describe('storage migrations', () => {
       ).toBe('projects');
       expect(
         sqlite.query<{ count: number }, []>(`SELECT count(*) as count FROM ${storageMigrationsTable}`).get()?.count,
-      ).toBe(1);
+      ).toBe(storageMigrationsJournal.length);
     });
   });
 
@@ -23,7 +23,7 @@ describe('storage migrations', () => {
 
       expect(
         sqlite.query<{ count: number }, []>(`SELECT count(*) as count FROM ${storageMigrationsTable}`).get()?.count,
-      ).toBe(1);
+      ).toBe(storageMigrationsJournal.length);
     });
   });
 });

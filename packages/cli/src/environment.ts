@@ -8,7 +8,9 @@ const Environment = z.object({
   CONTEXTBRIDGE_TELEMETRY_DISABLED: booleanEnv,
   CI: booleanEnv,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: booleanEnv,
+  CONTEXTBRIDGE_DB_PATH: z.string().trim().nonempty().optional(),
   XDG_CONFIG_HOME: z.string().optional(),
+  XDG_DATA_HOME: z.string().optional(),
   HOME: z.string().optional(),
 });
 

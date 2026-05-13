@@ -4,15 +4,22 @@ import { dirname, isAbsolute, join } from 'node:path';
 import { Result } from 'neverthrow';
 import { StorageError, toStorageError } from './storageError.ts';
 
+export interface StoragePathsContext {
+  readonly env: {
+    readonly CONTEXTBRIDGE_DB_PATH?: string | undefined;
+    readonly XDG_DATA_HOME?: string | undefined;
+    readonly HOME?: string | undefined;
+  };
+}
+
 export interface ResolveStoragePathOptions {
-  readonly env: Partial<Record<'CONTEXTBRIDGE_DB_PATH' | 'XDG_DATA_HOME' | 'HOME', string | undefined>>;
-  readonly platform: NodeJS.Platform;
+  readonly platform?: NodeJS.Platform;
   readonly homedir?: () => string;
 }
 
-export function resolveStoragePath(options: ResolveStoragePathOptions): string {
-  const { env, platform, homedir = defaultHomedir } = options;
-  const { CONTEXTBRIDGE_DB_PATH: dbPath, XDG_DATA_HOME: xdgDataHome, HOME: homeFromEnv } = env;
+export function resolveStoragePath(ctx: StoragePathsContext, options: ResolveStoragePathOptions = {}): string {
+  const { platform = process.platform, homedir = defaultHomedir } = options;
+  const { CONTEXTBRIDGE_DB_PATH: dbPath, XDG_DATA_HOME: xdgDataHome, HOME: homeFromEnv } = ctx.env;
 
   if (dbPath && dbPath.length > 0) {
     return dbPath;

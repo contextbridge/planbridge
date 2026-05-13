@@ -29,4 +29,31 @@ describe('projects table', () => {
       ).toThrow();
     });
   });
+
+  test('rejects vcs metadata when vcs_kind is none', async () => {
+    await withDb(({ db }) => {
+      expect(() =>
+        db
+          .insert(projects)
+          .values(project.build({ vcsKind: 'none', vcsRootPath: '/tmp/contextbridge/leak' }))
+          .run(),
+      ).toThrow(/CHECK/i);
+    });
+  });
+
+  test('accepts vcs_kind none when metadata columns are null', async () => {
+    await withDb(async ({ db }) => {
+      await db.insert(projects).values(
+        project.build({
+          vcsKind: 'none',
+          vcsRootPath: null,
+          gitRemoteUrl: null,
+          gitRepositoryId: null,
+        }),
+      );
+
+      const rows = await db.select({ vcsKind: projects.vcsKind }).from(projects);
+      expect(rows).toEqual([{ vcsKind: 'none' }]);
+    });
+  });
 });
