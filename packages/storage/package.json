@@ -1,0 +1,29 @@
+{
+  "name": "@contextbridge/storage",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/db/schema/index.ts",
+    "./testHelpers": "./src/testHelpers/index.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts && bun run scripts/generateMigrations.ts",
+    "db:check": "drizzle-kit check --config drizzle.config.ts"
+  },
+  "dependencies": {
+    "@contextbridge/shared": "workspace:*",
+    "drizzle-orm": "1.0.0-rc.2",
+    "neverthrow": "^8.2.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "1.0.0-rc.2",
+    "fishery": "^2.4.0"
+  }
+}
