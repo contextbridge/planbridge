@@ -10,7 +10,7 @@ import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
 import { appTestIds } from './App.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
-import { renderApp } from './testHelpers/renderApp.tsx';
+import { drag, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -219,14 +219,7 @@ describe('App', () => {
     const stringToken = document.querySelector<HTMLElement>('pre code.hljs .hljs-string')!;
     const text = stringToken.firstChild as Text;
 
-    const range = document.createRange();
-    range.setStart(text, 3);
-    range.setEnd(text, 5);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    drag({ target: text, from: 3, to: 5 });
 
     await screen.findByTestId(annotationPopoverTestIds.container);
 
@@ -317,14 +310,7 @@ describe('App', () => {
     const link = await screen.findByRole('link', { name: 'the docs' });
     const text = link.firstChild as Text;
 
-    const range = document.createRange();
-    range.setStart(text, 0);
-    range.setEnd(text, text.length);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    drag({ target: text, from: 0, to: text.length });
 
     expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
   });
@@ -338,13 +324,7 @@ describe('App', () => {
     const link = await screen.findByRole('link', { name: 'the docs' });
     const text = link.firstChild as Text;
 
-    const range = document.createRange();
-    range.setStart(text, 0);
-    range.setEnd(text, text.length);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    drag({ target: text, from: 0, to: text.length });
     await screen.findByTestId(annotationPopoverTestIds.container);
 
     await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Link comment');
