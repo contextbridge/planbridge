@@ -22,18 +22,20 @@ runs:
   using: 'composite'
   steps:
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v6.1.1
+      uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
       with:
         role-to-assume: ${{ inputs.role-to-assume }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Fetch MACOS_SIGN_P12 from Secrets Manager
       shell: bash
+      env:
+        CERTIFICATE_SECRET_ID: ${{ inputs.certificate-secret-id }}
       run: |
         set -euo pipefail
 
         value=$(aws secretsmanager get-secret-value \
-          --secret-id "${{ inputs.certificate-secret-id }}" \
+          --secret-id "$CERTIFICATE_SECRET_ID" \
           --query 'SecretString' \
           --output text)
 
@@ -49,10 +51,12 @@ runs:
 
     - name: Fetch secrets from SSM
       shell: bash
+      env:
+        PARAMETER_PATH: ${{ inputs.parameter-path }}
       run: |
         set -euo pipefail
 
-        PARAM_PATH="${{ inputs.parameter-path }}"
+        PARAM_PATH="$PARAMETER_PATH"
 
         PARAMS=$(aws ssm get-parameters-by-path \
           --path "$PARAM_PATH" \

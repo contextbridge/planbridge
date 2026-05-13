@@ -31,11 +31,12 @@ jobs:
       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           # Checkout main when merged, otherwise checkout PR branch (not ephemeral merge commit)
           ref: ${{ github.event.pull_request.merged && 'main' || github.event.pull_request.head.ref }}
           fetch-depth: 0 # Required for Chromatic to detect changes
+          persist-credentials: false
 
       - name: Bootstrap
         uses: ./.github/actions/bootstrap

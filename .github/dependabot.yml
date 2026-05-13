@@ -16,7 +16,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 3
+      default-days: 3 # zizmor: ignore[dependabot-cooldown]
     ignore:
       # Projen manages the `actions/create-github-app-token` SHA pin in its
       # generated workflows (upgrade_contextbridge-website.yml,
@@ -38,7 +38,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 3
+      default-days: 3 # zizmor: ignore[dependabot-cooldown]
     ignore:
       - dependency-name: "@types/bun"
     groups:
