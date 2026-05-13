@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { bundledSkills } from '#src/bundledSkills.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs, readWarnLogs } from '#src/testHelpers/index.ts';
+import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
 import { getDescriptor } from './registry.ts';
 
@@ -38,7 +38,6 @@ describe('CodexInstaller', () => {
         statusMessage: 'Opening PlanBridge',
       });
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
-      expect(commandRunnerCalls(context, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI (scope: user)');
       expect(io.stderr.text()).toContain('Action required');
       expect(io.stderr.text()).toContain('PlanBridge will not run in Codex until this hook is trusted');
@@ -56,7 +55,6 @@ describe('CodexInstaller', () => {
       expect(hooks.hooks.Stop[0]?.hooks[0]).toMatchObject({ command: 'contextbridge hook codex' });
       expect(existsSync(join(project, '.codex', 'config.toml'))).toBe(false);
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
-      expect(commandRunnerCalls(context, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
     });
 
     it('is idempotent and preserves other Stop hooks', async () => {
@@ -149,28 +147,6 @@ describe('CodexInstaller', () => {
       const installPromise = installer.install(context, { yes: true });
       expect(installPromise).rejects.toBeInstanceOf(CommanderError);
       expect(installPromise).rejects.toThrow(/^nope$/);
-    });
-
-    it('continues when disabling the legacy Codex hook feature fails', async () => {
-      const { installer, context, logs } = createCodexInstallerContext(
-        tmp,
-        {},
-        { disableLegacyHooksResult: { exitCode: 1, stdout: 'not enabled\n', stderr: 'unknown feature\n' } },
-      );
-
-      await installer.install(context, { yes: true });
-
-      expect(readHooksJson(join(tmp, '.codex', 'hooks.json')).hooks.Stop[0]?.hooks[0]).toMatchObject({
-        command: 'contextbridge hook codex',
-      });
-      expect(
-        readWarnLogs(logs).some(
-          (record) =>
-            record.msg === 'codex features disable codex_hooks failed; continuing' &&
-            record['stdout'] === 'not enabled\n' &&
-            record['stderr'] === 'unknown feature\n',
-        ),
-      ).toBe(true);
     });
 
     it('writes the skill to ~/.agents/skills/planbridge-open/SKILL.md on user-scope install', async () => {
@@ -393,20 +369,14 @@ function createCodexInstallerContext(
   options: {
     readonly versionStdout?: string;
     readonly enableHooksResult?: { readonly exitCode?: number; readonly stdout?: string; readonly stderr?: string };
-    readonly disableLegacyHooksResult?: {
-      readonly exitCode?: number;
-      readonly stdout?: string;
-      readonly stderr?: string;
-    };
   } = {},
 ) {
-  const { versionStdout = 'codex-cli 0.129.0\n', enableHooksResult, disableLegacyHooksResult } = options;
+  const { versionStdout = 'codex-cli 0.129.0\n', enableHooksResult } = options;
   const { env = environment.build({ HOME: tmp }), ...restOverrides } = overrides;
   const testContext = createStubContext({ env, ...restOverrides });
   testContext.commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
   testContext.commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: versionStdout });
   testContext.commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves(enableHooksResult);
-  testContext.commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves(disableLegacyHooksResult);
   return { installer: new CodexInstaller(), ...testContext };
 }
 

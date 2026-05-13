@@ -76,7 +76,7 @@ export class CodexInstaller extends ScopedHarnessInstaller {
     const hooksSource = await readOptionalText(hooksPath);
     const nextHooks = upsertPlanBridgeHookJson(hooksSource);
     await writeFile(hooksPath, nextHooks);
-    await enableCodexHookFeatureFlags(ctx, this.descriptor.binaryName);
+    await enableCodexHooksFeature(ctx, this.descriptor.binaryName);
     for (const skill of bundledSkills) {
       await writeSkill(ctx, skill);
     }
@@ -329,9 +329,8 @@ async function requireSupportedCodexVersion(ctx: CliContext, binaryName: string)
   }
 }
 
-async function enableCodexHookFeatureFlags(ctx: CliContext, binaryName: string): Promise<void> {
+async function enableCodexHooksFeature(ctx: CliContext, binaryName: string): Promise<void> {
   await runCodexCommand(ctx, binaryName, ['features', 'enable', 'hooks'], 'features enable hooks');
-  await tryRunCodexCommand(ctx, binaryName, ['features', 'disable', 'codex_hooks'], 'features disable codex_hooks');
 }
 
 async function runCodexCommand(
@@ -355,32 +354,6 @@ async function runCodexCommand(
   }
 
   return result;
-}
-
-async function tryRunCodexCommand(
-  ctx: CliContext,
-  binaryName: string,
-  args: readonly string[],
-  label: string,
-): Promise<void> {
-  const { commandRunner, logger } = ctx;
-  try {
-    const result = await commandRunner.run(binaryName, args);
-    if (result.exitCode === 0) {
-      logger.debug(
-        { args, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr },
-        `${binaryName} ${label}`,
-      );
-      return;
-    }
-
-    logger.warn(
-      { args, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr },
-      `${binaryName} ${label} failed; continuing`,
-    );
-  } catch (err) {
-    logger.warn({ err, args }, `${binaryName} ${label} failed; continuing`);
-  }
 }
 
 function parseCodexVersion(source: string): string | null {
