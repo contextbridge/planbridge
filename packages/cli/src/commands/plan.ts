@@ -8,7 +8,6 @@ import {
 import type { CliContext } from '#src/context.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
-import { readStreamToString } from '#src/streams.ts';
 import { abort } from './abort.ts';
 
 export interface PlanArgs {
@@ -19,7 +18,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   const { io, logger } = ctx;
   const { path } = args;
 
-  if (!path && io.stdin.isTTY === true) {
+  if (!path && io.stdinIsTTY === true) {
     abort(
       ctx,
       'plan',
@@ -31,7 +30,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   const source: 'file' | 'stdin' = path ? 'file' : 'stdin';
   let content: string;
   try {
-    content = path ? await Bun.file(path).text() : await readStreamToString(io.stdin);
+    content = path ? await Bun.file(path).text() : await io.readStdin();
   } catch (err) {
     abort(ctx, 'plan', 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
   }
@@ -44,7 +43,7 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
 
   try {
     const submission = await runAnnotation(ctx, { content, contentKind: 'plan', entrypoint: 'plan_command' }, deps);
-    io.stdout.write(formatAgentResponse(PLAN_TEMPLATES, submission, content));
+    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
   } catch (err) {
     if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');

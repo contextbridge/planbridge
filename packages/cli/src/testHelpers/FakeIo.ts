@@ -1,6 +1,7 @@
 import { PassThrough } from 'node:stream';
-import type { Io } from '#src/IoImpl.ts';
-import { MemoryStream } from './index.ts';
+import { type Io } from '#src/IoImpl.ts';
+import { readStreamToString } from '#src/streams.ts';
+import { MemoryStream } from './MemoryStream.ts';
 
 export class FakeIo implements Io {
   readonly stdout: MemoryStream;
@@ -8,12 +9,24 @@ export class FakeIo implements Io {
   readonly stdin: PassThrough & { isTTY?: boolean };
 
   constructor() {
-    const stdout = new MemoryStream();
-    const stderr = new MemoryStream();
-    const stdin = new PassThrough() as PassThrough & { isTTY?: boolean };
+    this.stdout = new MemoryStream();
+    this.stderr = new MemoryStream();
+    this.stdin = new PassThrough();
+  }
 
-    this.stdout = stdout;
-    this.stderr = stderr;
-    this.stdin = stdin;
+  get stdinIsTTY(): boolean | undefined {
+    return this.stdin.isTTY;
+  }
+
+  readStdin(): Promise<string> {
+    return readStreamToString(this.stdin);
+  }
+
+  writeStdout(chunk: string): void {
+    this.stdout.write(chunk);
+  }
+
+  writeStderr(chunk: string): void {
+    this.stderr.write(chunk);
   }
 }

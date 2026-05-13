@@ -81,15 +81,15 @@ export class CodexInstaller extends ScopedHarnessInstaller {
       await writeSkill(ctx, skill);
     }
 
-    io.stderr.write(`✓ PlanBridge hook installed for Codex CLI (scope: ${scope}).\n`);
-    io.stderr.write(`Action required: PlanBridge will not run in Codex until this hook is trusted.\n`);
-    io.stderr.write(
+    io.writeStderr(`✓ PlanBridge hook installed for Codex CLI (scope: ${scope}).\n`);
+    io.writeStderr(`Action required: PlanBridge will not run in Codex until this hook is trusted.\n`);
+    io.writeStderr(
       `Restart Codex CLI, open /hooks, verify the Stop hook runs \`${CODEX_HOOK_COMMAND}\`, and press t.\n`,
     );
-    io.stderr.write(`Walkthrough: https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook\n`);
+    io.writeStderr(`Walkthrough: https://plan.contextbridge.ai/usage/codex/#trust-the-codex-hook\n`);
     for (const { name } of bundledSkills) {
-      io.stderr.write(`✓ PlanBridge skill installed at ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/SKILL.md.\n`);
-      io.stderr.write(`Invoke in Codex as $${skillId(name)}.\n`);
+      io.writeStderr(`✓ PlanBridge skill installed at ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/SKILL.md.\n`);
+      io.writeStderr(`Invoke in Codex as $${skillId(name)}.\n`);
     }
   }
 
@@ -101,12 +101,12 @@ export class CodexInstaller extends ScopedHarnessInstaller {
       await removePlanBridgeHook(join(configDir, 'hooks.json'));
     }
 
-    io.stderr.write(`✓ PlanBridge hook removed from Codex CLI (scope: ${scope}).\n`);
+    io.writeStderr(`✓ PlanBridge hook removed from Codex CLI (scope: ${scope}).\n`);
 
     if (scope === 'user') {
       for (const { name } of bundledSkills) {
         await removeSkill(ctx, name);
-        io.stderr.write(`✓ PlanBridge skill removed from ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/.\n`);
+        io.writeStderr(`✓ PlanBridge skill removed from ~/${AGENTS_SKILLS_DIR}/${skillId(name)}/.\n`);
       }
     }
   }

@@ -6,7 +6,6 @@ import { ResultAsync, err, ok } from 'neverthrow';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type CodexStopResponse, codexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
-import { readStreamToString } from '#src/streams.ts';
 import {
   type CodexStopHookPayload,
   CodexStopHookPayloadSchema,
@@ -32,7 +31,7 @@ export async function runHookCodex(ctx: CliContext, deps: HookCodexDependencies 
   const payload = await readAndValidatePayload(ctx);
   const response = await handleStop(ctx, payload, deps);
 
-  io.stdout.write(`${JSON.stringify(response ?? {})}\n`);
+  io.writeStdout(`${JSON.stringify(response ?? {})}\n`);
 }
 
 export function registerHookCodex(ctx: CliContext, hookCommand: Command): void {
@@ -66,7 +65,7 @@ export function extractLatestPlanFromTranscript(transcript: string, turnId: stri
 
 async function readAndValidatePayload(ctx: CliContext): Promise<CodexStopHookPayload> {
   const { io } = ctx;
-  const raw = await readStreamToString(io.stdin);
+  const raw = await io.readStdin();
 
   return safeJsonParse(raw)
     .mapErr((e) => `failed to parse hook event JSON: ${getErrorMessage(e)}`)
