@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
-import { loadAllFrom } from '#src/loadAll.ts';
+import { loadAllFrom } from '#src/skills.ts';
 import { type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from './renderTargets.ts';
 
 function main(): void {

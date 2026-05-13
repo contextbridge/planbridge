@@ -40,6 +40,6 @@ If the skill needs a new CLI subcommand, add it under `packages/cli/src/commands
 Skill rendering iterates `SKILL_RENDERABLE_HARNESSES` from `@contextbridge/harness`. To add another agentskills.io-compliant harness:
 
 1. In `packages/harness/src/types.ts`, widen `HarnessId` with the new id.
-2. In `packages/harness/src/registry.ts`, append an entry to `HARNESSES`. Set `skillRendering` with `installName`, `invocation`, and `outDirFromRepoRoot` (the path under `harnessIntegrations/<id>/skills` is the convention). Set `installUrl` if the CLI installs into this harness.
+2. In `packages/harness/src/registry.ts`, append an entry to `HARNESSES`. Set `skillRendering` with `installName` and `destDir` (relative to repo root; the path under `harnessIntegrations/<id>/skills` is the convention). Set `installUrl` if the CLI installs into this harness.
 3. `bun run skills:generate` picks up the new entry — no edits to `packages/skills/`.
 4. If the harness is installable, add a `<X>Installer` extending `ScopedHarnessInstaller` and register it in `packages/cli/src/harnesses/installers.ts`. If it has a hook surface, add `packages/cli/src/commands/hook<X>.ts` and register it in `commands/index.ts`.

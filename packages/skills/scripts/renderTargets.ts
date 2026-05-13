@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { SKILL_RENDERABLE_HARNESSES, type SkillRenderableHarness } from '@contextbridge/harness';
 import { render } from '#src/render.ts';
-import type { CanonicalSkill } from '#src/skillSchema.ts';
+import type { Skill } from '#src/skills.ts';
 
 export const PACKAGE_ROOT = join(import.meta.dirname, '..');
 export const REPO_ROOT = join(PACKAGE_ROOT, '..', '..');
@@ -13,7 +13,7 @@ export interface RenderTarget {
   readonly body: string;
 }
 
-export function targetsFor(skill: CanonicalSkill): RenderTarget[] {
+export function targetsFor(skill: Skill): RenderTarget[] {
   return SKILL_RENDERABLE_HARNESSES.map((harness) => ({
     harness,
     path: join(outDirFor(harness), harness.skillRendering.installName(skill.frontmatter.name), 'SKILL.md'),
@@ -22,5 +22,5 @@ export function targetsFor(skill: CanonicalSkill): RenderTarget[] {
 }
 
 export function outDirFor(harness: SkillRenderableHarness): string {
-  return join(REPO_ROOT, harness.skillRendering.outDirFromRepoRoot);
+  return join(REPO_ROOT, harness.skillRendering.destDir);
 }

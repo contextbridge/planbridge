@@ -1,7 +1,7 @@
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { parseSkill } from './parser.ts';
 import { render } from './render.ts';
+import { parseSkill } from './skills.ts';
 
 const claude = getHarness('claude');
 const codex = getHarness('codex');

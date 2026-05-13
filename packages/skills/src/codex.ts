@@ -1,5 +1,5 @@
 import openSkill from '../../../harnessIntegrations/codex/skills/planbridge-open/SKILL.md' with { type: 'text' };
-import { parseSkill } from './parser.ts';
+import { parseSkill } from './skills.ts';
 
 export interface BundledSkill {
   /** On-disk install directory name, e.g. `planbridge-open`. Matches `~/.agents/skills/<installId>/`. */

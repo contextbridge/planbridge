@@ -1,8 +1,8 @@
 import type { HarnessDescriptor } from '@contextbridge/harness';
 import { stringify as yamlStringify } from 'yaml';
-import type { CanonicalSkill } from './skillSchema.ts';
+import type { Skill } from './skills.ts';
 
-export function render(skill: CanonicalSkill, harness: HarnessDescriptor): string {
+export function render(skill: Skill, harness: HarnessDescriptor): string {
   const rules = harness.skillRendering;
   if (!rules) {
     throw new Error(`Harness ${harness.id} has no skill rendering rules`);

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
 import { Result, err, fromThrowable, ok } from 'neverthrow';
-import { loadAllFrom } from '#src/loadAll.ts';
+import { loadAllFrom } from '#src/skills.ts';
 import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from './renderTargets.ts';
 
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));

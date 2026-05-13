@@ -12,7 +12,7 @@ A skill is `sources/<name>/SKILL.md` following the [agentskills.io specification
 
 ## Rendered outputs
 
-`bun run skills:generate` writes one SKILL.md per skill-renderable harness listed in `@contextbridge/harness`. The output directory is `harness.skillRendering.outDirFromRepoRoot` and the on-disk skill folder is `harness.skillRendering.installName(<name>)`. Today:
+`bun run skills:generate` writes one SKILL.md per skill-renderable harness listed in `@contextbridge/harness`. The output directory is `harness.skillRendering.destDir` (relative to the repo root) and the on-disk skill folder is `harness.skillRendering.installName(<name>)`. Today:
 
 - `harnessIntegrations/claude/skills/<name>/SKILL.md` — read off disk by Claude's plugin marketplace.
 - `harnessIntegrations/codex/skills/planbridge-<name>/SKILL.md` — embedded into the CLI binary at build time, written to `~/.agents/skills/planbridge-<name>/SKILL.md` on Codex install.
@@ -21,7 +21,7 @@ All files are committed. `bun run skills:check` (wired into `just verify` and th
 
 ## Rendering
 
-`render(skill, harness)` in `src/render.ts` takes a parsed `CanonicalSkill` and a `HarnessDescriptor` from `@contextbridge/harness`. The descriptor's `skillRendering` rules supply `installName(name)` — the frontmatter `name` field in the rendered output. The body is emitted verbatim.
+`render(skill, harness)` in `src/render.ts` takes a parsed `Skill` and a `HarnessDescriptor` from `@contextbridge/harness`. The descriptor's `skillRendering` rules supply `installName(name)` — the frontmatter `name` field in the rendered output. The body is emitted verbatim.
 
 ## Adding a skill
 

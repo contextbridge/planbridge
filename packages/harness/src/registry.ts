@@ -8,7 +8,7 @@ export const HARNESSES: readonly HarnessDescriptor[] = [
     installUrl: 'https://docs.claude.com/en/docs/claude-code/setup',
     skillRendering: {
       installName: (name) => name,
-      outDirFromRepoRoot: 'harnessIntegrations/claude/skills',
+      destDir: 'harnessIntegrations/claude/skills',
     },
   },
   {
@@ -18,7 +18,7 @@ export const HARNESSES: readonly HarnessDescriptor[] = [
     installUrl: 'https://developers.openai.com/codex/cli/',
     skillRendering: {
       installName: (name) => `planbridge-${name}`,
-      outDirFromRepoRoot: 'harnessIntegrations/codex/skills',
+      destDir: 'harnessIntegrations/codex/skills',
     },
   },
   { id: 'gemini', displayName: 'Gemini CLI', binaryName: 'gemini' },

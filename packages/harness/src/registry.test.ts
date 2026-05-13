@@ -17,13 +17,13 @@ describe('HARNESSES', () => {
   it('claude installs skills with the logical name and no prefix', () => {
     const claude = getHarness('claude');
     expect(claude.skillRendering?.installName('open')).toBe('open');
-    expect(claude.skillRendering?.outDirFromRepoRoot).toBe('harnessIntegrations/claude/skills');
+    expect(claude.skillRendering?.destDir).toBe('harnessIntegrations/claude/skills');
   });
 
   it('codex installs skills with the planbridge- prefix', () => {
     const codex = getHarness('codex');
     expect(codex.skillRendering?.installName('open')).toBe('planbridge-open');
-    expect(codex.skillRendering?.outDirFromRepoRoot).toBe('harnessIntegrations/codex/skills');
+    expect(codex.skillRendering?.destDir).toBe('harnessIntegrations/codex/skills');
   });
 });
 
