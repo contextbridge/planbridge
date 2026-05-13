@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import {
@@ -8,13 +9,12 @@ import {
   CLAUDE_MARKETPLACE_SOURCE,
   CLAUDE_PLUGIN_ID,
 } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, primeClaudeShellouts, stubClaudeState } from '#src/testHelpers/index.ts';
 import { runInstall } from './install.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 
 describe('runInstall', () => {
   it('with --yes installs Claude when not yet wired up and reports the summary', async () => {

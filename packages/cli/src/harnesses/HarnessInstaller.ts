@@ -1,9 +1,9 @@
+import type { InstallableHarness } from '@contextbridge/harness';
 import { type Command, CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
-import type { SupportedHarnessDescriptor } from './types.ts';
 
 export interface HarnessStatus {
-  readonly descriptor: SupportedHarnessDescriptor;
+  readonly descriptor: InstallableHarness;
   readonly detected: boolean;
   readonly installed: boolean;
   readonly managed: readonly ManagedEntry[];
@@ -21,7 +21,7 @@ export interface InstallActionOptions {
 }
 
 export abstract class HarnessInstaller {
-  abstract readonly descriptor: SupportedHarnessDescriptor;
+  abstract readonly descriptor: InstallableHarness;
   abstract status(ctx: CliContext): Promise<HarnessStatus>;
   abstract install(ctx: CliContext, options: InstallActionOptions): Promise<void>;
   abstract uninstall(ctx: CliContext, options: InstallActionOptions): Promise<void>;

@@ -1,3 +1,4 @@
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import {
@@ -14,9 +15,8 @@ import {
   CLAUDE_PLUGIN_ID,
   ClaudeInstaller,
 } from './ClaudeInstaller.ts';
-import { getDescriptor } from './registry.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
 
 describe('ClaudeInstaller.install', () => {
   it('runs marketplace-add then plugin-install at user scope and emits onboarding prose', async () => {

@@ -1,6 +1,10 @@
+import { HARNESSES, type HarnessDescriptor } from '@contextbridge/harness';
 import type { CliContext } from '#src/context.ts';
-import { HARNESS_DESCRIPTORS } from './registry.ts';
-import type { HarnessDescriptor, HarnessDetection } from './types.ts';
+
+export interface HarnessDetection {
+  readonly descriptor: HarnessDescriptor;
+  readonly binaryOnPath: boolean;
+}
 
 export function detectHarness(ctx: CliContext, descriptor: HarnessDescriptor): HarnessDetection {
   const { commandRunner } = ctx;
@@ -9,7 +13,7 @@ export function detectHarness(ctx: CliContext, descriptor: HarnessDescriptor): H
 
 export function detectHarnesses(
   ctx: CliContext,
-  descriptors: readonly HarnessDescriptor[] = HARNESS_DESCRIPTORS,
+  descriptors: readonly HarnessDescriptor[] = HARNESSES,
 ): readonly HarnessDetection[] {
   return descriptors.map((descriptor) => detectHarness(ctx, descriptor));
 }

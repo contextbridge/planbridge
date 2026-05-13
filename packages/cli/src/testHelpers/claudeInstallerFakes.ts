@@ -1,4 +1,4 @@
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { getHarness } from '@contextbridge/harness';
 import type { FakeCommandRunner } from './FakeCommandRunner.ts';
 
 export type PluginFixture = { id: string; scope: string };
@@ -24,7 +24,7 @@ export function marketplaceListResult(marketplaces: MarketplaceFixture[]) {
   return { exitCode: 0, stdout: JSON.stringify(marketplaces), stderr: '' };
 }
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
 
 /**
  * Prime a FakeCommandRunner with the canonical happy-path responses for every
