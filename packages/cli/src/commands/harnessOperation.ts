@@ -1,9 +1,9 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
-import { detectHarness } from '#src/harnesses/detect.ts';
-import type { HarnessInstaller, HarnessStatus, InstallActionOptions } from '#src/harnesses/HarnessInstaller.ts';
-import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
+import { detectHarness } from '#src/installers/detect.ts';
+import type { HarnessInstaller, HarnessStatus, InstallActionOptions } from '#src/installers/HarnessInstaller.ts';
+import { ALL_INSTALLERS } from '#src/installers/installers.ts';
 import { PROMPTER_CANCELLED_CODE } from '#src/prompter.ts';
 import { formatStatusLine } from './installStatus.ts';
 

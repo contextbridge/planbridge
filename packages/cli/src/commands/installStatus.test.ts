@@ -1,6 +1,6 @@
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { createStubContext, marketplaceListResult, parseStdoutJson, pluginListResult } from '#src/testHelpers/index.ts';
 import { runInstallStatus } from './installStatus.ts';
 

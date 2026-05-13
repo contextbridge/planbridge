@@ -8,7 +8,7 @@ import {
   CLAUDE_MARKETPLACE_NAME,
   CLAUDE_MARKETPLACE_SOURCE,
   CLAUDE_PLUGIN_ID,
-} from '#src/harnesses/ClaudeInstaller.ts';
+} from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, primeClaudeShellouts, stubClaudeState } from '#src/testHelpers/index.ts';
 import { runInstall } from './install.ts';

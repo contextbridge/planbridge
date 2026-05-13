@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
