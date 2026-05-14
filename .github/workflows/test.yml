@@ -15,14 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/bootstrap
       - name: Check formatting
         run: bun run format:check
       - name: Restore ESLint cache
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .eslintcache
           key: eslint-${{ runner.os }}-${{ github.sha }}
@@ -31,15 +32,18 @@ jobs:
         run: bun run lint
       - name: Typecheck
         run: bun run typecheck
+      - name: Skills drift check
+        run: bun run skills:check
 
   test:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/bootstrap
       - name: Get Playwright version
         id: playwright-version
@@ -49,7 +53,7 @@ jobs:
         id: ubuntu-version
         run: echo "version=$(lsb_release -rs)" >> $GITHUB_OUTPUT
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /home/runner/.cache/ms-playwright
           key: ${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}-playwright-browsers-${{ steps.playwright-version.outputs.version }}
@@ -74,8 +78,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: inputs.install_script_changed
+        with:
+          persist-credentials: false
       - name: Install shellcheck (macOS)
         if: inputs.install_script_changed && runner.os == 'macOS'
         run: brew install shellcheck

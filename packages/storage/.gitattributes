@@ -1,0 +1,3 @@
+generated/drizzle/**/snapshot.json linguist-generated=true -diff
+generated/drizzle/**/_journal.json linguist-generated=true -diff
+generated/drizzle/**/*.sql linguist-generated=true

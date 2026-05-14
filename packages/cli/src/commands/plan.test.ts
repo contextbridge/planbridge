@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
+import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
@@ -10,7 +11,6 @@ import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { environment } from '#src/testFactories.ts';
 import {
   createAnnotationDependencies,
-  createDeferred,
   createStubContext,
   readErrorLogs,
   readLogs,

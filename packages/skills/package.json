@@ -1,0 +1,29 @@
+{
+  "name": "@contextbridge/skills",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./codex": "./src/codex.ts"
+  },
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "skills:generate": "bun run scripts/generate.ts",
+    "skills:check": "bun run scripts/check.ts"
+  },
+  "dependencies": {
+    "@contextbridge/context": "workspace:*",
+    "@contextbridge/harness": "workspace:*",
+    "@contextbridge/shared": "workspace:*",
+    "front-matter": "^4.0.2",
+    "handlebars": "^4.7.8",
+    "neverthrow": "^8.2.0",
+    "prettier": "^3.8.2",
+    "yaml": "^2.9.0",
+    "zod": "^4.3.6"
+  }
+}

@@ -1,16 +1,16 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
 import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 
 describe('runCli', () => {
   it('prints the version on --version', async () => {
@@ -126,7 +126,6 @@ describe('runCli', () => {
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
     commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
     commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
-    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
@@ -136,7 +135,6 @@ describe('runCli', () => {
         hooks: { Stop: [{ hooks: [{ command: 'contextbridge hook codex' }] }] },
       });
       expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'enable', 'hooks'])).toHaveLength(1);
-      expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'disable', 'codex_hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('scope: user');
     } finally {
       rmSync(tmp, { recursive: true, force: true });
@@ -152,7 +150,6 @@ describe('runCli', () => {
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
     commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
     commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
-    commandRunner.on(CODEX_BINARY, ['features', 'disable', 'codex_hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);

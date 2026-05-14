@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import type { CliContext } from '#src/context.ts';
-import { ALL_INSTALLERS } from '#src/harnesses/installers.ts';
+import { ALL_INSTALLERS } from '#src/installers/installers.ts';
 import { runHarnessOperation } from './harnessOperation.ts';
 import { registerInstallStatus } from './installStatus.ts';
 

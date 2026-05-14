@@ -1,11 +1,11 @@
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { createStubContext, marketplaceListResult, pluginListResult } from '#src/testHelpers/index.ts';
 import { runUninstall } from './uninstall.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
 
 describe('runUninstall', () => {
   it('with --yes uninstalls when PlanBridge is wired up and reports the summary', async () => {

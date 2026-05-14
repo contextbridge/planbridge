@@ -24,7 +24,11 @@ globs: ["packages/**/*.test.ts", "packages/**/*.test.tsx", "packages/**/*TestIds
   const env = environment.build({ HOME: tmp });
   ```
 
-- **Export component test IDs as a colocated object from the component file.** Each React component that exposes test selectors declares its own \`xxxTestIds\` object next to the component definition and exports it. Tests import this object directly, never using string literals for test IDs. The naming pattern is \`\<componentName>TestIds\`.
+- **Prefer `toMatchObject` for structured payload assertions.** When a test verifies several fields on the same object or nested payload, use one `expect(value).toMatchObject({ ... })` instead of a run of field-by-field assertions. Keep separate assertions for orthogonal behavior, clearer failure messages, or values that need a specialized matcher.
+
+- **Use the shared deferred-promise helper; do not hand-roll it.** Tests that need manual promise resolution should import `createDeferred` from `@contextbridge/shared/testHelpers`. Do not recreate local `Deferred` types or `new Promise` wrappers in individual test files.
+
+- **Export component test IDs as a colocated object from the component file.** Each React component that exposes test selectors declares its own `xxxTestIds` object next to the component definition and exports it. Tests import this object directly, never using string literals for test IDs. The naming pattern is `<componentName>TestIds`.
 
   **Good:**
 

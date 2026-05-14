@@ -6,6 +6,10 @@ bun.lock
 tools/
 tools/infrastructure/cdk.out/
 
+# Drizzle-generated migration artifacts. snapshot.json formatting is dialect-
+# dependent and changes shape between drizzle-kit versions; don't fight it.
+packages/storage/generated/
+
 # Prettier treats .hbs as HTML and collapses the markdown these templates emit.
 *.hbs
 

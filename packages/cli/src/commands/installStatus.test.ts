@@ -1,10 +1,10 @@
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/harnesses/ClaudeInstaller.ts';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { createStubContext, marketplaceListResult, parseStdoutJson, pluginListResult } from '#src/testHelpers/index.ts';
 import { runInstallStatus } from './installStatus.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
 
 describe('runInstallStatus', () => {
   it('writes prose to stderr and leaves stdout empty by default when PlanBridge is fully wired', async () => {

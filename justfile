@@ -36,6 +36,7 @@ verify: install
     bun run format:check
     bun run typecheck
     bun run lint
+    bun run skills:check
     bun run test
 
 # Bootstrap development environment (install tools, deps, git hooks)

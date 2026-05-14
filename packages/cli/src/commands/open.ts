@@ -9,7 +9,6 @@ import {
 import type { CliContext } from '#src/context.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { DOCUMENT_TEMPLATES } from '#src/formatters/document/templates.ts';
-import { readStreamToString } from '#src/streams.ts';
 import { abort } from './abort.ts';
 
 export interface OpenArgs {
@@ -20,7 +19,7 @@ export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: Annotation
   const { io, logger } = ctx;
   const { path: argPath } = args;
 
-  if (!argPath && io.stdin.isTTY === true) {
+  if (!argPath && io.stdinIsTTY === true) {
     abort(
       ctx,
       'open',
@@ -32,7 +31,7 @@ export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: Annotation
   const source: 'file' | 'stdin' = argPath ? 'file' : 'stdin';
   let content: string;
   try {
-    content = argPath ? await Bun.file(argPath).text() : await readStreamToString(io.stdin);
+    content = argPath ? await Bun.file(argPath).text() : await io.readStdin();
   } catch (err) {
     abort(ctx, 'open', 'input', `failed to read content from ${source}: ${getErrorMessage(err)}`);
   }
@@ -51,7 +50,7 @@ export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: Annotation
       { content, contentKind: 'document', entrypoint: 'open_command', sourcePath },
       deps,
     );
-    io.stdout.write(formatAgentResponse(DOCUMENT_TEMPLATES, submission, content, { sourcePath }));
+    io.writeStdout(formatAgentResponse(DOCUMENT_TEMPLATES, submission, content, { sourcePath }));
   } catch (err) {
     if (err instanceof AnnotationInterruptedError) {
       logger.info('open session interrupted');

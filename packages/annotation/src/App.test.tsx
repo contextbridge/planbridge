@@ -1,5 +1,6 @@
-import type { AnnotationPayload } from '@contextbridge/shared/annotationSchema';
+import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { DOCS_URL, GITHUB_DISCUSSIONS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
@@ -10,7 +11,7 @@ import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
 import { appTestIds } from './App.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
-import { renderApp } from './testHelpers/renderApp.tsx';
+import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -91,16 +92,117 @@ describe('App', () => {
     });
 
     const submission = submitAnnotation.mock.calls[0]?.[0];
-    expect(submission?.status).toBe('changes_requested');
-    expect(submission?.threads).toHaveLength(1);
-    expect(submission?.threads[0]?.subject.kind).toBe('global');
-    expect(submission?.threads[0]?.messages[0]?.body).toBe('Please spell out rollback steps');
+    expect(submission).toMatchObject({
+      status: 'changes_requested',
+      threads: [
+        {
+          subject: { kind: 'global' },
+          messages: [{ body: 'Please spell out rollback steps' }],
+        },
+      ],
+    });
     expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 3 seconds.');
 
     act(() => timers.advance());
     act(() => timers.advance());
     act(() => timers.advance());
     expect(timers.closeWindow).toHaveBeenCalledTimes(1);
+  });
+
+  it('submits the review with Cmd+Enter from the global comment textarea', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+
+    await user.type(textarea, 'Please spell out rollback steps');
+    pressSubmitShortcut(textarea, 'meta');
+
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+
+    const submission = submitAnnotation.mock.calls[0]?.[0];
+    expect(submission).toMatchObject({
+      status: 'changes_requested',
+      threads: [
+        {
+          subject: { kind: 'global' },
+          messages: [{ body: 'Please spell out rollback steps' }],
+        },
+      ],
+    });
+  });
+
+  it('submits the review with Ctrl+Enter from the global comment textarea', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+
+    await user.type(textarea, 'Needs a migration plan');
+    pressSubmitShortcut(textarea, 'ctrl');
+
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+
+    const submission = submitAnnotation.mock.calls[0]?.[0];
+    expect(submission).toMatchObject({
+      status: 'changes_requested',
+      threads: [
+        {
+          subject: { kind: 'global' },
+          messages: [{ body: 'Needs a migration plan' }],
+        },
+      ],
+    });
+  });
+
+  it('does not submit again from the global shortcut while submitting', async () => {
+    const user = userEvent.setup();
+    const pendingSubmission = createDeferred<void>();
+    const submitAnnotation = vi
+      .fn<(submission: AnnotationSubmission) => Promise<void>>()
+      .mockReturnValue(pendingSubmission.promise);
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } }, { submitAnnotation });
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+
+    await user.type(textarea, 'Needs a migration plan');
+    pressSubmitShortcut(textarea, 'meta');
+
+    await waitFor(() => {
+      expect(screen.getByTestId(submitBarTestIds.button)).toBeDisabled();
+    });
+    pressSubmitShortcut(textarea, 'meta');
+
+    expect(submitAnnotation).toHaveBeenCalledTimes(1);
+
+    pendingSubmission.resolve();
+    await screen.findByTestId(submitBarTestIds.countdown);
+  });
+
+  it('does not submit again from the global shortcut after submitted', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+
+    await user.type(textarea, 'Looks good');
+    pressSubmitShortcut(textarea, 'meta');
+
+    await screen.findByTestId(submitBarTestIds.countdown);
+    pressSubmitShortcut(textarea, 'meta');
+
+    expect(submitAnnotation).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps plain Enter as textarea input in the global comment composer', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+
+    await user.type(textarea, 'Line one{enter}Line two');
+
+    expect(textarea).toHaveValue('Line one\nLine two');
+    expect(submitAnnotation).not.toHaveBeenCalled();
   });
 
   it('opens an annotation draft from a clicked target and submits it', async () => {
@@ -219,14 +321,7 @@ describe('App', () => {
     const stringToken = document.querySelector<HTMLElement>('pre code.hljs .hljs-string')!;
     const text = stringToken.firstChild as Text;
 
-    const range = document.createRange();
-    range.setStart(text, 3);
-    range.setEnd(text, 5);
-    const selection = window.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
+    drag({ target: text, from: 3, to: 5 });
 
     await screen.findByTestId(annotationPopoverTestIds.container);
 
@@ -280,6 +375,75 @@ describe('App', () => {
     expect(link).toHaveAttribute('href', 'https://example.com');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noreferrer');
+  });
+
+  it('lets a plain click on a link navigate without opening the annotation popover', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    await waitFor(() => {
+      expect(link).toHaveAttribute('data-target-id');
+    });
+
+    let defaultPrevented: boolean | undefined;
+    link.addEventListener(
+      'click',
+      (event) => {
+        defaultPrevented = event.defaultPrevented;
+        event.preventDefault();
+      },
+      { once: true },
+    );
+
+    await user.click(link);
+
+    expect(defaultPrevented).toBe(false);
+    expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+  });
+
+  it('opens the annotation popover when text inside a link is drag-selected', async () => {
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    drag({ target: text, from: 0, to: text.length });
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+  });
+
+  it('clicking a link that already has an annotation opens the editor instead of navigating', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
+    });
+
+    const link = await screen.findByRole('link', { name: 'the docs' });
+    const text = link.firstChild as Text;
+
+    drag({ target: text, from: 0, to: text.length });
+    await screen.findByTestId(annotationPopoverTestIds.container);
+
+    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Link comment');
+    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+    });
+
+    const rect = link.getBoundingClientRect();
+    fireEvent.click(link, {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    });
+
+    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Link comment');
   });
 
   it('sets the document title from the payload title', async () => {
