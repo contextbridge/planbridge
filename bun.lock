@@ -149,6 +149,7 @@
       "name": "@contextbridge/skills",
       "version": "0.0.0-development",
       "dependencies": {
+        "@contextbridge/context": "workspace:*",
         "@contextbridge/harness": "workspace:*",
         "@contextbridge/shared": "workspace:*",
         "front-matter": "^4.0.2",
