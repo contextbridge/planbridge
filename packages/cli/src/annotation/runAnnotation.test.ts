@@ -1,7 +1,8 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
 import { annotationArgs } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createDeferred, createStubContext } from '#src/testHelpers/index.ts';
+import { createAnnotationDependencies, createStubContext } from '#src/testHelpers/index.ts';
 import { runAnnotation } from './runAnnotation.ts';
 
 describe('runAnnotation', () => {
