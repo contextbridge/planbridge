@@ -18,6 +18,7 @@
   "dependencies": {
     "@contextbridge/harness": "workspace:*",
     "front-matter": "^4.0.2",
+    "handlebars": "^4.7.8",
     "neverthrow": "^8.2.0",
     "yaml": "^2.9.0",
     "zod": "^4.3.6"

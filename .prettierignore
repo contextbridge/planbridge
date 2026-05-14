@@ -24,6 +24,11 @@ packages/storage/generated/
 CHANGELOG.md
 harnessIntegrations/claude/.claude-plugin/plugin.json
 
+# Skill SKILL.md files are generated from `packages/skills/sources/` by
+# `bun run skills:generate`. Drift is checked byte-for-byte against the
+# committed renderer output; the renderer is the source of truth for shape.
+harnessIntegrations/*/skills/**/SKILL.md
+
 # ContextBot owns formatting of agents and its own rules
 AGENTS.md
 .contextbridge/rules

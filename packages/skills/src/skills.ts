@@ -36,7 +36,7 @@ export function parseSkill(source: string): Skill {
 
 export function loadAllFrom(sourcesDir: string): Skill[] {
   return readdirSync(sourcesDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((entry) => loadOne(sourcesDir, entry.name));
 }

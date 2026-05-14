@@ -15,7 +15,7 @@ Edit `packages/skills/sources/<name>/SKILL.md`. Files under `harnessIntegrations
 
 ## Steps
 
-1. Write `packages/skills/sources/<name>/SKILL.md`. Frontmatter: required `name` (kebab-case logical name — `open`, not `planbridge-open`) and `description`. The body is harness-neutral prose; the harness routes invocation before the SKILL.md loads, so the body rarely needs to name the invocation prefix.
+1. Write `packages/skills/sources/<name>/SKILL.md`. Frontmatter: required `name` (kebab-case logical name — `open`, not `planbridge-open`) and `description`. The body is a Handlebars template evaluated with `{ harness }` as context; wrap any harness-specific content (e.g. Codex sandbox guidance) in `{{#if (eq harness.id "…")}}…{{/if}}` and pull in reusable partials from `sources/_partials/<harnessId>/<topic>.md` via `{{> …}}` inside the conditional.
 2. Add an import + entry in `packages/skills/src/codex.ts`:
 
    ```typescript
