@@ -3,8 +3,8 @@ import path from 'node:path';
 import { ImageResponse } from '@vercel/og';
 import { type ReactElement, type ReactNode, createElement as h } from 'react';
 
-const FONT_DIR = path.resolve('./node_modules/@fontsource/atkinson-hyperlegible-next/files');
-const PUBLIC_FONT_DIR = path.resolve('./public/fonts');
+const ATKINSON_FONT_DIR = path.resolve('./node_modules/@fontsource/atkinson-hyperlegible-next/files');
+const ESBUILD_FONT_DIR = path.resolve('./src/assets/fonts');
 
 const TANGERINE = '#f68b35';
 const NEUTRAL_50 = '#fafafa';
@@ -18,11 +18,14 @@ const PLANBRIDGE_PATH_2 = 'M127.037 43.231L113.001 119.881H23.2355L15.332 163.11
 
 export async function GET() {
   const [regular, bold, headingBold, claudeSvg, codexPng] = await Promise.all([
-    fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-400-normal.woff')),
-    fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-700-normal.woff')),
-    fs.readFile(path.join(PUBLIC_FONT_DIR, 'ESBuild-Bold.woff')),
-    fs.readFile(path.resolve('./public/brands/claude-code.svg')),
-    fs.readFile(path.resolve('./public/brands/codex-cli.png')),
+    fs.readFile(path.join(ATKINSON_FONT_DIR, 'atkinson-hyperlegible-next-latin-400-normal.woff')),
+    fs.readFile(path.join(ATKINSON_FONT_DIR, 'atkinson-hyperlegible-next-latin-700-normal.woff')),
+    // @vercel/og uses satori, which doesn't parse WOFF2. The browser-facing font load
+    // goes through the Astro Fonts API (woff2 only). This one WOFF stays in src/assets/
+    // alongside the woff2 family for build-time OG rendering, and never ships to clients.
+    fs.readFile(path.join(ESBUILD_FONT_DIR, 'ESBuild-Bold.woff')),
+    fs.readFile(path.resolve('./src/assets/brands/claude-code.svg')),
+    fs.readFile(path.resolve('./src/assets/brands/codex-cli.png')),
   ]);
 
   const claudeDataUri = `data:image/svg+xml;base64,${claudeSvg.toString('base64')}`;
