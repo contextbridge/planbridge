@@ -36,7 +36,7 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
   const { logger } = ctx;
   const app = createAnnotationServerApp(ctx, opts);
   const server = Bun.serve({
-    port: opts.port ?? 0,
+    port: resolveListenPort(opts),
     fetch: app.fetch,
   });
 
@@ -107,6 +107,11 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
       return new Response('not found', { status: 404 });
     },
   };
+}
+
+export function resolveListenPort(opts: Pick<StartServerOptions, 'port'>): number {
+  const { port = 0 } = opts;
+  return port;
 }
 
 async function resolveUpdateNotice(checkForUpdate: CheckForUpdate | undefined): Promise<UpdateNotice | null> {

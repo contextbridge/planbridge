@@ -1,22 +1,24 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { type Command, CommanderError } from 'commander';
+import { type Command, CommanderError, InvalidArgumentError } from 'commander';
 import {
   type AnnotationDependencies,
   AnnotationInterruptedError,
   runAnnotation,
 } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
+import { parsePort } from '#src/environment.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { abort } from './abort.ts';
 
 export interface PlanArgs {
   path?: string;
+  port?: number;
 }
 
 export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
   const { io, logger } = ctx;
-  const { path } = args;
+  const { path, port } = args;
 
   if (!path && io.stdinIsTTY === true) {
     abort(
@@ -42,7 +44,11 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
 
   try {
-    const submission = await runAnnotation(ctx, { content, contentKind: 'plan', entrypoint: 'plan_command' }, deps);
+    const submission = await runAnnotation(
+      ctx,
+      { content, contentKind: 'plan', entrypoint: 'plan_command', port },
+      deps,
+    );
     io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
   } catch (err) {
     if (err instanceof AnnotationInterruptedError) {
@@ -60,7 +66,16 @@ export function registerPlan(ctx: CliContext, program: Command): void {
       'Run a PlanBridge plan review: reads the plan from stdin or [path], opens a local browser UI for a human to approve or annotate, and writes the markdown result to stdout.',
     )
     .argument('[path]', 'path to a file containing the plan (alternative to stdin)')
-    .action(async (path: string | undefined) => {
-      await runPlan(ctx, { path });
+    .option('--port <number>', 'serve the plan review browser UI on a specific port', parsePortOption)
+    .action(async (path: string | undefined, opts: { port?: number }) => {
+      await runPlan(ctx, { path, port: opts.port });
     });
+}
+
+function parsePortOption(value: string): number {
+  try {
+    return parsePort(value);
+  } catch {
+    throw new InvalidArgumentError('port must be an integer between 1 and 65535');
+  }
 }

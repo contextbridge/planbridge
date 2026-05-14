@@ -1,7 +1,7 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
-import { annotationArgs } from '#src/testFactories.ts';
+import { annotationArgs, environment } from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext } from '#src/testHelpers/index.ts';
 import { runAnnotation } from './runAnnotation.ts';
 
@@ -18,8 +18,27 @@ describe('runAnnotation', () => {
     expect(deps.payloads).toEqual([
       { content: '# Plan', title: 'Plan', contentKind: 'plan', metadata: { entrypoint: 'plan_command' } },
     ]);
+    expect(deps.port).toBeUndefined();
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
+  });
+
+  it('uses CONTEXTBRIDGE_PORT when no explicit port is supplied', async () => {
+    const { context } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createAnnotationDependencies();
+
+    await runAnnotation(context, annotationArgs.build(), deps);
+
+    expect(deps.port).toBe(3456);
+  });
+
+  it('uses the explicit port before CONTEXTBRIDGE_PORT', async () => {
+    const { context } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createAnnotationDependencies();
+
+    await runAnnotation(context, annotationArgs.build({ port: 3000 }), deps);
+
+    expect(deps.port).toBe(3000);
   });
 
   it('captures plan-review lifecycle analytics around a successful review', async () => {

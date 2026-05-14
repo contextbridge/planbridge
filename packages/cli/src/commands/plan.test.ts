@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
+import { environment } from '#src/testFactories.ts';
 import {
   createAnnotationDependencies,
   createStubContext,
@@ -146,6 +147,28 @@ describe('plan handler', () => {
     expect(submitted?.properties?.['status']).toBe(deps.submission.status);
     expect(submitted?.properties?.['threads_count']).toBe(deps.submission.threads.length);
     expect(typeof submitted?.properties?.['duration_ms']).toBe('number');
+  });
+
+  it('passes an explicit port to the review server', async () => {
+    const { context, io } = createStubContext();
+    const deps = createAnnotationDependencies();
+    io.stdin.write('# My plan\n');
+    io.stdin.end();
+
+    await runPlan(context, { port: 3000 }, deps);
+
+    expect(deps.port).toBe(3000);
+  });
+
+  it('lets an explicit port override CONTEXTBRIDGE_PORT', async () => {
+    const { context, io } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createAnnotationDependencies();
+    io.stdin.write('# My plan\n');
+    io.stdin.end();
+
+    await runPlan(context, { port: 3000 }, deps);
+
+    expect(deps.port).toBe(3000);
   });
 
   it('does not report SIGINT to telemetry', async () => {

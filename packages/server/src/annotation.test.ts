@@ -4,7 +4,7 @@ import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema'
 import { annotationThread, globalThread } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { describe, expect, it } from 'bun:test';
-import { createAnnotationServerApp, startServer } from './annotation.ts';
+import { createAnnotationServerApp, resolveListenPort, startServer } from './annotation.ts';
 
 describe('createAnnotationServerApp', () => {
   const payload: AnnotationPayload = {
@@ -196,6 +196,14 @@ describe('startServer', () => {
   };
   const config: FrontendConfig = { distinctId: 'test-distinct-id', telemetryDisabled: false };
   const ctx = fakeBaseContext();
+
+  it('uses port 0 by default so the OS chooses an available port', () => {
+    expect(resolveListenPort({})).toBe(0);
+  });
+
+  it('uses a configured port when supplied', () => {
+    expect(resolveListenPort({ port: 3456 })).toBe(3456);
+  });
 
   // Regression test for the submit→close race: the /submit response must be
   // fully delivered to the client even though the CLI tears the server down

@@ -8,6 +8,8 @@ export interface TrackedAnnotationDependencies extends AnnotationDependencies {
   payloads: AnnotationPayload[];
   /** Submission the fake server resolves with (unless `result` overrides it). */
   submission: AnnotationSubmission;
+  /** Port passed to startReviewServer, if any. */
+  port: number | undefined;
   /** Number of times the server's close() has been invoked. */
   closeCount: number;
   /** Convenience: true iff closeCount > 0. */
@@ -35,6 +37,7 @@ export function createAnnotationDependencies(
   const submission = options.submission ?? annotationSubmission.build();
   const sigintRegistration = createDeferred<void>();
   let closeCount = 0;
+  let observedPort: number | undefined;
   let sigintHandler: (() => void) | null = null;
   let sigintHandlerRemoved = false;
 
@@ -42,6 +45,9 @@ export function createAnnotationDependencies(
     payloads,
     submission,
     sigintHandlerRegistered: sigintRegistration.promise,
+    get port() {
+      return observedPort;
+    },
     get closeCount() {
       return closeCount;
     },
@@ -59,8 +65,9 @@ export function createAnnotationDependencies(
       sigintHandler();
     },
     loadHtml: () => Promise.resolve('<html><body>annotation</body></html>'),
-    startReviewServer: (_ctx, { payload }) => {
+    startReviewServer: (_ctx, { payload, port }) => {
       payloads.push(payload);
+      observedPort = port;
       return {
         port: 4312,
         url: 'http://localhost:4312',

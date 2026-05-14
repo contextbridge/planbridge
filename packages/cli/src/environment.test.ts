@@ -20,3 +20,17 @@ describe('boolean env coercion', () => {
     });
   });
 });
+
+describe('CONTEXTBRIDGE_PORT', () => {
+  it('coerces a configured port to a number', () => {
+    expect(getEnvironment({ CONTEXTBRIDGE_PORT: '3000' }).CONTEXTBRIDGE_PORT).toBe(3000);
+  });
+
+  it('is unset by default', () => {
+    expect(getEnvironment({}).CONTEXTBRIDGE_PORT).toBeUndefined();
+  });
+
+  it.each(['abc', '3000.5', '0', '-1', '65536'])('rejects invalid value %s', (value) => {
+    expect(() => getEnvironment({ CONTEXTBRIDGE_PORT: value })).toThrow();
+  });
+});

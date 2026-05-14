@@ -60,6 +60,7 @@ export const environment = Factory.define<Environment>(() => ({
   CONTEXTBRIDGE_TELEMETRY_DISABLED: false,
   CI: false,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
+  CONTEXTBRIDGE_PORT: undefined,
 }));
 
 export const harnessDescriptor = Factory.define<HarnessDescriptor>(() => ({

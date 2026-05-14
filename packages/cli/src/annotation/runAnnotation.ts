@@ -24,6 +24,7 @@ export interface RunAnnotationArgs {
   content: string;
   contentKind: ContentKind;
   entrypoint: AnnotationEntrypoint;
+  port?: number;
   sourcePath?: string;
 }
 
@@ -35,6 +36,7 @@ export interface AnnotationDependencies {
       html: Promise<string>;
       payload: AnnotationPayload;
       config: FrontendConfig;
+      port?: number;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
     },
   ): RunningServer;
@@ -46,7 +48,8 @@ export async function runAnnotation(
   args: RunAnnotationArgs,
   deps: AnnotationDependencies = defaultAnnotationDependencies,
 ): Promise<AnnotationSubmission> {
-  const { analytics, logger, openUrl, frontendConfig, updater } = ctx;
+  const { analytics, logger, openUrl, frontendConfig, updater, env } = ctx;
+  const { port = env.CONTEXTBRIDGE_PORT } = args;
   const startedAt = nowInstant();
 
   const payload: AnnotationPayload = {
@@ -81,6 +84,7 @@ export async function runAnnotation(
       html: htmlPromise,
       payload,
       config: frontendConfig,
+      port,
       checkForUpdate: () => updater.checkForUpdate().catch(() => null),
     });
     removeSigintHandler = deps.registerSigintHandler(() => {
@@ -120,8 +124,8 @@ export async function runAnnotation(
 
 const defaultAnnotationDependencies: AnnotationDependencies = {
   loadHtml: () => import('./bundledAnnotationHtml.ts').then((m) => m.bundledAnnotationHtml),
-  startReviewServer: (ctx, { html, payload, config, checkForUpdate }) =>
-    startServer(ctx, { html, payload, config, checkForUpdate }),
+  startReviewServer: (ctx, { html, payload, config, port, checkForUpdate }) =>
+    startServer(ctx, { html, payload, config, port, checkForUpdate }),
   registerSigintHandler: (handler) => {
     process.on('SIGINT', handler);
     return () => {
