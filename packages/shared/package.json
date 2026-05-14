@@ -10,6 +10,7 @@
     "./links": "./src/links.ts",
     "./annotationSchema": "./src/annotationSchema.ts",
     "./testFactories": "./src/testFactories.ts",
+    "./testHelpers": "./src/testHelpers.ts",
     "./time": "./src/time.ts",
     "./typeGuards": "./src/typeGuards.ts",
     "./types": "./src/types.ts",
