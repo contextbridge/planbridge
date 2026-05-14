@@ -3,14 +3,19 @@ import { dirname, join, relative } from 'node:path';
 import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
 import { Result, err, fromThrowable, ok } from 'neverthrow';
 import { loadAllFrom } from '#src/skills.ts';
-import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from './renderTargets.ts';
+import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsForAll } from './renderTargets.ts';
 
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));
 const safeReaddir = fromThrowable((dir: string) => readdirSync(dir, { withFileTypes: true }));
 
 async function main(): Promise<void> {
   const skills = loadAllFrom(SOURCES_DIR);
-  const targets = (await Promise.all(skills.map(targetsFor))).flat();
+  const targetResult = await targetsForAll(skills);
+  if (targetResult.isErr()) {
+    console.error(targetResult.error.message);
+    process.exit(1);
+  }
+  const targets = targetResult.value;
   const expectedDirs = new Set(targets.map((t) => dirname(t.path)));
 
   const driftErrors = Result.combineWithAllErrors(targets.map(checkDrift)).match(
