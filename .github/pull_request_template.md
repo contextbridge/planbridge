@@ -19,9 +19,9 @@ If the change is internal-only — e.g., an agent prompt tweak, a CI fix, a refa
 ## Commits
 
 <!--
-Before opening a PR, rebase the commits on your local branch to make them easy for a human to review commit-by-commit in a PR.  Commits like "wip", "fix fmt" etc should be squashed into a clean, logical commit.  
+Before opening a PR, rebase the commits on your local branch to make them easy for a human to review commit-by-commit in a PR.  Commits like "wip", "fix fmt" etc should be squashed into a clean, logical commit.
 
-When organizing commits, stage changes at the file rather than the hunk level to make things easy on yourself. 
+When organizing commits, stage changes at the file rather than the hunk level to make things easy on yourself.
 
 Then list them with clickable links (e.g., - [`abc1234`](url) — did the thing).
 -->
