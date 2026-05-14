@@ -26,6 +26,15 @@ export function renderApp(
   return { result, ...fake };
 }
 
+export type SubmitShortcutModifier = 'meta' | 'ctrl';
+
+export function pressSubmitShortcut(element: Element, modifier: SubmitShortcutModifier): void {
+  fireEvent.keyDown(element, {
+    key: 'Enter',
+    metaKey: modifier === 'meta',
+    ctrlKey: modifier === 'ctrl',
+  });
+}
 type DragArgs = {
   target: Text;
   from: number;

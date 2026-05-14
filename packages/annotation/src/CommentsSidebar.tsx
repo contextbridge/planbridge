@@ -64,7 +64,7 @@ export function CommentsSidebar({
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 border-t border-border pt-4">
-          <GlobalCommentComposer globalComment={globalComment} submitted={submission.submitted} />
+          <GlobalCommentComposer globalComment={globalComment} submission={submission} />
           <SubmitBar source={source} submission={submission} />
         </div>
       </section>

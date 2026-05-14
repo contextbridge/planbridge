@@ -1,7 +1,7 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
+import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { AnnotationDependencies } from '#src/annotation/runAnnotation.ts';
-import { createDeferred } from './createDeferred.ts';
 
 export interface TrackedAnnotationDependencies extends AnnotationDependencies {
   /** Payloads passed to startReviewServer in invocation order. */
