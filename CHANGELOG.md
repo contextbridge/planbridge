@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/contextbridge/planbridge/compare/v0.5.0...v0.6.0) (2026-05-14)
+
+
+### Features
+
+* add global feedback submit shortcut ([#116](https://github.com/contextbridge/planbridge/issues/116)) ([21b14a1](https://github.com/contextbridge/planbridge/commit/21b14a1dcc29e04c0b36b82e96aa90869f450237))
+* allow configuring PlanBridge port ([#95](https://github.com/contextbridge/planbridge/issues/95)) ([bf53148](https://github.com/contextbridge/planbridge/commit/bf5314828e0f369c7a2618a7b1ce755642604f17))
+* tell Codex to run contextbridge open outside the sandbox ([#115](https://github.com/contextbridge/planbridge/issues/115)) ([6cff1e9](https://github.com/contextbridge/planbridge/commit/6cff1e90373068b3dda87d982394695dd3580804))
+
 ## [0.5.0](https://github.com/contextbridge/planbridge/compare/v0.4.0...v0.5.0) (2026-05-13)
 
 The big news with 0.5.0 is the addition of the `contextbridge open` command. With this command, you can use the PlanBridge UI to markup
