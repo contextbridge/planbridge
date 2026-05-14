@@ -19,6 +19,7 @@ jobs:
     outputs:
       dependencies_changed: ${{ steps.changes.outputs.dependencies_changed }}
       install_script_changed: ${{ steps.changes.outputs.install_script_changed }}
+      website_changed: ${{ steps.changes.outputs.website_changed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -41,4 +42,16 @@ jobs:
       install_script_changed: ${{ needs.detect-changes.outputs.install_script_changed == 'true' }}
     permissions:
       contents: read
+      packages: read
+
+  deploy-website:
+    name: Deploy website
+    needs: [detect-changes, test]
+    if: ${{ needs.detect-changes.outputs.website_changed == 'true' }}
+    uses: ./.github/workflows/deploy-website.yml
+    secrets:
+      website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+    permissions:
+      contents: read
+      id-token: write
       packages: read
