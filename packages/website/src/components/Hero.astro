@@ -18,47 +18,53 @@ import InstallCommand from './InstallCommand.astro';
     <h1
       class="m-0 text-balance font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[48px] lg:text-[64px]"
     >
-     Stop using a frontier model with a plan mode built for 1987.
+      Better code with inline comments on your coding agent plans
     </h1>
 
-    <p class="mb-0 mt-6 text-balance font-sans text-xl leading-8 text-foreground">
-     Transform your agent's plan mode from an archaic TUI into a modern Docs-like experience. Highlight lines, drop knowledge into inline comments, and steer that clanker like a boss.
+    <p class="mb-0 mt-6 max-w-4xl text-balance font-sans text-xl leading-8 text-foreground">
+      PlanBridge opens your agent's plan in a local browser, so you can highlight text and comment
+      like you would in a document. It fits into your existing workflow, uses standard hooks, and
+      uninstalls easily if you change your mind.
     </p>
 
-    <div class="mt-8 flex justify-start">
+    <div class="mt-8 inline-flex max-w-full flex-col">
       <InstallCommand size="large" />
-    </div>
 
-    <div class="mt-6 flex flex-wrap items-center gap-x-12 gap-y-4 font-sans text-base">
-      <a href="/install/" class="text-foreground underline underline-offset-4">
-        Prefer to install manually?
-      </a>
-      <a href="/quickstart/" class="text-foreground underline underline-offset-4">
-        Read the quickstart &rarr;
-      </a>
-      <span class="flex flex-wrap items-center gap-x-6 gap-y-2 text-foreground">
-        <span class="font-mono text-xs font-bold uppercase tracking-[0.16em]">Works with</span>
-        <a
-          href="/usage/claude-code/"
-          class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
-        >
-          <img src="/brands/claude-code.svg" alt="" aria-hidden="true" class="h-4 w-4" />
-          Claude Code
-        </a>
-        <span>and</span>
-        <a
-          href="/usage/codex/"
-          class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
-        >
-          <img
-            src="/brands/codex-cli.png"
-            alt=""
-            aria-hidden="true"
-            class="h-4 w-4 object-contain"
-          />
-          Codex
-        </a>
-      </span>
+      <div class="mt-6 flex flex-col gap-4 font-sans text-base md:flex-row md:items-center md:justify-between">
+        <span class="flex flex-wrap items-center gap-x-12 gap-y-3">
+          <a href="/install/" class="text-foreground underline underline-offset-4">
+            Prefer to install manually?
+          </a>
+          <a href="/quickstart/" class="text-foreground underline underline-offset-4">
+            Read the quickstart &rarr;
+          </a>
+        </span>
+        <span class="flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-foreground md:justify-end">
+          <span class="whitespace-nowrap font-mono text-xs font-bold uppercase tracking-[0.16em]">
+            Works with
+          </span>
+          <a
+            href="/usage/claude-code/"
+            class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+          >
+            <img src="/brands/claude-code.svg" alt="" aria-hidden="true" class="h-4 w-4" />
+            Claude Code
+          </a>
+          <span>and</span>
+          <a
+            href="/usage/codex/"
+            class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+          >
+            <img
+              src="/brands/codex-cli.png"
+              alt=""
+              aria-hidden="true"
+              class="h-4 w-4 object-contain"
+            />
+            Codex
+          </a>
+        </span>
+      </div>
     </div>
 
     <div class="hero-demo mt-12">

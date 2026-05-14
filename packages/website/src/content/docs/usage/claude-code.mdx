@@ -5,7 +5,7 @@ description: Run PlanBridge automatically inside Claude Code via a PermissionReq
 
 import { Code } from 'astro-expressive-code/components';
 
-If you have our Claude Code hooks installed (via `contextbridge install`), every time Claude finishes planning and asks to proceed, PlanBridge intercepts and opens your browser for review.
+If you have the PlanBridge Claude Code plugin installed (via `contextbridge install`), Claude's normal plan-approval hook opens PlanBridge in your browser for review before implementation starts.
 
 ## Process
 
@@ -56,7 +56,7 @@ If you installed Claude Code _after_ the install script ran, or if `install stat
 
 <Code code="contextbridge uninstall claude" lang="sh" title="terminal" />
 
-Or `contextbridge uninstall` to remove PlanBridge wiring from every harness it was installed into.
+Or `contextbridge uninstall` to remove PlanBridge plugin and hook entries from every harness it was installed into.
 
 ## Open a file manually
 

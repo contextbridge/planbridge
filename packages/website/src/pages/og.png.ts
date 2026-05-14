@@ -4,8 +4,9 @@ import { ImageResponse } from '@vercel/og';
 import { type ReactElement, type ReactNode, createElement as h } from 'react';
 
 const FONT_DIR = path.resolve('./node_modules/@fontsource/atkinson-hyperlegible-next/files');
+const PUBLIC_FONT_DIR = path.resolve('./public/fonts');
 
-const ROYAL_LIGHT = '#457fff';
+const TANGERINE = '#f68b35';
 const NEUTRAL_50 = '#fafafa';
 const NEUTRAL_300 = '#d4d4d4';
 const NEUTRAL_700 = '#404040';
@@ -16,9 +17,10 @@ const PLANBRIDGE_PATH_1 = 'M127.035 43.2306L134.972 0H21.973L0 119.88H23.2335L37
 const PLANBRIDGE_PATH_2 = 'M127.037 43.231L113.001 119.881H23.2355L15.332 163.111H128.297L150.304 43.231H127.037Z';
 
 export async function GET() {
-  const [regular, bold, claudeSvg, codexPng] = await Promise.all([
+  const [regular, bold, headingBold, claudeSvg, codexPng] = await Promise.all([
     fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-400-normal.woff')),
     fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-700-normal.woff')),
+    fs.readFile(path.join(PUBLIC_FONT_DIR, 'ESBuild-Bold.woff')),
     fs.readFile(path.resolve('./public/brands/claude-code.svg')),
     fs.readFile(path.resolve('./public/brands/codex-cli.png')),
   ]);
@@ -32,6 +34,7 @@ export async function GET() {
     fonts: [
       { name: 'Atkinson', data: regular, weight: 400, style: 'normal' },
       { name: 'Atkinson', data: bold, weight: 700, style: 'normal' },
+      { name: 'ESBuild', data: headingBold, weight: 700, style: 'normal' },
     ],
   });
 }
@@ -53,27 +56,10 @@ function card(claudeIcon: string, codexIcon: string): ReactElement {
         position: 'relative',
       },
     },
-    halo(),
     brandRow(),
     headline(),
     bottomRow(claudeIcon, codexIcon),
   );
-}
-
-function halo(): ReactNode {
-  return h('div', {
-    style: {
-      position: 'absolute',
-      top: 100,
-      left: 200,
-      width: 800,
-      height: 400,
-      background: ROYAL_LIGHT,
-      opacity: 0.12,
-      filter: 'blur(120px)',
-      borderRadius: 9999,
-    },
-  });
 }
 
 function brandRow(): ReactNode {
@@ -84,7 +70,6 @@ function brandRow(): ReactNode {
         display: 'flex',
         alignItems: 'center',
         gap: 16,
-        zIndex: 10,
       },
     },
     h(
@@ -99,7 +84,7 @@ function brandRow(): ReactNode {
       h('path', { d: PLANBRIDGE_PATH_1 }),
       h('path', { d: PLANBRIDGE_PATH_2 }),
     ),
-    h('span', { style: { fontSize: 36, fontWeight: 700, color: NEUTRAL_50 } }, 'PlanBridge'),
+    h('span', { style: { fontFamily: 'ESBuild', fontSize: 36, fontWeight: 700, color: NEUTRAL_50 } }, 'PlanBridge'),
   );
 }
 
@@ -110,34 +95,43 @@ function headline(): ReactNode {
       style: {
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 10,
         marginTop: -40,
       },
     },
+    h('span', {
+      style: {
+        width: 140,
+        height: 6,
+        background: TANGERINE,
+        marginBottom: 26,
+      },
+    }),
     h(
       'span',
       {
         style: {
-          fontSize: 76,
+          fontFamily: 'ESBuild',
+          fontSize: 72,
           fontWeight: 700,
           lineHeight: 1.05,
-          color: ROYAL_LIGHT,
+          color: NEUTRAL_50,
         },
       },
-      'Review coding-agent plans',
+      'Better code with inline comments',
     ),
     h(
       'span',
       {
         style: {
-          fontSize: 76,
+          fontFamily: 'ESBuild',
+          fontSize: 72,
           fontWeight: 700,
           lineHeight: 1.05,
           color: NEUTRAL_50,
           marginTop: 4,
         },
       },
-      'with the precision of a PR.',
+      'on your coding agent plans',
     ),
   );
 }
@@ -150,13 +144,25 @@ function bottomRow(claudeIcon: string, codexIcon: string): ReactNode {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        zIndex: 10,
       },
     },
     h(
       'div',
       { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-      h('span', { style: { fontSize: 24, color: NEUTRAL_300, marginRight: 8 } }, 'Works with'),
+      h(
+        'span',
+        {
+          style: {
+            fontSize: 20,
+            color: NEUTRAL_300,
+            fontWeight: 700,
+            letterSpacing: 3,
+            marginRight: 8,
+            textTransform: 'uppercase',
+          },
+        },
+        'Works with',
+      ),
       chip('Claude Code', claudeIcon),
       chip('Codex', codexIcon),
     ),

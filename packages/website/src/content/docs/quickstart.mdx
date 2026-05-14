@@ -1,12 +1,12 @@
 ---
 title: Quickstart
-description: Install PlanBridge and let it run automatically inside your AI coding sessions.
+description: Install PlanBridge with standard harness plugins and hooks.
 ---
 
 import { Code } from 'astro-expressive-code/components';
 import DemoVideo from '../../components/DemoVideo.astro';
 
-One command installs the binary and wires it into the AI coding harnesses on your machine. After that, you use your harness as you always do; PlanBridge intercepts when there's something to review.
+One command installs the binary and offers to add standard plugin or hook entries for the AI coding harnesses on your machine. After that, you use your harness as you always do; PlanBridge opens when the harness reaches its normal review point.
 
 ## 1. Install
 
@@ -16,13 +16,13 @@ One command installs the binary and wires it into the AI coding harnesses on you
   title="terminal"
 />
 
-The script uses [Homebrew](https://brew.sh/) if installed, otherwise places the binary into `$HOME/.local/bin`. After, it runs `contextbridge install` to add hooks to supported AI coding harnesses it finds.
+The script uses [Homebrew](https://brew.sh/) if installed, otherwise places the binary into `$HOME/.local/bin`. After, it runs `contextbridge install` to add standard hooks or plugin entries to supported AI coding harnesses it finds.
 
 Prefer to step through the install yourself? See [Install](/install/) for manual installation details.
 
 ## 2. Use your harness normally
 
-That's the whole setup. The next time your harness reaches a review point, PlanBridge takes over:
+That's the whole setup. The next time your harness reaches a review point, PlanBridge opens for review:
 
 1. Your browser opens to a review UI.
 2. You annotate what you'd like to change or approve.

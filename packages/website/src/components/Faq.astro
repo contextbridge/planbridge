@@ -17,6 +17,11 @@ const faqs = [
       'Yes. The <code class="font-mono">/planbridge:open</code> skill (Claude Code) and <code class="font-mono">$planbridge-open</code> skill (Codex CLI) open any markdown file in the PlanBridge UI on demand. See <a href="/usage/open/" class="underline underline-offset-4">Open arbitrary content</a>.',
   },
   {
+    question: 'Does PlanBridge take over my agent workflow?',
+    answer:
+      'No. PlanBridge uses standard extension points: a Claude Code plugin, a Codex <code class="font-mono">Stop</code> hook, or a manual command for other agents. It runs only when review is requested, opens a local <code class="font-mono">localhost</code> browser UI, and <code class="font-mono">contextbridge uninstall</code> removes the harness entries if you want your old workflow back.',
+  },
+  {
     question: 'How much does this cost?',
     answer: 'PlanBridge is free and open source.',
   },
@@ -36,7 +41,7 @@ const faqs = [
 ];
 ---
 
-<section class="border-t border-foreground bg-background px-8 py-32">
+<section id="faq" class="scroll-mt-24 border-t border-foreground bg-background px-8 py-32">
   <div class="mx-auto max-w-7xl">
     <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
       FAQ

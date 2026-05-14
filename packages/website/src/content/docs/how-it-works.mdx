@@ -3,17 +3,17 @@ title: How it works
 description: What you do, what you see, and what runs on your machine when PlanBridge is in the loop.
 ---
 
-You install PlanBridge once. After that, you keep using your coding agent the way you always have. The only difference: when your agent has a plan ready, your browser opens with it and you mark it up before any code is written.
+You install PlanBridge once. After that, you keep using your coding agent the way you always have. The only difference: when your agent reaches a standard plan-review hook, your browser opens with the plan and you mark it up before any code is written.
 
 ## Your workflow
 
 ### You install it once
 
-Run the install script and PlanBridge picks up any supported coding agent already on your machine. No configuration. No API keys. Re-run it later if you add a new agent.
+Run the install script and PlanBridge picks up any supported coding agent already on your machine. It adds standard plugin or hook entries, not a custom runtime. No API keys. Re-run it later if you add a new agent.
 
 ### You review every plan
 
-Use your coding agent the way you always have. When it produces a plan, PlanBridge intercepts that step before any code is written. Your default browser opens to a review page on `localhost`.
+Use your coding agent the way you always have. When it produces a plan, the harness's normal review hook can call PlanBridge before any code is written. Your default browser opens to a review page on `localhost`.
 
 ### You shape the work
 
@@ -21,7 +21,7 @@ Highlight any line of the plan, leave a comment. When you're happy, click **Appr
 
 ## What runs where
 
-Your plan never leaves your machine. There's no remote backend, no account, no API keys. The only network traffic is your browser talking to a CLI process on `localhost`.
+Your plan never leaves your machine. There's no remote backend, no account, no API keys, and no background daemon. The only network traffic is your browser talking to a CLI process on `localhost`.
 
 The CLI launches the local server only when your agent needs review, then shuts it down as soon as you submit. Nothing persists.
 
@@ -48,6 +48,22 @@ stdin / [path]  ─▶  contextbridge plan
 - **CLI → stderr**: pino logs (JSON, or pretty when stderr is a TTY).
 
 The stdout/stderr split exists so piped consumers see only the markdown result while humans get readable diagnostics. The hook adapters (`contextbridge hook claude` for [Claude Code's `ExitPlanMode`](/usage/claude-code/), `contextbridge hook codex` for [Codex's `Stop` hook](/usage/codex/)) consume that markdown and wrap it in the harness-specific JSON response their hook contract expects.
+
+## Fixed local ports
+
+By default, PlanBridge asks the operating system for an available local port each time it opens the review UI. To bind the browser UI to a specific port, set `CONTEXTBRIDGE_PORT` for hook-driven flows:
+
+```sh
+export CONTEXTBRIDGE_PORT=3456
+```
+
+For one-off manual runs, pass `--port` to `contextbridge plan`:
+
+```sh
+contextbridge plan --port 3456 plan.md
+```
+
+This can help in environments that proxy a known port. For example, exe.dev forwards ports in the `3000..9999` range, so you can choose a forwarded port such as `3456`, set `CONTEXTBRIDGE_PORT=3456`, and access the review UI through exe.dev's proxy.
 
 ## Telemetry
 

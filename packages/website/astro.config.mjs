@@ -15,7 +15,7 @@ export default defineConfig({
     }),
     starlight({
       title: 'PlanBridge',
-      description: 'Human-in-the-loop annotation for AI coding sessions.',
+      description: 'Inline comments on your coding agent plans.',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/contextbridge/planbridge' }],
       favicon: '/favicon.svg',
       customCss: ['./src/styles/main.css'],

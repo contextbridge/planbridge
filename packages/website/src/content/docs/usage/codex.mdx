@@ -5,7 +5,7 @@ description: Run PlanBridge automatically inside Codex CLI via the Stop hook.
 
 import { Code } from 'astro-expressive-code/components';
 
-If you have our Codex CLI hook installed (via `contextbridge install`), PlanBridge opens whenever Codex finishes a turn with a proposed plan. You review the plan in the browser, and your decision flows back through Codex's `Stop` hook.
+If you have the PlanBridge Codex CLI hook installed (via `contextbridge install`), PlanBridge opens whenever Codex finishes a turn with a proposed plan. You review the plan in the browser, and your decision flows back through Codex's standard `Stop` hook.
 
 ## Install
 
@@ -130,7 +130,7 @@ You should see Codex CLI listed as installed.
 
 <Code code="contextbridge uninstall codex" lang="sh" title="terminal" />
 
-Or `contextbridge uninstall` to remove PlanBridge wiring from every harness it was installed into.
+Or `contextbridge uninstall` to remove PlanBridge plugin and hook entries from every harness it was installed into.
 
 ## Open a file manually
 

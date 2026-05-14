@@ -1,6 +1,6 @@
 ---
 title: Install
-description: Install PlanBridge and configure it for the harnesses on your machine.
+description: Install PlanBridge and add standard plugin or hook entries for the harnesses on your machine.
 ---
 
 import { Code } from 'astro-expressive-code/components';
@@ -10,13 +10,13 @@ The simplest install path is one shell command:
 
 <Code code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"`} lang="sh" title="terminal" />
 
-The script picks up [Homebrew](https://brew.sh/) if you have it, otherwise downloads the release tarball into `$HOME/.local/bin`. After the binary lands, it runs `contextbridge install` interactively to add review hooks to any supported AI coding harness it detects. The `/bin/sh -c "$(curl ...)"` form preserves terminal input so you stay in control of those prompts.
+The script picks up [Homebrew](https://brew.sh/) if you have it, otherwise downloads the release tarball into `$HOME/.local/bin`. After the binary lands, it runs `contextbridge install` interactively to add standard plugin or hook entries to any supported AI coding harness it detects. The `/bin/sh -c "$(curl ...)"` form preserves terminal input so you stay in control of those prompts.
 
 See [Manual install](#manual-install) below if you'd rather drive it yourself.
 
 ## Manual install
 
-Two steps either way: get the binary on your PATH, then run `contextbridge install` to wire up the hooks.
+Two steps either way: get the binary on your PATH, then run `contextbridge install` to add the harness plugin or hook entries.
 
 ### Step 1a: Homebrew (preferred)
 
@@ -32,7 +32,7 @@ If Homebrew isn't an option, grab the latest release tarball directly.
 
 <Code code="contextbridge install" lang="sh" title="terminal" />
 
-This detects every supported AI coding harness on your machine and adds the review hooks. The curl one-liner runs this for you; both manual paths leave it as a separate step. See [the installer reference](/cli/install/) for flags and per-harness targeting.
+This detects every supported AI coding harness on your machine and adds the review hook or plugin entry using that harness's normal extension system. The curl one-liner runs this for you; both manual paths leave it as a separate step. See [the installer reference](/cli/install/) for flags and per-harness targeting.
 
 Codex CLI requires newly installed hooks to be trusted before they can run. If you install the Codex hook, finish the [Codex trust walkthrough](/usage/codex/#trust-the-codex-hook) before expecting PlanBridge to open inside Codex.
 
@@ -41,7 +41,7 @@ Codex CLI requires newly installed hooks to be trusted before they can run. If y
 <Code code={`contextbridge --version
 contextbridge install status`} lang="sh" title="terminal" />
 
-`install status` reports which supported harnesses were detected and which currently have PlanBridge wired in.
+`install status` reports which supported harnesses were detected and which currently have PlanBridge entries installed.
 
 ## Installer options
 
@@ -69,4 +69,4 @@ Set `CONTEXTBRIDGE_UPDATE_CHECK_DISABLED=1` to silence the periodic update check
 
 <Code code="contextbridge uninstall" lang="sh" title="terminal" />
 
-Removes PlanBridge wiring from every harness. After that, remove the binary itself with the same package manager that installed it (Homebrew, or `rm $HOME/.local/bin/contextbridge`).
+Removes PlanBridge's plugin and hook entries from every harness, which gets your old workflow back. After that, remove the binary itself with the same package manager that installed it (Homebrew, or `rm $HOME/.local/bin/contextbridge`).
