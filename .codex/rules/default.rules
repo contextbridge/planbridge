@@ -1,3 +1,2 @@
 prefix_rule(pattern=["just", "verify"], decision="allow")
 prefix_rule(pattern=["bun", "install"], decision="allow")
-prefix_rule(pattern=["bun", "run", "projen"], decision="allow")

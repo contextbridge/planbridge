@@ -42,8 +42,6 @@ export default defineConfig(
       'packages/*/dist/**',
       'packages/*/node_modules/**',
       'packages/*/storybook-static/**',
-      'tools/**',
-      '**/projen-templates/**',
       '**/*.stories.{ts,tsx}',
     ],
   },
