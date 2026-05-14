@@ -1,9 +1,19 @@
 ---
+import { getImage, Picture } from 'astro:assets';
+import posterImage from '../assets/demo/plan-review-poster.jpg';
+
 interface Props {
   src?: string;
-  poster?: string;
 }
-const { src = '/demo/plan-review.webm', poster = '/demo/plan-review-poster.jpg' } = Astro.props;
+const { src = '/demo/plan-review.webm' } = Astro.props;
+
+// Video poster attribute is a URL string, so generate an optimized WebP via getImage().
+// WebP is the safe pick for the poster attribute across browsers.
+const optimizedPoster = await getImage({
+  src: posterImage,
+  format: 'webp',
+  width: posterImage.width,
+});
 ---
 
 <figure class="relative mx-auto max-w-7xl">
@@ -23,12 +33,15 @@ const { src = '/demo/plan-review.webm', poster = '/demo/plan-review-poster.jpg' 
       loop
       playsinline
       preload="metadata"
-      poster={poster}
+      poster={optimizedPoster.src}
       aria-label="Claude Code drafts a Stripe webhook plan in the terminal, hands it to PlanBridge for human annotation, then resumes with the feedback applied."
     >
       <source src={src} type="video/webm" />
-      <img
-        src={poster}
+      <Picture
+        src={posterImage}
+        widths={[640, 1024, 1600]}
+        sizes="(min-width: 1280px) 1280px, 100vw"
+        formats={['avif', 'webp']}
         alt="Floating Claude Code terminal window and PlanBridge browser window with a Stripe webhook plan being annotated by a human reviewer."
       />
     </video>
@@ -37,7 +50,7 @@ const { src = '/demo/plan-review.webm', poster = '/demo/plan-review-poster.jpg' 
 
 <dialog data-demo-video-modal class="demo-video-modal">
   <button type="button" data-demo-video-close class="demo-video-modal__close" aria-label="Close">×</button>
-  <video data-demo-video-modal-video class="demo-video-modal__video" controls playsinline preload="metadata" poster={poster}>
+  <video data-demo-video-modal-video class="demo-video-modal__video" controls playsinline preload="metadata" poster={optimizedPoster.src}>
     <source src={src} type="video/webm" />
   </video>
 </dialog>

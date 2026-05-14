@@ -11,96 +11,15 @@
  * Put app-specific overrides in main.css (which @imports this file).
  */
 
-@import '@fontsource/atkinson-hyperlegible-next/400.css';
-@import '@fontsource/atkinson-hyperlegible-next/400-italic.css';
-@import '@fontsource/atkinson-hyperlegible-next/700.css';
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-Regular.woff2') format('woff2'),
-    url('/fonts/ESBuild-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-RegularItalic.woff2') format('woff2'),
-    url('/fonts/ESBuild-RegularItalic.woff') format('woff');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-Medium.woff2') format('woff2'),
-    url('/fonts/ESBuild-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-MediumItalic.woff2') format('woff2'),
-    url('/fonts/ESBuild-MediumItalic.woff') format('woff');
-  font-weight: 500;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-Semibold.woff2') format('woff2'),
-    url('/fonts/ESBuild-Semibold.woff') format('woff');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-SemiboldItalic.woff2') format('woff2'),
-    url('/fonts/ESBuild-SemiboldItalic.woff') format('woff');
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-Bold.woff2') format('woff2'),
-    url('/fonts/ESBuild-Bold.woff') format('woff');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ESBuild';
-  src:
-    url('/fonts/ESBuild-BoldItalic.woff2') format('woff2'),
-    url('/fonts/ESBuild-BoldItalic.woff') format('woff');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
+/*
+ * Fonts (--cb-font-sans, --cb-font-heading) are configured via the Astro 6 Fonts API
+ * in astro.config.mjs. The <Font cssVariable="..." preload /> tags injected in Head.astro
+ * (Starlight pages) and Landing.astro (homepage) inject the @font-face rules and define
+ * the CSS variables.
+ */
 
 :root {
   color-scheme: light dark;
-
-  /* Font families */
-  --cb-font-sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
-  --cb-font-heading: 'ESBuild', system-ui, sans-serif;
 
   /* Brand accent colors (theme-invariant) */
   --peach: oklch(88.5% 0.075 70);

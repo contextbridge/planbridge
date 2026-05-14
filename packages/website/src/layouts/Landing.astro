@@ -1,6 +1,8 @@
 ---
 import "../styles/main.css";
+import { Font, Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
+import tasteInTheLoopBadge from '../assets/brands/taste-in-the-loop.svg';
 
 const { title, description } = Astro.props.frontmatter;
 ---
@@ -26,6 +28,8 @@ const { title, description } = Astro.props.frontmatter;
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL('/og.png', Astro.site).toString()} />
+    <Font cssVariable="--cb-font-sans" />
+    <Font cssVariable="--cb-font-heading" />
     {
       import.meta.env.PROD && (
         <script
@@ -103,10 +107,13 @@ const { title, description } = Astro.props.frontmatter;
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-foreground underline underline-offset-4"
-                ><img
-                  src="/brands/taste-in-the-loop.svg"
+                ><Image
+                  src={tasteInTheLoopBadge}
                   alt=""
                   aria-hidden="true"
+                  width={16}
+                  height={16}
+                  layout="none"
                   class="mr-1 inline-block h-[0.9em] w-[0.9em] rounded-[0.2em] align-[-0.14em]"
                 />Taste in the Loop</a
               >

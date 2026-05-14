@@ -1,4 +1,7 @@
 ---
+import { Image, Picture } from 'astro:assets';
+import claudeCodeBadge from '../assets/brands/claude-code.svg';
+import codexCliBadge from '../assets/brands/codex-cli.png';
 import InstallActions from './InstallActions.astro';
 ---
 
@@ -20,10 +23,13 @@ import InstallActions from './InstallActions.astro';
         href="/usage/claude-code/"
         class="flex items-center gap-8 bg-background p-8 text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
       >
-        <img
-          src="/brands/claude-code.svg"
+        <Image
+          src={claudeCodeBadge}
           alt=""
           aria-hidden="true"
+          width={64}
+          height={64}
+          layout="none"
           class="h-16 w-16 flex-shrink-0"
         />
         <div>
@@ -35,10 +41,13 @@ import InstallActions from './InstallActions.astro';
         href="/usage/codex/"
         class="flex items-center gap-8 bg-background p-8 text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
       >
-        <img
-          src="/brands/codex-cli.png"
+        <Picture
+          src={codexCliBadge}
           alt=""
           aria-hidden="true"
+          widths={[64, 128]}
+          sizes="64px"
+          formats={['avif', 'webp']}
           class="h-16 w-16 flex-shrink-0 object-contain"
         />
         <div>
