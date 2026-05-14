@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 const booleanEnv = z.stringbool({ truthy: ['1', 'true', 'yes'], falsy: ['', '0', 'false', 'no'] }).default(false);
-const portEnv = z.coerce.number().int().min(1).max(65535).optional();
+export const PortSchema = z.coerce.number().int().min(1).max(65535);
+const portEnv = PortSchema.optional();
 
 const Environment = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
@@ -18,4 +19,8 @@ export type Environment = z.infer<typeof Environment>;
 
 export function getEnvironment(env: NodeJS.ProcessEnv = process.env): Environment {
   return Environment.parse(env);
+}
+
+export function parsePort(value: unknown): number {
+  return PortSchema.parse(value);
 }

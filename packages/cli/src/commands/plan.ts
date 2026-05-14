@@ -6,6 +6,7 @@ import {
   runAnnotation,
 } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
+import { parsePort } from '#src/environment.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { readStreamToString } from '#src/streams.ts';
@@ -73,14 +74,9 @@ export function registerPlan(ctx: CliContext, program: Command): void {
 }
 
 function parsePortOption(value: string): number {
-  if (!/^\d+$/.test(value)) {
+  try {
+    return parsePort(value);
+  } catch {
     throw new InvalidArgumentError('port must be an integer between 1 and 65535');
   }
-
-  const port = Number(value);
-  if (port < 1 || port > 65535) {
-    throw new InvalidArgumentError('port must be an integer between 1 and 65535');
-  }
-
-  return port;
 }

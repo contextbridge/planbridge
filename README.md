@@ -59,21 +59,6 @@ Your plan content stays on your machine. No remote backend, no account, no API k
 - [Usage: Other agents](https://plan.contextbridge.ai/usage/other-agents/)
 - [Privacy & Telemetry](https://plan.contextbridge.ai/privacy/)
 
-## Port configuration
-
-By default, PlanBridge asks the OS for an available local port. To bind the
-browser UI to a specific port, set `CONTEXTBRIDGE_PORT` for hook-driven flows or
-pass `--port` for a manual run:
-
-```sh
-export CONTEXTBRIDGE_PORT=3456
-contextbridge plan --port 3456 plan.md
-```
-
-This is useful in environments that proxy a known port. For example, exe.dev
-forwards ports in the `3000..9999` range, so a VM can run PlanBridge with
-`CONTEXTBRIDGE_PORT=3456` and access the review UI through exe.dev's proxy.
-
 ## Community
 
 - Slack: [Join the ContextBridge community](https://go.contextbridge.ai/join-community)
