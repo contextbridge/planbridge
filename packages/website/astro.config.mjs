@@ -7,6 +7,14 @@ import icon from 'astro-icon';
 
 export default defineConfig({
   site: 'https://plan.contextbridge.ai',
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport',
+  },
+  image: {
+    responsiveStyles: true,
+    layout: 'constrained',
+  },
   integrations: [
     icon(),
     react(),
