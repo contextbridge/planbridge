@@ -95,19 +95,22 @@ async function refreshInstallerScope(
   installer: HarnessInstaller,
   scope: string,
 ): Promise<void> {
-  const { commandRunner, logger } = ctx;
+  const { commandRunner, io, logger } = ctx;
+  const harness = installer.descriptor.id;
   try {
-    const result = await commandRunner.run(binaryPath, ['install', installer.descriptor.id, '--scope', scope], {
+    const result = await commandRunner.run(binaryPath, ['install', harness, '--scope', scope, '--quiet'], {
       stdio: 'inherit',
     });
     if (result.exitCode !== 0) {
       logger.error(
-        { exitCode: result.exitCode, harness: installer.descriptor.id, scope },
+        { exitCode: result.exitCode, harness, scope, stdout: result.stdout, stderr: result.stderr },
         'post-update harness refresh failed',
       );
+      return;
     }
+    io.writeStderr(`✓ refreshed ${installer.descriptor.displayName} (scope: ${scope}).\n`);
   } catch (err) {
-    logger.error({ err, harness: installer.descriptor.id, scope }, 'post-update harness refresh failed');
+    logger.error({ err, harness, scope }, 'post-update harness refresh failed');
   }
 }
 

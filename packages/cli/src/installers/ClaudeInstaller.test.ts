@@ -84,6 +84,20 @@ describe('ClaudeInstaller.install', () => {
     expect(stderr).toContain('PlanBridge plugin installed for Claude Code (scope: user)');
   });
 
+  it('with quiet=true performs the same install but suppresses success and migration prose', async () => {
+    const { installer, context, io, commandRunner } = setupTest();
+    stubClaudeState(commandRunner, { unmanagedPlugins: [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' }] });
+
+    await installer.install(context, { yes: true, quiet: true });
+
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall'])).toHaveLength(1);
+    const stderr = io.stderr.text();
+    expect(stderr).not.toContain('PlanBridge plugin installed for Claude Code');
+    expect(stderr).not.toContain('Restart Claude Code');
+    expect(stderr).not.toContain('renamed from cli@contextbridge');
+  });
+
   it('leaves legacy cli@contextbridge alone when it is at a different scope than the install target', async () => {
     const { installer, context, io, commandRunner } = setupTest();
     stubClaudeState(commandRunner, { unmanagedPlugins: [{ id: CLAUDE_LEGACY_PLUGIN_ID, scope: 'project' }] });

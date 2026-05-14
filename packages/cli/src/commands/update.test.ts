@@ -208,7 +208,7 @@ describe('runUpdate', () => {
   });
 
   it('refreshes Claude after a successful update when the plugin is wired up', async () => {
-    const { context, commandRunner, updater } = createStubContext();
+    const { context, commandRunner, io, updater } = createStubContext();
     commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
     commandRunner.setWhich('contextbridge', FAKE_CONTEXTBRIDGE_PATH);
     updater.setCheckResult({ currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' });
@@ -229,7 +229,12 @@ describe('runUpdate', () => {
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
-    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
+    expect(spawnCall).toMatchObject({
+      args: ['install', 'claude', '--scope', 'user', '--quiet'],
+      opts: { stdio: 'inherit' },
+    });
+
+    expect(io.stderr.text()).toContain('✓ refreshed Claude Code (scope: user).');
   });
 
   it('refreshes Claude after update when only the legacy cli@contextbridge plugin is installed', async () => {
@@ -254,7 +259,7 @@ describe('runUpdate', () => {
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
-    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user']);
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'user', '--quiet']);
   });
 
   it('refreshes Claude at project scope when the new plugin is installed at project scope', async () => {
@@ -279,7 +284,7 @@ describe('runUpdate', () => {
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
-    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project', '--quiet']);
   });
 
   it('refreshes Claude at project scope when only the legacy plugin is installed at project scope', async () => {
@@ -304,7 +309,7 @@ describe('runUpdate', () => {
 
     const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
     expect(spawnCall).toBeDefined();
-    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project']);
+    expect(spawnCall?.args).toEqual(['install', 'claude', '--scope', 'project', '--quiet']);
   });
 
   it('refreshes Codex at project scope when the hook is installed at project scope', async () => {
@@ -334,7 +339,7 @@ describe('runUpdate', () => {
 
       const spawnCall = commandRunner.calls.find((c) => c.cmd === FAKE_CONTEXTBRIDGE_PATH);
       expect(spawnCall).toBeDefined();
-      expect(spawnCall?.args).toEqual(['install', 'codex', '--scope', 'project']);
+      expect(spawnCall?.args).toEqual(['install', 'codex', '--scope', 'project', '--quiet']);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
