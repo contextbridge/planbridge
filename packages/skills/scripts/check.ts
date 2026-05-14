@@ -8,9 +8,9 @@ import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));
 const safeReaddir = fromThrowable((dir: string) => readdirSync(dir, { withFileTypes: true }));
 
-function main(): void {
+async function main(): Promise<void> {
   const skills = loadAllFrom(SOURCES_DIR);
-  const targets = skills.flatMap(targetsFor);
+  const targets = (await Promise.all(skills.map(targetsFor))).flat();
   const expectedDirs = new Set(targets.map((t) => dirname(t.path)));
 
   const driftErrors = Result.combineWithAllErrors(targets.map(checkDrift)).match(
@@ -50,4 +50,4 @@ function findOrphans(parent: string, expectedDirs: Set<string>): string[] {
     .filter((dir) => !expectedDirs.has(dir));
 }
 
-main();
+await main();

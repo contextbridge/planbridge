@@ -35,8 +35,6 @@ Reusable per-harness snippets live at `packages/skills/sources/_partials/<harnes
 
 Partials emit content directly. Wrap them in a `{{#if (eq harness.id "…")}}` block at the call site. Group multiple partials under a single conditional when they're adjacent.
 
-Note: Handlebars' standalone-line behavior consumes each tag's own line, but blank lines on either side of a conditional block remain in both renders. The non-target render will gain one extra blank line where the conditional sits — markdown-equivalent, but visible in `git diff` of regenerated outputs.
-
 ## Rendering
 
 `render(skill, harness)` in `src/render.ts` takes a parsed `Skill` and a `HarnessDescriptor` from `@contextbridge/harness`. The descriptor's `skillRendering` rules supply `installName(name)` — the frontmatter `name` field in the rendered output. The body is compiled as a Handlebars template (see `## Templating`).

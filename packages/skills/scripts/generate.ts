@@ -4,9 +4,11 @@ import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
 import { loadAllFrom } from '#src/skills.ts';
 import { type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from './renderTargets.ts';
 
-function main(): void {
+async function main(): Promise<void> {
   SKILL_RENDERABLE_HARNESSES.forEach((harness) => rmSync(outDirFor(harness), { recursive: true, force: true }));
-  loadAllFrom(SOURCES_DIR).flatMap(targetsFor).forEach(writeTarget);
+  const skills = loadAllFrom(SOURCES_DIR);
+  const targets = (await Promise.all(skills.map(targetsFor))).flat();
+  targets.forEach(writeTarget);
 }
 
 function writeTarget({ path, body }: RenderTarget): void {
@@ -15,4 +17,4 @@ function writeTarget({ path, body }: RenderTarget): void {
   console.log(`wrote ${path}`);
 }
 
-main();
+await main();

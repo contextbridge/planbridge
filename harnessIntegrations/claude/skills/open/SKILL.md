@@ -26,7 +26,6 @@ The CLI takes a file path or stdin content:
     # Piped content (when the content lives in conversation, not on disk)
     printf %s "<content>" | contextbridge open
 
-
 ### Resolving the argument
 
 The user's argument may be a literal path or a human-language description. Resolve it first:
