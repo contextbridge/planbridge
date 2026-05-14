@@ -162,6 +162,8 @@ jobs:
     uses: ./.github/workflows/deploy-website.yml
     secrets:
       website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+      website_bucket: ${{ secrets.WEBSITE_BUCKET }}
+      website_distribution_id: ${{ secrets.WEBSITE_DISTRIBUTION_ID }}
     permissions:
       contents: read
       id-token: write

@@ -6,6 +6,12 @@ on:
       website_deploy_role_arn:
         description: ARN of the OIDC role to assume for the S3 sync and CloudFront invalidation.
         required: true
+      website_bucket:
+        description: Name of the S3 bucket that hosts the website.
+        required: true
+      website_distribution_id:
+        description: CloudFront distribution ID fronting the website bucket.
+        required: true
 
 permissions: {}
 
@@ -45,10 +51,10 @@ jobs:
       - name: Sync website to S3
         shell: bash
         env:
-          WEBSITE_BUCKET: ${{ vars.WEBSITE_BUCKET }}
+          WEBSITE_BUCKET: ${{ secrets.website_bucket }}
         run: |
           set -euo pipefail
-          : "${WEBSITE_BUCKET:?Set WEBSITE_BUCKET repository variable}"
+          : "${WEBSITE_BUCKET:?Set WEBSITE_BUCKET repository secret}"
           aws s3 sync packages/website/dist/ "s3://${WEBSITE_BUCKET}/" \
             --delete \
             --exclude "_astro/*" \
@@ -62,10 +68,10 @@ jobs:
       - name: Invalidate website CloudFront cache
         shell: bash
         env:
-          WEBSITE_DISTRIBUTION_ID: ${{ vars.WEBSITE_DISTRIBUTION_ID }}
+          WEBSITE_DISTRIBUTION_ID: ${{ secrets.website_distribution_id }}
         run: |
           set -euo pipefail
-          : "${WEBSITE_DISTRIBUTION_ID:?Set WEBSITE_DISTRIBUTION_ID repository variable}"
+          : "${WEBSITE_DISTRIBUTION_ID:?Set WEBSITE_DISTRIBUTION_ID repository secret}"
           aws cloudfront create-invalidation \
             --distribution-id "${WEBSITE_DISTRIBUTION_ID}" \
             --paths "/*" \
