@@ -153,3 +153,61 @@ jobs:
             --region us-east-1 \
             --content-type 'text/x-shellscript; charset=utf-8' \
             --cache-control 'public, max-age=300'
+
+  deploy-website:
+    name: Deploy website
+    needs: release
+    # Skip alpha releases so unreleased docs do not publish before stable CLI releases.
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/bootstrap
+
+      - name: Build website
+        run: bun run --cwd packages/website build
+
+      - name: Configure AWS credentials for website deploy
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        with:
+          role-to-assume: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: website-${{ github.run_id }}
+
+      - name: Sync website to S3
+        shell: bash
+        env:
+          WEBSITE_BUCKET: ${{ vars.WEBSITE_BUCKET }}
+        run: |
+          set -euo pipefail
+          : "${WEBSITE_BUCKET:?Set WEBSITE_BUCKET repository variable}"
+          aws s3 sync packages/website/dist/ "s3://${WEBSITE_BUCKET}/" \
+            --delete \
+            --exclude "_astro/*" \
+            --cache-control "public, max-age=300, must-revalidate" \
+            --region us-east-1
+          aws s3 sync packages/website/dist/_astro/ "s3://${WEBSITE_BUCKET}/_astro/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --region us-east-1
+
+      - name: Invalidate website CloudFront cache
+        shell: bash
+        env:
+          WEBSITE_DISTRIBUTION_ID: ${{ vars.WEBSITE_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+          : "${WEBSITE_DISTRIBUTION_ID:?Set WEBSITE_DISTRIBUTION_ID repository variable}"
+          aws cloudfront create-invalidation \
+            --distribution-id "${WEBSITE_DISTRIBUTION_ID}" \
+            --paths "/*" \
+            --region us-east-1
