@@ -8,7 +8,11 @@ import TarballPlatformTabs from '../../components/TarballPlatformTabs.astro';
 
 The simplest install path is one shell command:
 
-<Code code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"`} lang="sh" title="terminal" />
+<Code
+  code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"`}
+  lang="sh"
+  title="terminal"
+/>
 
 The script picks up [Homebrew](https://brew.sh/) if you have it, otherwise downloads the release tarball into `$HOME/.local/bin`. After the binary lands, it runs `contextbridge install` interactively to add standard plugin or hook entries to any supported AI coding harness it detects. The `/bin/sh -c "$(curl ...)"` form preserves terminal input so you stay in control of those prompts.
 
@@ -38,8 +42,12 @@ Codex CLI requires newly installed hooks to be trusted before they can run. If y
 
 ## Verify
 
-<Code code={`contextbridge --version
-contextbridge install status`} lang="sh" title="terminal" />
+<Code
+  code={`contextbridge --version
+contextbridge install status`}
+  lang="sh"
+  title="terminal"
+/>
 
 `install status` reports which supported harnesses were detected and which currently have PlanBridge entries installed.
 
@@ -47,17 +55,21 @@ contextbridge install status`} lang="sh" title="terminal" />
 
 The install script accepts flags after `--`:
 
-| Flag | Env var | What it does |
-| --- | --- | --- |
-| `--channel alpha` | `CB_CHANNEL` | Install from the alpha release channel instead of stable. |
-| `--version v0.1.0` | `CB_VERSION` | Pin to a specific tagged release. Requires `--no-brew`. |
-| `--no-brew` | `CB_NO_BREW=1` | Skip Homebrew even if available; fall through to the tarball path. |
-| `--bin-dir <dir>` | `CB_INSTALL_DIR` | Override the tarball install dir (default `$HOME/.local/bin`). Requires `--no-brew`. |
-| `--no-configure` | `CB_SKIP_CONFIGURE=1` | Skip the post-install `contextbridge install` step. Useful in CI. |
+| Flag               | Env var               | What it does                                                                         |
+| ------------------ | --------------------- | ------------------------------------------------------------------------------------ |
+| `--channel alpha`  | `CB_CHANNEL`          | Install from the alpha release channel instead of stable.                            |
+| `--version v0.1.0` | `CB_VERSION`          | Pin to a specific tagged release. Requires `--no-brew`.                              |
+| `--no-brew`        | `CB_NO_BREW=1`        | Skip Homebrew even if available; fall through to the tarball path.                   |
+| `--bin-dir <dir>`  | `CB_INSTALL_DIR`      | Override the tarball install dir (default `$HOME/.local/bin`). Requires `--no-brew`. |
+| `--no-configure`   | `CB_SKIP_CONFIGURE=1` | Skip the post-install `contextbridge install` step. Useful in CI.                    |
 
 Pass flags after `--`:
 
-<Code code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)" -- --channel alpha`} lang="sh" title="terminal" />
+<Code
+  code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)" -- --channel alpha`}
+  lang="sh"
+  title="terminal"
+/>
 
 ## Update
 

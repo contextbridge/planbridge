@@ -34,10 +34,10 @@ The markdown carries its own agent-facing instructions (`MUST revise`, `do not s
 
 ## Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Submission written to stdout |
-| `1` | Input or runtime error (see stderr) |
+| Code  | Meaning                                        |
+| ----- | ---------------------------------------------- |
+| `0`   | Submission written to stdout                   |
+| `1`   | Input or runtime error (see stderr)            |
 | `130` | Interrupted (Ctrl-C) before the user submitted |
 
 Agents should treat `130` as "the user wants out" and stop the loop.

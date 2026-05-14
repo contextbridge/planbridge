@@ -40,7 +40,6 @@ Run the website locally with:
 
 ```sh
 just website
-bun run --cwd packages/website test
 ```
 
 ## Testing
