@@ -1,16 +1,24 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import type { BaseContext } from '@contextbridge/context';
 import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
 import { Result, err, fromThrowable, ok } from 'neverthrow';
 import { loadAllFrom } from '#src/skills.ts';
-import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsFor } from './renderTargets.ts';
+import { createScriptContext } from './context.ts';
+import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsForAll } from './renderTargets.ts';
 
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));
 const safeReaddir = fromThrowable((dir: string) => readdirSync(dir, { withFileTypes: true }));
 
-function main(): void {
+async function main(ctx: BaseContext): Promise<void> {
+  const { logger } = ctx;
   const skills = loadAllFrom(SOURCES_DIR);
-  const targets = skills.flatMap(targetsFor);
+  const targetResult = await targetsForAll(skills);
+  if (targetResult.isErr()) {
+    logger.error(targetResult.error.message);
+    process.exit(1);
+  }
+  const targets = targetResult.value;
   const expectedDirs = new Set(targets.map((t) => dirname(t.path)));
 
   const driftErrors = Result.combineWithAllErrors(targets.map(checkDrift)).match(
@@ -25,11 +33,11 @@ function main(): void {
 
   const errors = [...driftErrors, ...orphanErrors];
   if (errors.length > 0) {
-    errors.forEach((e) => console.error(e));
-    console.error('\nRun `bun run skills:generate` to regenerate harness outputs from sources.');
+    errors.forEach((e) => logger.error(e));
+    logger.error('Run `bun run skills:generate` to regenerate harness outputs from sources.');
     process.exit(1);
   }
-  console.log(`✓ ${skills.length} skill(s) in sync with committed outputs.`);
+  logger.info(`✓ ${skills.length} skill(s) in sync with committed outputs.`);
 }
 
 function checkDrift({ path, body, harness }: RenderTarget): Result<void, string> {
@@ -50,4 +58,4 @@ function findOrphans(parent: string, expectedDirs: Set<string>): string[] {
     .filter((dir) => !expectedDirs.has(dir));
 }
 
-main();
+await main(createScriptContext());

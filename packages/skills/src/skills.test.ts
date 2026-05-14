@@ -79,6 +79,17 @@ describe('loadAllFrom', () => {
   it('returns an empty array when no skills exist', () => {
     expect(loadAllFrom(dir)).toEqual([]);
   });
+
+  it('ignores directories whose name starts with an underscore', () => {
+    mkdirSync(join(dir, 'open'), { recursive: true });
+    mkdirSync(join(dir, '_partials', 'codex'), { recursive: true });
+    writeFileSync(join(dir, 'open', 'SKILL.md'), frontmatter({ name: 'open', description: 'Open a thing.' }, 'body\n'));
+    writeFileSync(join(dir, '_partials', 'codex', 'sandbox-escalation.md'), 'shared snippet\n');
+
+    const skills = loadAllFrom(dir);
+
+    expect(skills.map((s) => s.frontmatter.name)).toEqual(['open']);
+  });
 });
 
 function frontmatter(fields: Record<string, unknown>, body: string): string {

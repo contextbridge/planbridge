@@ -26,6 +26,10 @@ The CLI takes a file path or stdin content:
     # Piped content (when the content lives in conversation, not on disk)
     printf %s "<content>" | contextbridge open
 
+## Running this from Codex
+
+This skill runs commands that require resources outside Codex's default sandbox. When invoking them, set `sandbox_permissions: "require_escalated"` and supply a brief `justification` describing what the command does. If the user runs the command regularly, suggest a matching `prefix_rule` (e.g., `["contextbridge", "<subcommand>"]`) so future invocations don't require re-approval.
+
 ### Resolving the argument
 
 The user's argument may be a literal path or a human-language description. Resolve it first:

@@ -19,9 +19,25 @@ A skill is `sources/<name>/SKILL.md` following the [agentskills.io specification
 
 All files are committed. `bun run skills:check` (wired into `just verify` and the lint CI job) regenerates in-memory and fails on byte-diff.
 
+## Templating
+
+SKILL.md bodies are Handlebars templates. `render()` compiles the body through an isolated Handlebars instance and evaluates it with `{ harness }` as the data context, so templates can branch on the active harness:
+
+    {{#if (eq harness.id "codex")}}
+    {{> codex/sandbox-escalation}}
+    {{/if}}
+
+Only one helper is registered, `eq` (strict equality). The harness conditional is always written at the call site so a reader of the SKILL.md can see what content is harness-specific without opening each referenced partial.
+
+### Partials
+
+Reusable per-harness snippets live at `packages/skills/sources/_partials/<harnessId>/<topic>.md`. Their on-disk path under `_partials/` minus the `.md` extension is the partial name — `_partials/codex/sandbox-escalation.md` is callable as `{{> codex/sandbox-escalation}}`. `loadAllFrom` skips `_`-prefixed directories so the partials tree is invisible to the skill loader and to the orphan-detection pass in `skills:check`.
+
+Partials emit content directly. Wrap them in a `{{#if (eq harness.id "…")}}` block at the call site. Group multiple partials under a single conditional when they're adjacent.
+
 ## Rendering
 
-`render(skill, harness)` in `src/render.ts` takes a parsed `Skill` and a `HarnessDescriptor` from `@contextbridge/harness`. The descriptor's `skillRendering` rules supply `installName(name)` — the frontmatter `name` field in the rendered output. The body is emitted verbatim.
+`render(skill, harness)` in `src/render.ts` takes a parsed `Skill` and a `HarnessDescriptor` from `@contextbridge/harness`. The descriptor's `skillRendering` rules supply `installName(name)` — the frontmatter `name` field in the rendered output. The body is compiled as a Handlebars template (see `## Templating`).
 
 ## Adding a skill
 
