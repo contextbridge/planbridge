@@ -2,6 +2,12 @@ name: Deploy Website
 
 on:
   workflow_call:
+    inputs:
+      cli_ref:
+        description: Stable CLI tag to use when generating website CLI reference docs. Empty means use the checked-out CLI source.
+        required: false
+        type: string
+        default: ''
     secrets:
       website_deploy_role_arn:
         description: ARN of the OIDC role to assume for the S3 sync and CloudFront invalidation.
@@ -37,6 +43,40 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/bootstrap
+
+      - name: Pin CLI reference source
+        if: ${{ inputs.cli_ref != '' }}
+        shell: bash
+        env:
+          CLI_REF: ${{ inputs.cli_ref }}
+        run: |
+          set -euo pipefail
+          : "${CLI_REF:?Set CLI_REF}"
+
+          if ! git check-ref-format --allow-onelevel "${CLI_REF}"; then
+            echo "::error::Invalid CLI_REF '${CLI_REF}'"
+            exit 1
+          fi
+
+          case "${CLI_REF}" in
+            v*) ;;
+            *)
+              echo "::error::CLI_REF must be a v* tag, got '${CLI_REF}'"
+              exit 1
+              ;;
+          esac
+
+          case "${CLI_REF}" in
+            *-*)
+              echo "::error::CLI_REF must be a stable tag without '-', got '${CLI_REF}'"
+              exit 1
+              ;;
+          esac
+
+          git fetch --force --no-tags --depth=1 origin "refs/tags/${CLI_REF}:refs/tags/${CLI_REF}"
+          cli_ref_commit="$(git rev-parse --verify "refs/tags/${CLI_REF}^{commit}")"
+          git checkout "${cli_ref_commit}" -- packages/cli
+          echo "Pinned packages/cli to ${CLI_REF} (${cli_ref_commit})"
 
       - name: Build website
         run: bun run --cwd packages/website build
