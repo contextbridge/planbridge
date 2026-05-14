@@ -1,0 +1,130 @@
+---
+interface Props {
+  src?: string;
+  poster?: string;
+}
+const { src = '/demo/plan-review.webm', poster = '/demo/plan-review-poster.jpg' } = Astro.props;
+---
+
+<figure class="relative mx-auto max-w-7xl">
+  <figcaption class="mb-3 font-sans text-sm italic leading-relaxed text-foreground">
+    Example: Claude Code's plan opening in PlanBridge.
+  </figcaption>
+  <button
+    type="button"
+    class="relative block w-full cursor-zoom-in overflow-hidden border-0 bg-transparent p-0"
+    data-demo-video-trigger
+    aria-label="View demo at full size"
+  >
+    <video
+      class="pointer-events-none block w-full"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      poster={poster}
+      aria-label="Claude Code drafts a Stripe webhook plan in the terminal, hands it to PlanBridge for human annotation, then resumes with the feedback applied."
+    >
+      <source src={src} type="video/webm" />
+      <img
+        src={poster}
+        alt="Floating Claude Code terminal window and PlanBridge browser window with a Stripe webhook plan being annotated by a human reviewer."
+      />
+    </video>
+  </button>
+</figure>
+
+<dialog data-demo-video-modal class="demo-video-modal">
+  <button type="button" data-demo-video-close class="demo-video-modal__close" aria-label="Close">×</button>
+  <video data-demo-video-modal-video class="demo-video-modal__video" controls playsinline preload="metadata" poster={poster}>
+    <source src={src} type="video/webm" />
+  </video>
+</dialog>
+
+<style>
+  .demo-video-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    display: none;
+  }
+  .demo-video-modal[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .demo-video-modal::backdrop {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+  }
+  .demo-video-modal__video {
+    width: auto;
+    height: auto;
+    max-width: calc(100vw - 4rem);
+    max-height: calc(100vh - 4rem);
+    border-radius: 0.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  }
+  .demo-video-modal__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.5);
+  }
+  .demo-video-modal__close:hover {
+    background: rgba(0, 0, 0, 0.9);
+  }
+  .demo-video-modal__close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+</style>
+
+<script>
+  const trigger = document.querySelector<HTMLButtonElement>('[data-demo-video-trigger]');
+  const modal = document.querySelector<HTMLDialogElement>('[data-demo-video-modal]');
+  const modalVideo = document.querySelector<HTMLVideoElement>('[data-demo-video-modal-video]');
+  const closeBtn = document.querySelector<HTMLButtonElement>('[data-demo-video-close]');
+
+  trigger?.addEventListener('click', () => {
+    modal?.showModal();
+    if (modalVideo) {
+      modalVideo.currentTime = 0;
+      void modalVideo.play().catch(() => {});
+    }
+  });
+
+  closeBtn?.addEventListener('click', () => modal?.close());
+
+  modal?.addEventListener('click', (event) => {
+    if (event.target === modal) modal.close();
+  });
+
+  modal?.addEventListener('close', () => {
+    if (modalVideo) {
+      modalVideo.pause();
+      modalVideo.currentTime = 0;
+    }
+  });
+</script>

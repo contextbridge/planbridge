@@ -1,0 +1,29 @@
+---
+import InstallCommand from './InstallCommand.astro';
+
+interface Props {
+  marginTopClass?: string;
+}
+
+const { marginTopClass = 'mt-8' } = Astro.props;
+---
+
+<div class={marginTopClass}>
+  <div class="flex justify-start">
+    <InstallCommand size="large" />
+  </div>
+  <p class="mt-8 flex flex-wrap items-center gap-x-12 gap-y-2 font-sans text-base">
+    <a
+      href="/install/"
+      class="text-foreground underline underline-offset-4"
+    >
+      Prefer to install manually?
+    </a>
+    <a
+      href="/quickstart/"
+      class="text-foreground underline underline-offset-4"
+    >
+      Read the quickstart &rarr;
+    </a>
+  </p>
+</div>

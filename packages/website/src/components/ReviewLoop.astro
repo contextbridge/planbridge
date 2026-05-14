@@ -1,0 +1,26 @@
+---
+import { ReviewLoopDiagram } from './ReviewLoopDiagram';
+---
+
+<section class="border-t border-foreground bg-background px-8 py-32">
+  <div class="mx-auto max-w-7xl">
+    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
+      How it works
+    </p>
+    <h2
+      class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
+    >
+      The cheapest time to fix code is before it's written.
+    </h2>
+
+    <p class="mt-8 max-w-3xl font-sans text-2xl leading-relaxed text-foreground">
+      Iterate on the plan first. Save the tokens and the rework.
+    </p>
+
+    <div class="mt-16 h-px w-full bg-foreground"></div>
+
+    <div class="mt-16">
+      <ReviewLoopDiagram client:visible />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,258 @@
+/*
+ * ContextBridge brand foundation.
+ *
+ * Mirrors the canonical token contract from contextbridge.github.io.
+ *
+ * Theme contract:
+ *   - `color-scheme` on <html> drives `light-dark()` resolution. Default is
+ *     `light dark` (follow OS pref); `data-theme='light'|'dark'` forces the
+ *     scheme and wins over the OS pref.
+ *
+ * Put app-specific overrides in main.css (which @imports this file).
+ */
+
+@import '@fontsource/atkinson-hyperlegible-next/400.css';
+@import '@fontsource/atkinson-hyperlegible-next/400-italic.css';
+@import '@fontsource/atkinson-hyperlegible-next/700.css';
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-Regular.woff2') format('woff2'),
+    url('/fonts/ESBuild-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-RegularItalic.woff2') format('woff2'),
+    url('/fonts/ESBuild-RegularItalic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-Medium.woff2') format('woff2'),
+    url('/fonts/ESBuild-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-MediumItalic.woff2') format('woff2'),
+    url('/fonts/ESBuild-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-Semibold.woff2') format('woff2'),
+    url('/fonts/ESBuild-Semibold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-SemiboldItalic.woff2') format('woff2'),
+    url('/fonts/ESBuild-SemiboldItalic.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-Bold.woff2') format('woff2'),
+    url('/fonts/ESBuild-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ESBuild';
+  src:
+    url('/fonts/ESBuild-BoldItalic.woff2') format('woff2'),
+    url('/fonts/ESBuild-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Font families */
+  --cb-font-sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --cb-font-heading: 'ESBuild', system-ui, sans-serif;
+
+  /* Brand accent colors (theme-invariant) */
+  --peach: oklch(88.5% 0.075 70);
+  --tangerine: oklch(77% 0.17 55);
+  --coral: oklch(66% 0.22 30);
+  --red: oklch(58% 0.25 27);
+  --violet: oklch(52% 0.29 310);
+  --royal: oklch(48% 0.26 265);
+  --royal-light: oklch(65% 0.24 265);
+  --violet-light: oklch(70% 0.25 310);
+
+  /* Color system using OKLCH for perceptual uniformity */
+  --color-amber-50: oklch(98.5% 0.02 95);
+  --color-amber-100: oklch(96% 0.052 95.5);
+  --color-amber-200: oklch(92% 0.1 96);
+  --color-amber-300: oklch(87.5% 0.15 96.5);
+  --color-amber-400: oklch(81.5% 0.182 97);
+  --color-amber-500: oklch(75.5% 0.19 97.5);
+  --color-amber-600: oklch(66% 0.172 98);
+  --color-amber-700: oklch(55% 0.15 98.5);
+  --color-amber-800: oklch(46.5% 0.122 99);
+  --color-amber-900: oklch(40.5% 0.102 99.5);
+  --color-amber-950: oklch(28% 0.072 100);
+
+  --color-neutral-50: oklch(98.5% 0 0);
+  --color-neutral-100: oklch(96.7% 0 0);
+  --color-neutral-200: oklch(93% 0 0);
+  --color-neutral-300: oklch(87% 0 0);
+  --color-neutral-400: oklch(70.8% 0 0);
+  --color-neutral-500: oklch(55.6% 0 0);
+  --color-neutral-600: oklch(43.9% 0 0);
+  --color-neutral-700: oklch(37.1% 0 0);
+  --color-neutral-800: oklch(26.9% 0 0);
+  --color-neutral-900: oklch(20.5% 0 0);
+  --color-neutral-950: oklch(18% 0 0);
+  --color-neutral-975: oklch(12% 0 0);
+  --color-neutral-990: oklch(8% 0 0);
+
+  --color-green-50: oklch(98.3% 0.018 155);
+  --color-green-100: oklch(96% 0.041 156);
+  --color-green-200: oklch(92% 0.08 157);
+  --color-green-300: oklch(86.5% 0.132 158);
+  --color-green-400: oklch(78.5% 0.184 159);
+  --color-green-500: oklch(72% 0.21 160);
+  --color-green-600: oklch(62.5% 0.186 160.5);
+  --color-green-700: oklch(53% 0.15 161);
+  --color-green-800: oklch(45% 0.118 162);
+  --color-green-900: oklch(38.5% 0.094 162.5);
+  --color-green-950: oklch(28% 0.065 163);
+
+  --color-teal-50: oklch(98% 0.014 180);
+  --color-teal-100: oklch(95.5% 0.034 181);
+  --color-teal-200: oklch(91% 0.064 181.5);
+  --color-teal-300: oklch(85% 0.104 182);
+  --color-teal-400: oklch(77% 0.136 182.5);
+  --color-teal-500: oklch(70.2% 0.151 162.68);
+  --color-teal-600: oklch(60% 0.139 183);
+  --color-teal-700: oklch(51% 0.115 183.5);
+  --color-teal-800: oklch(43% 0.092 184);
+  --color-teal-900: oklch(36.5% 0.075 184.5);
+  --color-teal-950: oklch(28% 0.058 185);
+
+  /* Theme-flipping semantic tokens — light-dark() resolves via color-scheme. */
+  --background: light-dark(oklch(100% 0 0), var(--color-neutral-990));
+  --foreground: light-dark(oklch(0% 0 0), var(--color-neutral-50));
+  --muted-foreground: light-dark(var(--color-neutral-600), var(--color-neutral-400));
+  --border: light-dark(var(--color-neutral-200), var(--color-neutral-800));
+
+  /* Design system tokens — reference base colors */
+  --card: light-dark(var(--background), var(--color-neutral-975));
+  --card-foreground: var(--foreground);
+  --primary: var(--royal);
+  --primary-foreground: light-dark(var(--background), var(--color-neutral-50));
+  --secondary: light-dark(var(--color-neutral-50), var(--color-neutral-900));
+  --secondary-foreground: var(--foreground);
+  --accent: light-dark(var(--color-neutral-50), var(--color-neutral-900));
+  --accent-foreground: var(--foreground);
+  --muted: light-dark(var(--color-neutral-50), var(--color-neutral-900));
+
+  /* Gradients, glass, shadows */
+  --gradient-primary: linear-gradient(135deg, var(--royal) 0%, var(--violet) 100%);
+  --gradient-secondary: light-dark(
+    linear-gradient(135deg, var(--color-neutral-50) 0%, var(--color-neutral-100) 100%),
+    linear-gradient(135deg, var(--color-neutral-900) 0%, var(--color-neutral-950) 100%)
+  );
+  --glass-bg: color-mix(in oklch, var(--background) 80%, transparent);
+  --glass-border: color-mix(in oklch, var(--border) 50%, transparent);
+  --shadow-glass: 0 8px 32px color-mix(in oklch, var(--foreground) 10%, transparent);
+  --shadow-elevated: 0 25px 50px color-mix(in oklch, var(--foreground) 15%, transparent);
+  --shadow-glow: 0 0 20px color-mix(in oklch, var(--primary) 15%, transparent);
+  --shadow-coral: 0 4px 14px color-mix(in oklch, var(--coral) 25%, transparent);
+  --shadow-royal: 0 4px 14px color-mix(in oklch, var(--royal) 25%, transparent);
+  --radius: 0.625rem;
+
+  --popover: light-dark(var(--background), var(--color-neutral-975));
+  --popover-foreground: var(--foreground);
+  --destructive: var(--red);
+  --input: light-dark(var(--color-neutral-200), var(--color-neutral-800));
+  --ring: light-dark(var(--color-neutral-400), var(--color-neutral-600));
+
+  --chart-1: var(--tangerine);
+  --chart-2: var(--color-teal-500);
+  --chart-3: var(--royal);
+  --chart-4: var(--peach);
+  --chart-5: var(--coral);
+
+  --sidebar: light-dark(var(--color-neutral-50), var(--color-neutral-950));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--foreground);
+  --sidebar-primary-foreground: light-dark(var(--color-neutral-50), var(--color-neutral-950));
+  --sidebar-accent: light-dark(var(--color-neutral-100), var(--color-neutral-900));
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: light-dark(var(--color-neutral-200), var(--color-neutral-800));
+  --sidebar-ring: light-dark(var(--color-neutral-400), var(--color-neutral-600));
+}
+
+/* Explicit toggle — wins over OS pref by forcing color-scheme. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--cb-font-sans);
+}
+
+:is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--cb-font-heading);
+}
+
+/* Dark section utility — forces dark scheme so inherited light-dark() resolves dark. */
+.section-dark {
+  color-scheme: dark;
+  --royal: var(--royal-light);
+  --color-royal: var(--royal-light);
+  --foreground: oklch(100% 0 0);
+  --background: oklch(0% 0 0);
+  --muted-foreground: var(--color-neutral-400);
+  --border: var(--color-neutral-700);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.section-dark p {
+  color: var(--color-neutral-300);
+}
+
+.section-dark .text-royal {
+  color: var(--royal-light);
+}

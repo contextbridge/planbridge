@@ -1,0 +1,128 @@
+---
+import DemoVideo from './DemoVideo.astro';
+import InstallCommand from './InstallCommand.astro';
+---
+
+<section class="hero-section section-dark relative z-10 overflow-x-clip px-8 pt-16 pb-0">
+  <div class="hero-transition-art" aria-hidden="true">
+    <svg viewBox="0 0 1200 220" role="presentation" preserveAspectRatio="none">
+      <path d="M -120 42 C 180 2 360 2 640 50 S 1000 106 1320 58" />
+      <path d="M -120 74 C 180 34 360 34 640 82 S 1000 138 1320 90" />
+      <path d="M -120 106 C 180 66 360 66 640 114 S 1000 170 1320 122" />
+      <path d="M -120 138 C 180 98 360 98 640 146 S 1000 202 1320 154" />
+      <path d="M -120 170 C 180 130 360 130 640 178 S 1000 234 1320 186" />
+    </svg>
+  </div>
+
+  <div class="relative z-10 mx-auto max-w-7xl">
+    <h1
+      class="m-0 text-balance font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[48px] lg:text-[64px]"
+    >
+      Better code with inline comments on your coding agent plans
+    </h1>
+
+    <p class="mb-0 mt-6 max-w-4xl text-balance font-sans text-xl leading-8 text-foreground">
+      PlanBridge opens your agent's plan in a local browser, so you can highlight text and comment
+      like you would in a document. It fits into your existing workflow, uses standard hooks, and
+      uninstalls easily if you change your mind.
+    </p>
+
+    <div class="mt-8 inline-flex max-w-full flex-col">
+      <InstallCommand size="large" />
+
+      <div class="mt-6 flex flex-col gap-4 font-sans text-base md:flex-row md:items-center md:justify-between">
+        <span class="flex flex-wrap items-center gap-x-12 gap-y-3">
+          <a href="/install/" class="text-foreground underline underline-offset-4">
+            Prefer to install manually?
+          </a>
+          <a href="/quickstart/" class="text-foreground underline underline-offset-4">
+            Read the quickstart &rarr;
+          </a>
+        </span>
+        <span class="flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-foreground md:justify-end">
+          <span class="whitespace-nowrap font-mono text-xs font-bold uppercase tracking-[0.16em]">
+            Works with
+          </span>
+          <a
+            href="/usage/claude-code/"
+            class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+          >
+            <img src="/brands/claude-code.svg" alt="" aria-hidden="true" class="h-4 w-4" />
+            Claude Code
+          </a>
+          <span>and</span>
+          <a
+            href="/usage/codex/"
+            class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+          >
+            <img
+              src="/brands/codex-cli.png"
+              alt=""
+              aria-hidden="true"
+              class="h-4 w-4 object-contain"
+            />
+            Codex
+          </a>
+        </span>
+      </div>
+    </div>
+
+    <div class="hero-demo mt-12">
+      <DemoVideo />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-section {
+    background: transparent;
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--background);
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - var(--hero-demo-overlap) + var(--hero-diagonal-height) / 2),
+      0 calc(100% - var(--hero-demo-overlap) - var(--hero-diagonal-height) / 2)
+    );
+  }
+
+  .hero-transition-art {
+    position: absolute;
+    inset-inline: -6rem;
+    top: calc(100% - var(--hero-demo-overlap) - var(--hero-diagonal-height) / 2 - 4rem);
+    z-index: 5;
+    height: calc(var(--hero-diagonal-height) + 8rem);
+    pointer-events: none;
+    color: white;
+    opacity: 0.18;
+    mix-blend-mode: difference;
+  }
+
+  .hero-transition-art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .hero-transition-art path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .hero-demo {
+    position: relative;
+    z-index: 10;
+    margin-bottom: calc(var(--hero-demo-overlap) * -1);
+    filter: drop-shadow(0 50px 60px rgba(0, 0, 0, 0.55));
+  }
+</style>

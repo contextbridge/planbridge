@@ -20,6 +20,9 @@ outputs:
   install_script_changed:
     description: Did the shell installer script or its tests change?
     value: ${{ steps.filter.outputs.install_script }}
+  website_changed:
+    description: Did anything affecting the marketing/docs site change?
+    value: ${{ steps.filter.outputs.website }}
   last_successful_sha:
     description: The SHA of the last successful deployment (only set in deploy mode)
     value: ${{ steps.find-last-deploy.outputs.sha }}
@@ -74,3 +77,7 @@ runs:
             - 'scripts/install.sh'
             - 'scripts/install.test.sh'
             - '.github/workflows/test.yml'
+          website:
+            - 'packages/website/**'
+            - '.github/workflows/deploy-website.yml'
+            - '.github/actions/bootstrap/action.yml'

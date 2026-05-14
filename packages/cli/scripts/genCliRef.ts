@@ -11,7 +11,7 @@ import type { Command, Option } from 'commander';
 import { createProgram } from '#src/commands/index.ts';
 import { createStubContext } from '#src/testHelpers/index.ts';
 
-const OUT_DIR = fileURLToPath(new URL('../../../tools/website/src/content/docs/cli/', import.meta.url));
+const OUT_DIR = fileURLToPath(new URL('../../../packages/website/src/content/docs/cli/', import.meta.url));
 
 await main();
 

@@ -1,0 +1,109 @@
+---
+interface Props {
+  size?: 'default' | 'large';
+}
+const { size = 'default' } = Astro.props;
+const INSTALL_COMMAND = '/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"';
+const sizeClasses =
+  size === 'large'
+    ? 'px-6 py-4 text-base'
+    : 'px-4 py-2 text-base';
+---
+
+<div class="flex max-w-full flex-col sm:inline-flex" data-install-command>
+  <div class="mb-2 flex items-baseline justify-between gap-6 font-mono text-xs font-bold uppercase tracking-[0.16em] text-tangerine">
+    <span>Install</span>
+    <span>macOS · Linux</span>
+  </div>
+  <div
+    class:list={[
+      'flex items-center gap-4 border border-foreground bg-background font-mono text-foreground',
+      sizeClasses,
+    ]}
+  >
+    <span aria-hidden="true" class="text-foreground select-none font-bold">$</span>
+    <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-base [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {INSTALL_COMMAND}<span class="install-cursor" aria-hidden="true">_</span>
+    </code>
+    <button
+      type="button"
+      class="ml-2 inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-2 text-foreground hover:bg-foreground hover:text-background focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+      data-copy-button
+      aria-label="Copy install command"
+      title="Copy"
+    >
+      <svg
+        data-copy-icon-default
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+      </svg>
+      <svg
+        data-copy-icon-copied
+        class="hidden"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  @keyframes cb-cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  .install-cursor {
+    display: inline-block;
+    margin-left: 0.05em;
+    font-weight: 700;
+    animation: cb-cursor-blink 1.1s step-end infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .install-cursor { animation: none; }
+  }
+</style>
+
+<script>
+  const COMMAND = '/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"';
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-button]').forEach((button) => {
+    const defaultIcon = button.querySelector<SVGElement>('[data-copy-icon-default]');
+    const copiedIcon = button.querySelector<SVGElement>('[data-copy-icon-copied]');
+    if (!defaultIcon || !copiedIcon) return;
+    let resetTimer: number | undefined;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(COMMAND);
+        defaultIcon.classList.add('hidden');
+        copiedIcon.classList.remove('hidden');
+        button.setAttribute('title', 'Copied');
+        if (resetTimer) window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          defaultIcon.classList.remove('hidden');
+          copiedIcon.classList.add('hidden');
+          button.setAttribute('title', 'Copy');
+        }, 1600);
+      } catch {
+        button.setAttribute('title', 'Copy failed');
+      }
+    });
+  });
+</script>

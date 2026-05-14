@@ -1,0 +1,33 @@
+---
+title: Privacy & Telemetry
+description: What PlanBridge sends, where, and how to turn it off.
+---
+
+PlanBridge is a local-only tool. Your plan content never leaves your machine. The CLI does, however, send anonymous product analytics and crash reports unless you opt out.
+
+## What's collected
+
+- **Anonymous product analytics** (PostHog): subcommand invocations, harness detection results, version, OS family. **No plan content, no file paths, no source code.**
+- **Crash reports** (Sentry): stack traces and pino error logs from unhandled errors. Scrubbed of plan content.
+
+A randomly-generated anonymous device ID is persisted under `$XDG_CONFIG_HOME/contextbridge/` so we can deduplicate active installs without any account or login.
+
+## Opt out
+
+Set either of these in your environment to disable all telemetry:
+
+```sh
+export DO_NOT_TRACK=1
+# or
+export CONTEXTBRIDGE_TELEMETRY_DISABLED=1
+```
+
+PlanBridge respects the Console Do Not Track standard, so `DO_NOT_TRACK=1` also turns off analytics in many other CLIs you may use.
+
+## Update checks
+
+The CLI periodically checks for newer releases. To disable:
+
+```sh
+export CONTEXTBRIDGE_UPDATE_CHECK_DISABLED=1
+```

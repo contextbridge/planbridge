@@ -1,6 +1,0 @@
-[submodule "tools"]
-	path = tools
-	url = ../planbridge-private.git
-	branch = main
-	update = rebase
-	ignore = all

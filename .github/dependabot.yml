@@ -17,16 +17,6 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 3 # zizmor: ignore[dependabot-cooldown]
-    ignore:
-      # Projen manages the `actions/create-github-app-token` SHA pin in its
-      # generated workflows (upgrade_contextbridge-website.yml,
-      # auto-approve.yml). Dependabot can't update those lines without being
-      # overwritten on the next `bun run projen` synth, which hardcodes the
-      # SHA in node_modules/projen/lib/github/github-credentials.js.
-      # Keep projen as the single owner; bump projen itself to pick up new
-      # action versions.  See CON-1099 for context.
-      - dependency-name: "actions/create-github-app-token"
-        update-types: ["version-update:semver-major", "version-update:semver-minor", "version-update:semver-patch"]
     groups:
       github-actions:
         patterns: ["*"]

@@ -1,0 +1,67 @@
+---
+title: Claude Code
+description: Run PlanBridge automatically inside Claude Code via a PermissionRequest:ExitPlanMode hook.
+---
+
+import { Code } from 'astro-expressive-code/components';
+
+If you have the PlanBridge Claude Code plugin installed (via `contextbridge install`), Claude's normal plan-approval hook opens PlanBridge in your browser for review before implementation starts.
+
+## Process
+
+1. Open Claude Code and put the agent into ["Plan Mode"](https://code.claude.com/docs/en/permission-modes#analyze-before-you-edit-with-plan-mode) (shift + tab or `/plan`)
+2. Type your prompt for Claude to plan.
+3. When the plan is complete, PlanBridge will open in your browser.
+4. Comment on the plan. This is the perfect time to redirect Claude if it will do something you don't want.
+5. Submit feedback (with comments) or approve the plan. If you submit feedback, Claude will rework the plan for you. If you approve, Claude will begin implementing.
+
+## Accepting a Plan
+
+If you have no feedback on a plan and you want Claude to start implementing, click "Approve Plan". This will tell Claude to start implementing.
+
+## Iterating on a Plan
+
+If you have feedback on a plan, select the relevant text and comment. When you click "Request Changes", Claude will adjust the plan per your feedback. Once the changes are made, you'll be re-presented the updated plan.
+
+From here, continue iterating until you're ready to approve the plan.
+
+## Ignore the terminal prompt
+
+When PlanBridge opens, Claude Code keeps its usual approval prompt up in the terminal:
+
+```text
+Claude has written up a plan and is ready to execute. Would you like to proceed?
+
+❯ 1. Yes, and use auto mode
+  2. Yes, manually approve edits
+  3. No, refine with Ultraplan on Claude Code on the web
+  4. Tell Claude what to change
+```
+
+Leave it alone. Once you approve or request changes in the browser, PlanBridge dismisses the prompt for you.
+
+## Verify
+
+<Code code="contextbridge install status" lang="sh" title="terminal" />
+
+You should see Claude Code listed as installed.
+
+## Re-install or install later
+
+If you installed Claude Code _after_ the install script ran, or if `install status` shows it's missing, wire it in directly:
+
+<Code code="contextbridge install claude" lang="sh" title="terminal" />
+
+## Uninstall
+
+<Code code="contextbridge uninstall claude" lang="sh" title="terminal" />
+
+Or `contextbridge uninstall` to remove PlanBridge plugin and hook entries from every harness it was installed into.
+
+## Open a file manually
+
+The plan-mode hook fires automatically. If you want to pull an arbitrary markdown file into the PlanBridge UI on demand (a design doc, an RFC, a plan written outside of plan mode), use the `/planbridge:open` skill that ships with the plugin. See [Open arbitrary content](/usage/open/).
+
+## Reference
+
+- [Claude Code hooks documentation](https://docs.claude.com/en/docs/claude-code/hooks)

@@ -153,3 +153,16 @@ jobs:
             --region us-east-1 \
             --content-type 'text/x-shellscript; charset=utf-8' \
             --cache-control 'public, max-age=300'
+
+  deploy-website:
+    name: Deploy website
+    needs: release
+    # Skip alpha releases so unreleased docs do not publish before stable CLI releases.
+    if: ${{ !contains(github.ref_name, '-') }}
+    uses: ./.github/workflows/deploy-website.yml
+    secrets:
+      website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
