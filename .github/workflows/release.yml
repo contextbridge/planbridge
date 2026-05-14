@@ -160,6 +160,8 @@ jobs:
     # Skip alpha releases so unreleased docs do not publish before stable CLI releases.
     if: ${{ !contains(github.ref_name, '-') }}
     uses: ./.github/workflows/deploy-website.yml
+    with:
+      cli_ref: ${{ github.ref_name }}
     secrets:
       website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
       website_bucket: ${{ secrets.WEBSITE_BUCKET }}
