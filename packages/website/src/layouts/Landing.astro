@@ -1,6 +1,6 @@
 ---
 import "../styles/main.css";
-import { Image } from 'astro:assets';
+import { Font, Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import tasteInTheLoopBadge from '../assets/brands/taste-in-the-loop.svg';
 
@@ -28,6 +28,8 @@ const { title, description } = Astro.props.frontmatter;
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL('/og.png', Astro.site).toString()} />
+    <Font cssVariable="--cb-font-sans" />
+    <Font cssVariable="--cb-font-heading" />
     {
       import.meta.env.PROD && (
         <script
