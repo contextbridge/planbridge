@@ -21,8 +21,8 @@ export async function GET() {
     fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-400-normal.woff')),
     fs.readFile(path.join(FONT_DIR, 'atkinson-hyperlegible-next-latin-700-normal.woff')),
     fs.readFile(path.join(PUBLIC_FONT_DIR, 'ESBuild-Bold.woff')),
-    fs.readFile(path.resolve('./public/brands/claude-code.svg')),
-    fs.readFile(path.resolve('./public/brands/codex-cli.png')),
+    fs.readFile(path.resolve('./src/assets/brands/claude-code.svg')),
+    fs.readFile(path.resolve('./src/assets/brands/codex-cli.png')),
   ]);
 
   const claudeDataUri = `data:image/svg+xml;base64,${claudeSvg.toString('base64')}`;

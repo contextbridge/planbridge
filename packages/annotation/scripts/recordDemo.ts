@@ -8,7 +8,10 @@ const STORYBOOK_PORT = 6006;
 const STORY_URL = `http://localhost:${STORYBOOK_PORT}/iframe.html?id=plan-app--full-demo&viewMode=story`;
 const VIDEO_SIZE = { width: 1600, height: 900 };
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
-const OUT_DIR = resolve(REPO_ROOT, 'packages/website/public/demo');
+// Poster goes through Astro's image pipeline (hashed, immutable cache, AVIF/WebP variants).
+// Video stays in public/ since Astro doesn't pipeline video.
+const POSTER_DIR = resolve(REPO_ROOT, 'packages/website/src/assets/demo');
+const VIDEO_DIR = resolve(REPO_ROOT, 'packages/website/public/demo');
 const TMP_DIR = resolve(REPO_ROOT, 'claude-tmp/record-demo');
 
 async function waitForStorybook(timeoutMs = 60_000): Promise<void> {
@@ -37,7 +40,8 @@ function spawnStorybook(): ChildProcess {
 }
 
 async function record(): Promise<void> {
-  await mkdir(OUT_DIR, { recursive: true });
+  await mkdir(POSTER_DIR, { recursive: true });
+  await mkdir(VIDEO_DIR, { recursive: true });
   await rm(TMP_DIR, { recursive: true, force: true });
   await mkdir(TMP_DIR, { recursive: true });
 
@@ -57,7 +61,7 @@ async function record(): Promise<void> {
     timeout: 15_000,
   });
   await posterPage.waitForTimeout(400);
-  const posterPath = resolve(OUT_DIR, 'plan-review-poster.jpg');
+  const posterPath = resolve(POSTER_DIR, 'plan-review-poster.jpg');
   await posterPage.screenshot({ path: posterPath, type: 'jpeg', quality: 85, fullPage: false });
   await posterContext.close();
 
@@ -81,7 +85,7 @@ async function record(): Promise<void> {
     throw new Error('Playwright did not produce a video for the recording context');
   }
   const recordedPath = await video.path();
-  const finalPath = resolve(OUT_DIR, 'plan-review.webm');
+  const finalPath = resolve(VIDEO_DIR, 'plan-review.webm');
   await transcodeToVp9(recordedPath, finalPath);
 
   await browser.close();
