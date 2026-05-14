@@ -26,32 +26,18 @@ planbridge/
 │   ├── skills/                # @contextbridge/skills — SKILL.md sources + per-harness codegen + drift check
 │   ├── storage/               # @contextbridge/storage — local SQLite + Drizzle schema
 │   ├── ui/                    # @contextbridge/ui — shared CSS, fonts, cn(), shadcn components
-│   └── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
-├── tools/                     # private git submodule for employees/trusted CI only
-│   ├── projen/                # projen runner (uses private @contextbridge/projen)
-│   ├── infrastructure/        # AWS CDK stacks + release pipeline (uses private @contextbridge/infrastructure)
-│   └── website/               # @contextbridge/website — Astro + Starlight marketing/docs site (projen-managed, ships as a CDK asset)
+│   ├── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
+│   └── website/               # @contextbridge/website — Astro + Starlight marketing/docs site
 ├── tsconfig.base.json         # shared TS compiler options
 ├── package.json               # root workspace ("workspaces": ["packages/*"])
 └── justfile                   # root-level recipes
 ```
 
-`tools/` is a private git submodule backed by `contextbridge/planbridge-private`, not public source in this repository. Public contributors should not initialize it; a normal clone plus root `bun install` and `just verify` are sufficient. Employees and trusted CI with access can run:
-
-```sh
-just install
-just tools-init
-```
-
-Tools changes are developed in the private repo and then pinned here by updating the submodule pointer. Projen synth may modify both repositories; commit private `tools/` changes in `planbridge-private` and public generated changes in `planbridge` separately.
+`planbridge-private` is a separate private repository for employee-only infrastructure and release plumbing. It is not part of this public checkout.
 
 Package naming: every workspace is `@contextbridge/<short-name>`. Browser UIs are named by capability — `annotation` for the kind-agnostic markdown annotation engine, later `review` for file-change review — never a generic `-ui` suffix. Future review surfaces (`packages/review` for file-change review, etc.) land as siblings. Libraries that multiple experiences share (shared contracts, context, server) are their own packages.
 
 Each package has its own `AGENTS.md` with package-specific guidance (plus a one-line `CLAUDE.md` stub that imports it via `@AGENTS.md` so Claude Code auto-loads it when editing files in that directory). **The stub is load-bearing** — Claude Code discovers ancestor `CLAUDE.md` on file edits but not standalone `AGENTS.md`; don't drop it. `packages/shared` and `packages/server` don't have their own files — they have no package-specific guidance beyond root conventions.
-
-### `tools/website` (projen-managed)
-
-The marketing/docs site lives in the private `planbridge-private` submodule rather than `packages/` because it deploys as a CDK asset of `MarketingWebsiteStack` — keeping source colocated with the stack that ships it. It is the only projen-managed package in the monorepo. Projen config lives in the same submodule at `tools/projen/.projenrc.ts`: a bare `projen.Project` acts as a shell that hosts a `GitHub` component plus the website as a child subproject (`outdir: '../..'` from the submodule). Public contributors do not need to initialize the submodule or run projen synth; building the website locally requires `just tools-init` first.
 
 ## Verification
 
@@ -60,11 +46,9 @@ Before marking a task complete, run `just verify` and fix anything that fails. I
 - `bun run format:check` — Prettier
 - `bun run typecheck` — strict TypeScript check (`bun run --filter '*' typecheck`)
 - `bun run lint` — ESLint (`--max-warnings 0`)
-- `bun run test` — dispatches per-package `test` scripts. Most packages use Bun's test runner; `@contextbridge/annotation` uses **vitest** (browser mode via Playwright/Chromium) because the annotation UI tests depend on real DOM, CSS Custom Highlights, and selection APIs that Bun's runner can't provide.
+- `bun run test` — dispatches per-package `test` scripts. Most packages use Bun's test runner; `@contextbridge/annotation` uses **vitest** (browser mode via Playwright/Chromium) because the annotation UI tests depend on real DOM, CSS Custom Highlights, and selection APIs that Bun's runner can't provide. `@contextbridge/website` runs Astro checks and build through its package test script.
 
 Do **not** run `bun test` at the repo root — it walks every `*.test.ts` file with Bun's runner, which blows up on the annotation package's vitest/browser tests. Use `bun run test` (the dispatch script) or a targeted `bun run --cwd packages/<pkg> test` during iteration.
-
-The website is **not** dispatched by the root `test` script: it lives in a separate bun workspace inside the `tools/` submodule, and not all contributors initialize that submodule. Run its checks via `bun run --cwd tools/website test` (or `just tools-install && just verify` from a tools-initialized checkout) when changing the site.
 
 ## Pull requests
 

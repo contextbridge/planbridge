@@ -1,0 +1,73 @@
+---
+import InstallActions from './InstallActions.astro';
+---
+
+<section class="border-t border-foreground bg-background px-8 py-32">
+  <div class="mx-auto max-w-7xl">
+    <h2
+      class="font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
+    >
+      Works with Claude Code and Codex.
+    </h2>
+
+    <p class="mt-8 max-w-3xl font-sans text-2xl leading-relaxed text-foreground">
+      Auto-detected hooks for Claude Code and Codex. Other agents work too,
+      anything that can run a command and read a structured result.
+    </p>
+
+    <div class="mt-16 grid grid-cols-1 gap-px bg-foreground md:grid-cols-2">
+      <a
+        href="/usage/claude-code/"
+        class="flex items-center gap-8 bg-background p-8 text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+      >
+        <img
+          src="/brands/claude-code.svg"
+          alt=""
+          aria-hidden="true"
+          class="h-16 w-16 flex-shrink-0"
+        />
+        <div>
+          <h3 class="font-mono text-2xl font-bold tracking-tight">Claude Code</h3>
+          <p class="mt-2 font-sans text-base">PreToolUse hook on ExitPlanMode.</p>
+        </div>
+      </a>
+      <a
+        href="/usage/codex/"
+        class="flex items-center gap-8 bg-background p-8 text-foreground no-underline transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+      >
+        <img
+          src="/brands/codex-cli.png"
+          alt=""
+          aria-hidden="true"
+          class="h-16 w-16 flex-shrink-0 object-contain"
+        />
+        <div>
+          <h3 class="font-mono text-2xl font-bold tracking-tight">Codex</h3>
+          <p class="mt-2 font-sans text-base">Wired to the Codex hook contract.</p>
+        </div>
+      </a>
+    </div>
+
+    <p class="mt-8 font-sans text-base text-foreground">
+      <a
+        href="/usage/other-agents/"
+        class="text-foreground underline underline-offset-4"
+      >
+        Setup for other agents &rarr;
+      </a>
+    </p>
+
+    <p class="mt-4 font-sans text-base text-foreground">
+      <a
+        href="/usage/open/"
+        class="text-foreground underline underline-offset-4"
+      >
+        Open any file manually with the /planbridge:open skill &rarr;
+      </a>
+    </p>
+
+    <div class="mt-16">
+      <InstallActions marginTopClass="mt-0" />
+    </div>
+  </div>
+</section>

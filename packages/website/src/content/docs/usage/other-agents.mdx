@@ -1,0 +1,45 @@
+---
+title: Other agents
+description: Drive PlanBridge from any AI coding agent that can run shell commands.
+---
+
+import { Code } from 'astro-expressive-code/components';
+
+If your agent isn't on the [supported harness list](/usage/), you can still wire PlanBridge in yourself. Any agent that can run a shell command works. Cursor, Aider, opencode, Gemini CLI, Aether, and most other tool-using agents fit this shape.
+
+The setup is one instruction in your agent's system prompt or rules file: pipe the proposed plan to `contextbridge plan`, then act on the markdown response on stdout.
+
+## Instruction to give your agent
+
+Add something like this to your prompt, system instructions, or rules file (`.cursorrules`, `AGENTS.md`, project README, wherever your agent picks up persistent guidance):
+
+> Before you start coding, write your plan to stdin of `contextbridge plan` and read the markdown returned on stdout. If the response starts with `# Plan review: changes requested`, revise the plan to address every comment, then run `contextbridge plan` again with the revised plan. Continue until you get `# Plan review: approved`, or stop if the command exits with code 130 (the user cancelled).
+
+The agent runs something like:
+
+<Code code='echo "$plan" | contextbridge plan' lang="sh" title="agent shell" />
+
+Your browser opens to the review UI. You annotate or approve. The markdown summary lands on stdout for the agent to read.
+
+## Response shape
+
+The agent receives markdown on stdout. It opens with one of two headers:
+
+- `# Plan review: approved`. The human approved with no changes. Continue with implementation.
+- `# Plan review: changes requested`. The human left feedback. Revise the plan to address every comment, then run `contextbridge plan` again with the revised plan.
+
+The body of a "changes requested" response contains the human's annotations as `## Comment (lines X–Y)` sections, each with the relevant plan excerpt quoted and the human's comment in a blockquote. A `## General feedback` section appears for comments not anchored to a specific line.
+
+The markdown carries its own agent-facing instructions (`MUST revise`, `do not start implementing until approved`, etc.). Most agents act on them directly. If yours doesn't, paste the snippet above into its prompt.
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Submission written to stdout |
+| `1` | Input or runtime error (see stderr) |
+| `130` | Interrupted (Ctrl-C) before the user submitted |
+
+Agents should treat `130` as "the user wants out" and stop the loop.
+
+For the full flag and subcommand surface, point your agent at the [CLI reference](/cli/).

@@ -1,0 +1,122 @@
+---
+import DemoVideo from './DemoVideo.astro';
+import InstallCommand from './InstallCommand.astro';
+---
+
+<section class="hero-section section-dark relative z-10 overflow-x-clip px-8 pt-16 pb-0">
+  <div class="hero-transition-art" aria-hidden="true">
+    <svg viewBox="0 0 1200 220" role="presentation" preserveAspectRatio="none">
+      <path d="M -120 42 C 180 2 360 2 640 50 S 1000 106 1320 58" />
+      <path d="M -120 74 C 180 34 360 34 640 82 S 1000 138 1320 90" />
+      <path d="M -120 106 C 180 66 360 66 640 114 S 1000 170 1320 122" />
+      <path d="M -120 138 C 180 98 360 98 640 146 S 1000 202 1320 154" />
+      <path d="M -120 170 C 180 130 360 130 640 178 S 1000 234 1320 186" />
+    </svg>
+  </div>
+
+  <div class="relative z-10 mx-auto max-w-7xl">
+    <h1
+      class="m-0 text-balance font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[48px] lg:text-[64px]"
+    >
+     Stop using a frontier model with a plan mode built for 1987.
+    </h1>
+
+    <p class="mb-0 mt-6 text-balance font-sans text-xl leading-8 text-foreground">
+     Transform your agent's plan mode from an archaic TUI into a modern Docs-like experience. Highlight lines, drop knowledge into inline comments, and steer that clanker like a boss.
+    </p>
+
+    <div class="mt-8 flex justify-start">
+      <InstallCommand size="large" />
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-x-12 gap-y-4 font-sans text-base">
+      <a href="/install/" class="text-foreground underline underline-offset-4">
+        Prefer to install manually?
+      </a>
+      <a href="/quickstart/" class="text-foreground underline underline-offset-4">
+        Read the quickstart &rarr;
+      </a>
+      <span class="flex flex-wrap items-center gap-x-6 gap-y-2 text-foreground">
+        <span class="font-mono text-xs font-bold uppercase tracking-[0.16em]">Works with</span>
+        <a
+          href="/usage/claude-code/"
+          class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+        >
+          <img src="/brands/claude-code.svg" alt="" aria-hidden="true" class="h-4 w-4" />
+          Claude Code
+        </a>
+        <span>and</span>
+        <a
+          href="/usage/codex/"
+          class="inline-flex items-center gap-2 text-foreground underline underline-offset-4"
+        >
+          <img
+            src="/brands/codex-cli.png"
+            alt=""
+            aria-hidden="true"
+            class="h-4 w-4 object-contain"
+          />
+          Codex
+        </a>
+      </span>
+    </div>
+
+    <div class="hero-demo mt-12">
+      <DemoVideo />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-section {
+    background: transparent;
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: var(--background);
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - var(--hero-demo-overlap) + var(--hero-diagonal-height) / 2),
+      0 calc(100% - var(--hero-demo-overlap) - var(--hero-diagonal-height) / 2)
+    );
+  }
+
+  .hero-transition-art {
+    position: absolute;
+    inset-inline: -6rem;
+    top: calc(100% - var(--hero-demo-overlap) - var(--hero-diagonal-height) / 2 - 4rem);
+    z-index: 5;
+    height: calc(var(--hero-diagonal-height) + 8rem);
+    pointer-events: none;
+    color: white;
+    opacity: 0.18;
+    mix-blend-mode: difference;
+  }
+
+  .hero-transition-art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .hero-transition-art path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .hero-demo {
+    position: relative;
+    z-index: 10;
+    margin-bottom: calc(var(--hero-demo-overlap) * -1);
+    filter: drop-shadow(0 50px 60px rgba(0, 0, 0, 0.55));
+  }
+</style>

@@ -1,0 +1,175 @@
+---
+import "../styles/main.css";
+import { Icon } from 'astro-icon/components';
+
+const { title, description } = Astro.props.frontmatter;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('/og.png', Astro.site).toString()} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content={Astro.url.toString()} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL('/og.png', Astro.site).toString()} />
+    {
+      import.meta.env.PROD && (
+        <script
+          is:inline
+          set:html={`!function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Mi Ri init Vi Gi Rr Wi Ji Bi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync un identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Xi createPersonProfile setInternalOrTestUser sn Hi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ki debug Lr rn getPageViewId captureTraceFeedback captureTraceMetric Di".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);posthog.init('phc_y9PBFEZPu8LVfeoxV47p7CfU5Ms8SY5q5fQGfisb34s3',{api_host:'https://phin.contextbridge.ai',ui_host:'https://us.posthog.com',defaults:'2026-01-30',person_profiles:'always'});`}
+        />
+      )
+    }
+  </head>
+  <body class="m-0 bg-background text-foreground font-sans antialiased">
+    <!-- Sticky nav: Context____Bridge wordmark style -->
+    <header
+      class="section-dark sticky top-0 z-50 flex items-center gap-4 border-b border-border bg-background px-8 py-6"
+    >
+      <a
+        href="/"
+        class="inline-flex flex-1 items-center gap-3 text-foreground no-underline"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          viewBox="-0.348 -0.445 151 164"
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+        >
+          <path d="M127.035 43.2306L134.972 0H21.973L0 119.88H23.2335L37.303 43.2306H127.035Z"></path>
+          <path d="M127.037 43.231L113.001 119.881H23.2355L15.332 163.111H128.297L150.304 43.231H127.037Z"></path>
+        </svg>
+        <span class="font-mono text-base font-bold tracking-tight">PlanBridge</span>
+      </a>
+      <nav class="ml-8 flex items-center gap-8">
+        <a
+          href="/quickstart/"
+          class="font-mono text-base font-medium text-foreground no-underline hover:underline"
+          >Docs</a
+        >
+        <a
+          href="https://github.com/contextbridge/planbridge"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View source on GitHub"
+          class="inline-flex items-center text-foreground no-underline"
+        >
+          <Icon name="simple-icons:github" class="h-6 w-6" />
+        </a>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-foreground px-8 py-16">
+      <div class="mx-auto flex max-w-7xl flex-col gap-8 font-mono text-base text-foreground">
+        <div class="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
+          <p class="m-0 flex flex-wrap items-center gap-x-4 gap-y-2 font-sans text-base text-foreground">
+            <span class="font-mono text-base font-bold">PlanBridge</span>
+            <a
+              href="https://contextbridge.ai"
+              class="text-foreground no-underline hover:underline"
+              >by ContextBridge</a
+            >
+            <span aria-hidden="true">·</span>
+            <span>
+              Made with
+              <span data-made-with-emoji aria-label="coffee" role="img">☕</span>
+              in
+              <span aria-label="mountains" role="img">🏔️</span> Denver and
+              <span aria-label="beach" role="img">🏖️</span> Santa Cruz.
+            </span>
+          </p>
+          <div class="flex items-center gap-8">
+            <a
+              href="/quickstart/"
+              class="font-sans text-base text-foreground no-underline hover:underline"
+              >Docs</a
+            >
+            <a
+              href="https://github.com/contextbridge/planbridge"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View source on GitHub"
+              class="inline-flex items-center text-foreground"
+            >
+              <Icon name="simple-icons:github" class="h-6 w-6" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const states = [
+        { emoji: '☕', label: 'coffee' },
+        { emoji: '💙', label: 'love' },
+        { emoji: '🏋️', label: 'weights' },
+        { emoji: '🌯', label: 'burritos' },
+        { emoji: '🍕', label: 'pizza' },
+        { emoji: '🍜', label: 'ramen' },
+        { emoji: '🍣', label: 'sushi' },
+        { emoji: '🍵', label: 'tea' },
+        { emoji: '🚴', label: 'biking' },
+        { emoji: '🚵', label: 'mountain biking' },
+        { emoji: '🎸', label: 'guitar' },
+        { emoji: '🎧', label: 'headphones' },
+        { emoji: '🎲', label: 'dice' },
+        { emoji: '😴', label: 'sleep' },
+        { emoji: '💯', label: '100' },
+        { emoji: '☀️', label: 'sun' },
+        { emoji: '☁️', label: 'cloud' },
+      ] as const;
+      const el = document.querySelector<HTMLElement>('[data-made-with-emoji]');
+      if (el) {
+        const shuffle = <T,>(arr: readonly T[]): T[] => {
+          const a = arr.slice();
+          for (let j = a.length - 1; j > 0; j--) {
+            const k = Math.floor(Math.random() * (j + 1));
+            [a[j], a[k]] = [a[k]!, a[j]!];
+          }
+          return a;
+        };
+        let queue = shuffle(states);
+        let i = 0;
+        const apply = () => {
+          const state = queue[i] ?? states[0];
+          el.textContent = state.emoji;
+          el.setAttribute('aria-label', state.label);
+        };
+        apply();
+        setInterval(() => {
+          i++;
+          if (i >= queue.length) {
+            const last = queue[queue.length - 1];
+            queue = shuffle(states);
+            // avoid repeating the last emoji as the first of the new cycle
+            if (queue[0] === last && queue.length > 1) {
+              [queue[0], queue[1]] = [queue[1]!, queue[0]!];
+            }
+            i = 0;
+          }
+          apply();
+        }, 4000);
+      }
+    </script>
+  </body>
+</html>

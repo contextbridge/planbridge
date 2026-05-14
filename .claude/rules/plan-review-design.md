@@ -74,7 +74,7 @@ content. Deletion is usually the right move.
 
 ## When this rule does not apply
 
-- `tools/website` is a marketing surface — the soft product surface
+- `packages/website` is a marketing surface — the soft product surface
   aesthetic is appropriate there.
 - shadcn primitives under `@contextbridge/ui/components/ui/*` follow
   their upstream defaults; do not retune them here.

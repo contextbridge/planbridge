@@ -1,0 +1,42 @@
+---
+title: Quickstart
+description: Install PlanBridge and let it run automatically inside your AI coding sessions.
+---
+
+import { Code } from 'astro-expressive-code/components';
+import DemoVideo from '../../components/DemoVideo.astro';
+
+One command installs the binary and wires it into the AI coding harnesses on your machine. After that, you use your harness as you always do; PlanBridge intercepts when there's something to review.
+
+## 1. Install
+
+<Code
+  code={`/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"`}
+  lang="sh"
+  title="terminal"
+/>
+
+The script uses [Homebrew](https://brew.sh/) if installed, otherwise places the binary into `$HOME/.local/bin`. After, it runs `contextbridge install` to add hooks to supported AI coding harnesses it finds.
+
+Prefer to step through the install yourself? See [Install](/install/) for manual installation details.
+
+## 2. Use your harness normally
+
+That's the whole setup. The next time your harness reaches a review point, PlanBridge takes over:
+
+1. Your browser opens to a review UI.
+2. You annotate what you'd like to change or approve.
+3. Your decision flows back to the harness, which iterates on the plan or proceeds once the approved plan is accepted.
+
+<DemoVideo />
+
+## Per-harness notes
+
+Anything harness-specific (verifying the install, custom hook setup, known quirks) lives on its own page:
+
+- [Claude Code](/usage/claude-code/)
+- [Codex CLI](/usage/codex/)
+
+## No supported harness?
+
+If you're using something else (Cursor, Aider, opencode, Gemini CLI, etc.), you can still wire PlanBridge in by telling your agent to pipe its plan to `contextbridge plan` and act on the JSON response. See [Other agents](/usage/other-agents/).

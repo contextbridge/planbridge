@@ -41,6 +41,7 @@ export default defineConfig(
       'coverage/**',
       'packages/*/dist/**',
       'packages/*/node_modules/**',
+      'packages/*/.astro/**',
       'packages/*/storybook-static/**',
       '**/*.stories.{ts,tsx}',
     ],

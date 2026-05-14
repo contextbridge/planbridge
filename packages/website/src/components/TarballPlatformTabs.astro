@@ -1,0 +1,82 @@
+---
+import { Code } from 'astro-expressive-code/components';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+const buildSnippet = (os: string, arch: string) =>
+  `curl -fsSL "https://downloads.contextbridge.ai/cli/latest/contextbridge_latest_${os}_${arch}.tar.gz" -o contextbridge.tar.gz
+curl -fsSL "https://downloads.contextbridge.ai/cli/latest/checksums.txt" | grep "contextbridge_latest_${os}_${arch}.tar.gz" | shasum -a 256 -c -
+tar -xzf contextbridge.tar.gz
+mv contextbridge ~/.local/bin/  # or anywhere on your $PATH`;
+---
+
+<Tabs syncKey="cli-platform">
+  <TabItem label="macOS Apple Silicon">
+    <Code code={buildSnippet('darwin', 'arm64')} lang="sh" title="terminal" />
+  </TabItem>
+  <TabItem label="macOS Intel">
+    <Code code={buildSnippet('darwin', 'amd64')} lang="sh" title="terminal" />
+  </TabItem>
+  <TabItem label="Linux arm64">
+    <Code code={buildSnippet('linux', 'arm64')} lang="sh" title="terminal" />
+  </TabItem>
+  <TabItem label="Linux amd64">
+    <Code code={buildSnippet('linux', 'amd64')} lang="sh" title="terminal" />
+  </TabItem>
+</Tabs>
+
+<script is:inline>
+  (() => {
+    const SYNC_KEY = 'cli-platform';
+    const STORAGE_KEY = `starlight-synced-tabs__${SYNC_KEY}`;
+
+    function detectLabel() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes('mac os x') || ua.includes('macintosh')) {
+        // Browsers on Apple Silicon Macs report as Intel in the UA. Use the
+        // WebGL renderer string to spot Intel/AMD GPUs and downgrade to Intel
+        // only when we have evidence — otherwise default to Apple Silicon,
+        // which is the dominant case for Macs today.
+        try {
+          const canvas = document.createElement('canvas');
+          const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+          const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+          const renderer = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+          if (/\b(intel|amd radeon)\b/i.test(renderer)) return 'macOS Intel';
+        } catch {}
+        return 'macOS Apple Silicon';
+      }
+      if (ua.includes('linux') && !ua.includes('android')) {
+        if (/aarch64|arm64/i.test(ua)) return 'Linux arm64';
+        return 'Linux amd64';
+      }
+      return null;
+    }
+
+    function applyDefault() {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) return;
+      const label = detectLabel();
+      if (!label) return;
+      document.querySelectorAll(`starlight-tabs[data-sync-key="${SYNC_KEY}"]`).forEach((root) => {
+        const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
+        const idx = tabs.findIndex((t) => t.textContent && t.textContent.trim() === label);
+        if (idx < 1) return;
+        const panels = root.querySelectorAll(':scope > [role="tabpanel"]');
+        const newTab = tabs[idx];
+        const newPanel = panels[idx];
+        if (!newTab || !newPanel) return;
+        tabs[0].setAttribute('aria-selected', 'false');
+        tabs[0].setAttribute('tabindex', '-1');
+        panels[0].setAttribute('hidden', 'true');
+        newTab.removeAttribute('tabindex');
+        newTab.setAttribute('aria-selected', 'true');
+        newPanel.removeAttribute('hidden');
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyDefault);
+    } else {
+      applyDefault();
+    }
+  })();
+</script>

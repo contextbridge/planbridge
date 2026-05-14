@@ -1,0 +1,34 @@
+---
+import HeroArtwork from './HeroArtwork.astro';
+import InstallActions from './InstallActions.astro';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<section
+  class="relative overflow-hidden border-t border-foreground bg-foreground px-8 py-32 text-background"
+>
+  <div
+    class="pointer-events-none absolute -top-16 -right-24 hidden w-[720px] text-background opacity-25 lg:block"
+    aria-hidden="true"
+  >
+    <HeroArtwork />
+  </div>
+  <div class="relative mx-auto max-w-7xl">
+    <h2
+      class="font-medium leading-[1.0] tracking-tight text-background text-[40px] sm:text-[64px] lg:text-[80px]"
+    >
+      {title}
+    </h2>
+    <p class="mt-8 max-w-3xl font-sans text-2xl leading-relaxed text-background">
+      {description}
+    </p>
+    <div class="mt-16 invert">
+      <InstallActions marginTopClass="mt-0" />
+    </div>
+  </div>
+</section>

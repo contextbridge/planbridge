@@ -8,7 +8,7 @@ const STORYBOOK_PORT = 6006;
 const STORY_URL = `http://localhost:${STORYBOOK_PORT}/iframe.html?id=plan-app--full-demo&viewMode=story`;
 const VIDEO_SIZE = { width: 1600, height: 900 };
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
-const OUT_DIR = resolve(REPO_ROOT, 'tools/website/public/demo');
+const OUT_DIR = resolve(REPO_ROOT, 'packages/website/public/demo');
 const TMP_DIR = resolve(REPO_ROOT, 'claude-tmp/record-demo');
 
 async function waitForStorybook(timeoutMs = 60_000): Promise<void> {

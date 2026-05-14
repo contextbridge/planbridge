@@ -1,0 +1,62 @@
+---
+title: Open arbitrary content
+description: Ask your coding agent to open any markdown file in the PlanBridge browser UI for human annotation.
+---
+
+import { Code } from 'astro-expressive-code/components';
+
+<Code code="/planbridge:open docs/spec.md" lang="text" title="Claude Code" />
+
+<Code code="$planbridge-open docs/spec.md" lang="text" title="Codex CLI" />
+
+The file opens in your browser for inline annotation. Your comments come back to the agent on stdout.
+
+This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The `open` skill fires whenever you ask for it.
+
+## When to use it
+
+- You want PR-style review on a design doc, RFC, or spec.
+- Your agent uses a workflow that bypasses plan mode (the [superpowers plugin](https://github.com/obra/superpowers) writes plan files directly to disk, so the plan-mode hook never fires).
+- You want to redirect the agent before it starts work, and the relevant context lives in a file rather than in plan mode.
+
+## Claude Code
+
+The `open` skill ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
+
+<Code code="/planbridge:open path/to/file.md" lang="text" title="Claude Code" />
+
+You can also describe the file in plain language and Claude resolves it:
+
+<Code code="/planbridge:open the design doc we drafted yesterday" lang="text" title="Claude Code" />
+
+## Codex CLI
+
+`contextbridge install codex` writes the skill to `~/.agents/skills/planbridge-open/SKILL.md`. Invoke it inside Codex with:
+
+<Code code="$planbridge-open path/to/file.md" lang="text" title="Codex CLI" />
+
+## What you see
+
+1. Your agent resolves the argument and runs `contextbridge open`.
+2. PlanBridge opens the file in your browser.
+3. You leave inline annotations and general comments, then submit or approve.
+4. PlanBridge writes a markdown summary of your feedback to stdout.
+5. Your agent reads the summary and responds conversationally.
+
+The output is feedback for discussion, not a directive. The agent treats your comments the way it would treat a colleague's review notes, not a checklist to silently execute.
+
+## Direct CLI use
+
+The skill is a thin wrapper around `contextbridge open`. You can run the binary yourself from any harness:
+
+<Code code="contextbridge open path/to/file.md" lang="sh" title="terminal" />
+
+Or pipe content via stdin (useful when the document lives in conversation rather than on disk):
+
+<Code code='printf "%s" "$content" | contextbridge open' lang="sh" title="terminal" />
+
+Full flags and exit codes live in the [CLI reference](/cli/open/).
+
+## Limitations
+
+`open` takes a single markdown file or a single piped document. Folders, URLs, HTML, and multi-file sessions are not supported in this release.

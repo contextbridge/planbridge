@@ -33,11 +33,9 @@ bootstrap:
 storybook:
     bun run --cwd packages/annotation storybook
 
-# Run the marketing website dev server (http://localhost:4321). Source lives in
-# the private `tools/` submodule; requires `just tools-init` first.
+# Run the marketing website dev server (http://localhost:4321)
 website:
-    test -f tools/website/package.json || (echo "Private tools submodule is not initialized. Run: just tools-init" >&2; exit 1)
-    bun run --cwd tools/website dev
+    bun run --cwd packages/website dev
 
 # Re-record the homepage demo video from the plan-app DemoFlow story
 record-demo:

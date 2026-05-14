@@ -1,0 +1,21 @@
+---
+title: Usage
+description: Wire PlanBridge into a supported harness, or ask any other agent to call it directly.
+---
+
+PlanBridge has two paths into the browser review UI.
+
+**As a harness hook.** Your AI coding agent calls `contextbridge` automatically at decision points, a human annotates in the browser, and the decision flows back to the agent. The [install script](/install/) wires this up for any supported harness it detects.
+
+**As a manual skill.** You invoke `/planbridge:open <path>` in Claude Code or `$planbridge-open <path>` in Codex CLI and your agent opens any markdown file in the browser for review. See [Open arbitrary content](/usage/open/).
+
+## Supported harnesses
+
+| Harness | Status | Docs |
+| --- | --- | --- |
+| [Claude Code](/usage/claude-code/) | Supported | Hook on `PermissionRequest:ExitPlanMode` |
+| [Codex CLI](/usage/codex/) | Supported | Hook on `Stop` |
+
+## Other agents
+
+Any agent that can run shell commands and parse JSON can use PlanBridge directly. You instruct it to pipe its plan to `contextbridge plan` and read the response on stdout. See [Other agents](/usage/other-agents/) for the prompt to give your agent and the response shape it should expect. Cursor, Aider, opencode, Gemini CLI, and Aether all fit this pattern.
