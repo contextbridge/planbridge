@@ -14,7 +14,7 @@ import { INSTALL_SCOPES, type InstallScope, ScopedHarnessInstaller } from './Sco
 
 const CODEX_HOOK_COMMAND = 'contextbridge hook codex';
 const CODEX_HOOK_TIMEOUT_SECONDS = 345600;
-const CODEX_HOOK_STATUS_MESSAGE = 'Opening PlanBridge';
+const CODEX_HOOK_STATUS_MESSAGE = 'Waiting for your plan review in PlanBridge...';
 // 0.129.0 introduced the replacement `hooks` feature flag for the deprecated `codex_hooks` flag.
 const MINIMUM_CODEX_VERSION = '0.129.0';
 
