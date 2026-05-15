@@ -1,18 +1,19 @@
 import {
   annotationAnchor,
+  annotationSubmission,
   annotationThread,
   commentMessage,
   globalThread,
-  planReviewSubmission,
   reviewer,
 } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { claudeHookResponse } from './claudeHookResponse.ts';
-import { formatAsMarkdown } from './markdown.ts';
+import { PLAN_TEMPLATES } from './templates.ts';
 
 describe('claudeHookResponse', () => {
   it('returns an allow envelope that switches the session to acceptEdits for approved submissions', () => {
-    const submission = planReviewSubmission.build({ status: 'approved', threads: [] });
+    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const planContent = '# ignored by approved template\n';
 
     const response = claudeHookResponse(submission, planContent);
@@ -28,9 +29,9 @@ describe('claudeHookResponse', () => {
     });
   });
 
-  it('returns a deny envelope whose message matches formatAsMarkdown for changes-requested submissions', () => {
+  it('returns a deny envelope whose message matches formatAgentResponse for changes-requested submissions', () => {
     const planContent = ['# Plan', '', '## Step one', '', '- do the thing', '- then the next thing'].join('\n');
-    const submission = planReviewSubmission.build({
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -66,13 +67,13 @@ describe('claudeHookResponse', () => {
     expect(response.hookSpecificOutput.hookEventName).toBe('PermissionRequest');
     expect(decision.behavior).toBe('deny');
     if (decision.behavior !== 'deny') throw new Error('expected deny');
-    expect(decision.message).toBe(formatAsMarkdown(submission, planContent));
+    expect(decision.message).toBe(formatAgentResponse(PLAN_TEMPLATES, submission, planContent));
     expect(decision.message).not.toBe('');
   });
 
   it('preserves formatter output across mixed global + annotation threads', () => {
     const planContent = ['# Plan', '', '## Approach', '', '- Step one.', '- Step two.'].join('\n');
-    const submission = planReviewSubmission.build({
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         globalThread.build({
@@ -111,7 +112,7 @@ describe('claudeHookResponse', () => {
     const decision = response.hookSpecificOutput.decision;
     if (decision.behavior !== 'deny') throw new Error('expected deny');
 
-    expect(decision.message).toBe(formatAsMarkdown(submission, planContent));
+    expect(decision.message).toBe(formatAgentResponse(PLAN_TEMPLATES, submission, planContent));
     expect(decision.message).toContain('## General feedback');
     expect(decision.message).toContain('## Annotation (line 5)');
   });

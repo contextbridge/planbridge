@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - 'packages/plan/**/*.tsx'
-      - 'packages/plan/**/*.css'
+      - 'packages/annotation/**/*.tsx'
+      - 'packages/annotation/**/*.css'
       - 'packages/ui/**/*.tsx'
       - 'packages/ui/**/*.css'
       - '.github/workflows/chromatic.yml'
@@ -31,17 +31,18 @@ jobs:
       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           # Checkout main when merged, otherwise checkout PR branch (not ephemeral merge commit)
           ref: ${{ github.event.pull_request.merged && 'main' || github.event.pull_request.head.ref }}
           fetch-depth: 0 # Required for Chromatic to detect changes
+          persist-credentials: false
 
       - name: Bootstrap
         uses: ./.github/actions/bootstrap
 
       - name: Build Storybook
-        run: bun run --cwd packages/plan build-storybook
+        run: bun run --cwd packages/annotation build-storybook
         env:
           SKIP_DEMO_STORIES: 'true'
 
@@ -50,12 +51,12 @@ jobs:
         # CHROMATIC_SHA/CHROMATIC_BRANCH env vars with GitHub context values, ignoring
         # user overrides. The CLI respects these env vars properly.
         # Issue: https://github.com/chromaui/chromatic-cli/issues/1230
-        working-directory: packages/plan
+        working-directory: packages/annotation
         run: |
           bun run chromatic -- \
             --project-token="${{ secrets.CHROMATIC_PROJECT_TOKEN }}" \
             --storybook-build-dir=storybook-static \
-            --storybook-base-dir=packages/plan \
+            --storybook-base-dir=packages/annotation \
             --only-changed \
             --exit-zero-on-changes \
             ${{ github.event.pull_request.merged && '--auto-accept-changes' || '' }}

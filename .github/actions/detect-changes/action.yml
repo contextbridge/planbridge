@@ -20,6 +20,9 @@ outputs:
   install_script_changed:
     description: Did the shell installer script or its tests change?
     value: ${{ steps.filter.outputs.install_script }}
+  website_changed:
+    description: Did anything affecting the marketing/docs site change?
+    value: ${{ steps.filter.outputs.website }}
   last_successful_sha:
     description: The SHA of the last successful deployment (only set in deploy mode)
     value: ${{ steps.find-last-deploy.outputs.sha }}
@@ -27,9 +30,10 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         fetch-depth: 0
+        persist-credentials: false
 
     - name: Find last successful deployment
       id: find-last-deploy
@@ -38,7 +42,7 @@ runs:
       run: |
         last_successful=$(gh run list \
           --branch main \
-          --workflow "${{ inputs.workflow_name }}" \
+          --workflow "$WORKFLOW_NAME" \
           --status success \
           --limit 50 \
           --json headSha \
@@ -53,8 +57,9 @@ runs:
         fi
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+        WORKFLOW_NAME: ${{ inputs.workflow_name }}
 
-    - uses: dorny/paths-filter@v4
+    - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
       id: filter
       with:
         # In PR mode, paths-filter auto-detects the base from the PR event.
@@ -72,3 +77,7 @@ runs:
             - 'scripts/install.sh'
             - 'scripts/install.test.sh'
             - '.github/workflows/test.yml'
+          website:
+            - 'packages/website/**'
+            - '.github/workflows/deploy-website.yml'
+            - '.github/actions/bootstrap/action.yml'

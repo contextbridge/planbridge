@@ -3,21 +3,19 @@ node_modules/
 coverage/
 .claude/
 bun.lock
-tools/
-tools/infrastructure/cdk.out/
+packages/*/.astro/
+packages/website/src/content/docs/cli/
+
+# Drizzle-generated migration artifacts. snapshot.json formatting is dialect-
+# dependent and changes shape between drizzle-kit versions; don't fight it.
+packages/storage/generated/
 
 # Prettier treats .hbs as HTML and collapses the markdown these templates emit.
 *.hbs
 
-# projen-managed files at the repo root. Projen marks these read-only, so
-# prettier's write pass (e.g. pre-commit hook) fails with EACCES. Projen also
-# has its own formatting conventions we don't want to fight.
-.projen/
-.github/CODEOWNERS
-.github/workflows/auto-approve.yml
-
-# release-please owns CHANGELOG.md formatting; don't fight it.
+# release-please owns formatting of files it writes; don't fight it.
 CHANGELOG.md
+harnessIntegrations/claude/.claude-plugin/plugin.json
 
 # ContextBot owns formatting of agents and its own rules
 AGENTS.md

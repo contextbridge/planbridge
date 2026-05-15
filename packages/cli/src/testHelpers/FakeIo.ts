@@ -1,19 +1,13 @@
 import { PassThrough } from 'node:stream';
-import type { Io } from '#src/IoImpl.ts';
-import { MemoryStream } from './index.ts';
+import { BaseIo } from '#src/BaseIo.ts';
+import { MemoryStream } from './MemoryStream.ts';
 
-export class FakeIo implements Io {
-  readonly stdout: MemoryStream;
-  readonly stderr: MemoryStream;
-  readonly stdin: PassThrough & { isTTY?: boolean };
+export class FakeIo extends BaseIo {
+  declare readonly stdout: MemoryStream;
+  declare readonly stderr: MemoryStream;
+  declare readonly stdin: PassThrough & { isTTY?: boolean };
 
   constructor() {
-    const stdout = new MemoryStream();
-    const stderr = new MemoryStream();
-    const stdin = new PassThrough() as PassThrough & { isTTY?: boolean };
-
-    this.stdout = stdout;
-    this.stderr = stderr;
-    this.stdin = stdin;
+    super({ stdout: new MemoryStream(), stderr: new MemoryStream(), stdin: new PassThrough() });
   }
 }

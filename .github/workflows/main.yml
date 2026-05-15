@@ -19,9 +19,13 @@ jobs:
     outputs:
       dependencies_changed: ${{ steps.changes.outputs.dependencies_changed }}
       install_script_changed: ${{ steps.changes.outputs.install_script_changed }}
+      website_changed: ${{ steps.changes.outputs.website_changed }}
+      cli_ref: ${{ steps.cli-ref.outputs.cli_ref }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Detect changes
         id: changes
@@ -30,6 +34,20 @@ jobs:
           mode: deploy
           workflow_name: Main Branch
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve latest stable CLI tag
+        id: cli-ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --tags origin
+          latest_tag="$(git tag --list 'v*' --sort=-version:refname | awk '$0 !~ /-/ { print; exit }')"
+          if [ -z "${latest_tag}" ]; then
+            echo "::error::No stable v* tag found for CLI reference generation"
+            exit 1
+          fi
+          echo "Latest stable CLI tag: ${latest_tag}"
+          echo "cli_ref=${latest_tag}" >> "${GITHUB_OUTPUT}"
 
   test:
     name: Tests
@@ -40,4 +58,19 @@ jobs:
     permissions:
       contents: read
       packages: read
-    secrets: inherit
+
+  deploy-website:
+    name: Deploy website
+    needs: [detect-changes, test]
+    if: ${{ needs.detect-changes.outputs.website_changed == 'true' }}
+    uses: ./.github/workflows/deploy-website.yml
+    with:
+      cli_ref: ${{ needs.detect-changes.outputs.cli_ref }}
+    secrets:
+      website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+      website_bucket: ${{ secrets.WEBSITE_BUCKET }}
+      website_distribution_id: ${{ secrets.WEBSITE_DISTRIBUTION_ID }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: read

@@ -1,0 +1,41 @@
+{
+  "name": "@contextbridge/website",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen:docs": "bun run --cwd ../cli gen:docs",
+    "predev": "bun run gen:docs",
+    "dev": "astro dev",
+    "prebuild": "bun run gen:docs",
+    "build": "astro build",
+    "pretypecheck": "bun run gen:docs",
+    "typecheck": "astro check",
+    "test": "bun run typecheck && bun run build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.4",
+    "@astrojs/starlight": "^0.38.0",
+    "@fontsource/atkinson-hyperlegible-next": "^5.2.5",
+    "@iconify-json/lucide": "^1.2.105",
+    "@iconify-json/simple-icons": "^1.2.81",
+    "@vercel/og": "^0.11.1",
+    "astro": "^6.1.0",
+    "astro-expressive-code": "^0.41.7",
+    "astro-icon": "^1.1.5",
+    "lucide-react": "^1.14.0",
+    "motion": "^12.38.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "sharp": "^0.34.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@tailwindcss/vite": "^4.2.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.0"
+  }
+}

@@ -1,0 +1,76 @@
+/*
+ * Tailwind v4 theme tokens for the ContextBridge marketing site.
+ *
+ * Projen-managed — do NOT hand-edit.
+ *
+ * Exposes the canonical brand contract from base.css as Tailwind utilities.
+ * `@theme inline` resolves var() references at usage site so utilities like
+ * `bg-background` track the dark-mode overrides declared in base.css.
+ *
+ * `dark:` tracks the `data-theme='dark'` attribute — the resolved theme that
+ * SystemThemeProvider writes from `localStorage['starlight-theme']`.
+ */
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --font-sans: var(--cb-font-sans);
+  --font-mono: var(--cb-font-heading);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Shadcn semantic aliases */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Charts and sidebar */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand colors */
+  --color-peach: var(--peach);
+  --color-tangerine: var(--tangerine);
+  --color-coral: var(--coral);
+  --color-red: var(--red);
+  --color-violet: var(--violet);
+  --color-royal: var(--royal);
+  --color-royal-light: var(--royal-light);
+  --color-violet-light: var(--violet-light);
+
+  /* Extended neutral scale (50-950 ships with Tailwind's default theme.css) */
+  --color-neutral-975: var(--color-neutral-975);
+  --color-neutral-990: var(--color-neutral-990);
+}

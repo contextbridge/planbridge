@@ -10,7 +10,7 @@ paths:
 
 # Bun testing conventions
 
-Conventions specific to `bun:test` that are non-obvious and have bitten us. Scoped to packages that use Bun's test runner — `@contextbridge/plan` uses vitest and these rules don't apply there.
+Conventions specific to `bun:test` that are non-obvious and have bitten us. Scoped to packages that use Bun's test runner — `@contextbridge/annotation` uses vitest and these rules don't apply there.
 
 Root repo testing conventions (colocated `.test.ts`, no `__tests__/`, fishery factories, component-local `testIds`, etc.) live in `AGENTS.md`. Add to this file when a **Bun-runtime-specific** pattern needs locking in.
 

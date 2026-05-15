@@ -4,7 +4,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
-const reactFiles = ['packages/plan/src/**/*.{ts,tsx}', 'packages/ui/src/**/*.{ts,tsx}'];
+const reactFiles = ['packages/annotation/src/**/*.{ts,tsx}', 'packages/ui/src/**/*.{ts,tsx}'];
 
 // Flat-config array-valued rules (like no-restricted-syntax) are REPLACED, not
 // merged, when a later matching block sets the same rule. Keep the shared
@@ -41,9 +41,8 @@ export default defineConfig(
       'coverage/**',
       'packages/*/dist/**',
       'packages/*/node_modules/**',
+      'packages/*/.astro/**',
       'packages/*/storybook-static/**',
-      'tools/**',
-      '**/projen-templates/**',
       '**/*.stories.{ts,tsx}',
     ],
   },

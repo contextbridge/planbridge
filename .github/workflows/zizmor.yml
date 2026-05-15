@@ -18,35 +18,41 @@ jobs:
     permissions:
       contents: read
       actions: read # zizmor reads workflow run metadata for online audits
+      security-events: write # upload SARIF to GitHub code scanning
     steps:
-      - name: Generate ContextBridge app token
-        id: app-token
-        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
-        with:
-          app-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
-          private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
-          owner: contextbridge
-          repositories: |
-            planbridge
-            contextbot-actions
-
+      # paths-filter needs a git checkout — it runs `git branch --show-current`
+      # before any API fallback, and fails outside a working tree.
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
+      # Audit only when something zizmor cares about changed. Keeps the job a
+      # required check that always reports a status, while skipping the
+      # API-heavy audit (and SARIF upload) on unrelated PRs.
+      - name: Detect workflow changes
+        id: changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            github:
+              - '.github/**'
+              - 'zizmor.yml'
+
       - name: Install uv
+        if: steps.changes.outputs.github == 'true'
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
       - name: Run zizmor
+        if: steps.changes.outputs.github == 'true'
         run: uvx zizmor --format=sarif .github/ > zizmor.sarif
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload zizmor SARIF
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Upload zizmor SARIF to code scanning
+        if: steps.changes.outputs.github == 'true'
+        uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
         with:
-          name: zizmor-sarif
-          path: zizmor.sarif
-          if-no-files-found: ignore
+          sarif_file: zizmor.sarif
+          category: zizmor

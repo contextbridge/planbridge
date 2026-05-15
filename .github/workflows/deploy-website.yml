@@ -1,0 +1,118 @@
+name: Deploy Website
+
+on:
+  workflow_call:
+    inputs:
+      cli_ref:
+        description: Stable CLI tag to use when generating website CLI reference docs. Empty means use the checked-out CLI source.
+        required: false
+        type: string
+        default: ''
+    secrets:
+      website_deploy_role_arn:
+        description: ARN of the OIDC role to assume for the S3 sync and CloudFront invalidation.
+        required: true
+      website_bucket:
+        description: Name of the S3 bucket that hosts the website.
+        required: true
+      website_distribution_id:
+        description: CloudFront distribution ID fronting the website bucket.
+        required: true
+
+permissions: {}
+
+# Serialize across every caller (main path-filter deploys and release deploys)
+# so two runs can't race on the same S3 bucket / CloudFront distribution.
+concurrency:
+  group: website-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/bootstrap
+
+      - name: Pin CLI reference source
+        if: ${{ inputs.cli_ref != '' }}
+        shell: bash
+        env:
+          CLI_REF: ${{ inputs.cli_ref }}
+        run: |
+          set -euo pipefail
+          : "${CLI_REF:?Set CLI_REF}"
+
+          if ! git check-ref-format --allow-onelevel "${CLI_REF}"; then
+            echo "::error::Invalid CLI_REF '${CLI_REF}'"
+            exit 1
+          fi
+
+          case "${CLI_REF}" in
+            v*) ;;
+            *)
+              echo "::error::CLI_REF must be a v* tag, got '${CLI_REF}'"
+              exit 1
+              ;;
+          esac
+
+          case "${CLI_REF}" in
+            *-*)
+              echo "::error::CLI_REF must be a stable tag without '-', got '${CLI_REF}'"
+              exit 1
+              ;;
+          esac
+
+          git fetch --force --no-tags --depth=1 origin "refs/tags/${CLI_REF}:refs/tags/${CLI_REF}"
+          cli_ref_commit="$(git rev-parse --verify "refs/tags/${CLI_REF}^{commit}")"
+          git checkout "${cli_ref_commit}" -- packages/cli
+          echo "Pinned packages/cli to ${CLI_REF} (${cli_ref_commit})"
+
+      - name: Build website
+        run: bun run --cwd packages/website build
+
+      - name: Configure AWS credentials for website deploy
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        with:
+          role-to-assume: ${{ secrets.website_deploy_role_arn }}
+          aws-region: us-east-1
+          role-session-name: website-${{ github.run_id }}
+
+      - name: Sync website to S3
+        shell: bash
+        env:
+          WEBSITE_BUCKET: ${{ secrets.website_bucket }}
+        run: |
+          set -euo pipefail
+          : "${WEBSITE_BUCKET:?Set WEBSITE_BUCKET repository secret}"
+          aws s3 sync packages/website/dist/ "s3://${WEBSITE_BUCKET}/" \
+            --delete \
+            --exclude "_astro/*" \
+            --cache-control "public, max-age=300, must-revalidate" \
+            --region us-east-1
+          aws s3 sync packages/website/dist/_astro/ "s3://${WEBSITE_BUCKET}/_astro/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --region us-east-1
+
+      - name: Invalidate website CloudFront cache
+        shell: bash
+        env:
+          WEBSITE_DISTRIBUTION_ID: ${{ secrets.website_distribution_id }}
+        run: |
+          set -euo pipefail
+          : "${WEBSITE_DISTRIBUTION_ID:?Set WEBSITE_DISTRIBUTION_ID repository secret}"
+          aws cloudfront create-invalidation \
+            --distribution-id "${WEBSITE_DISTRIBUTION_ID}" \
+            --paths "/*" \
+            --region us-east-1

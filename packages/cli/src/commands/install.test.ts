@@ -1,79 +1,74 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { getDescriptor } from '#src/harnesses/registry.ts';
-import { environment } from '#src/testFactories.ts';
 import {
-  type FakeCommandCall,
-  type FakeCommandRunner,
-  createStubContext,
-  marketplaceListResult,
-  pluginListResult,
-} from '#src/testHelpers/index.ts';
+  CLAUDE_MARKETPLACE_NAME,
+  CLAUDE_MARKETPLACE_SOURCE,
+  CLAUDE_PLUGIN_ID,
+} from '#src/installers/ClaudeInstaller.ts';
+import { environment } from '#src/testFactories.ts';
+import { createStubContext, primeClaudeShellouts, stubClaudeState } from '#src/testHelpers/index.ts';
 import { runInstall } from './install.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 
 describe('runInstall', () => {
   it('with --yes installs Claude when not yet wired up and reports the summary', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([]),
-      pluginListResult([]),
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, io, commandRunner, prompter } = setupTest();
 
     await runInstall(context, { yes: true });
 
-    expect(installCalls(commandRunner)).toEqual([
-      {
-        cmd: CLAUDE_BINARY,
-        args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
-        opts: {},
-      },
-      { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'cli@contextbridge', '--scope', 'user'], opts: {} },
+    const marketplaceAdd = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']);
+    const pluginInstall = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install']);
+    expect(marketplaceAdd).toHaveLength(1);
+    expect(marketplaceAdd[0]?.args).toEqual([
+      'plugin',
+      'marketplace',
+      'add',
+      CLAUDE_MARKETPLACE_SOURCE,
+      '--scope',
+      'user',
     ]);
+    expect(pluginInstall).toHaveLength(1);
+    expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user']);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed');
     expect(stderr).toContain('Installed 1 of 1 detected harness');
   });
 
   it('skips already-installed harnesses by default and notes them in the summary', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]),
-    );
+    const { context, io, commandRunner, prompter } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
-    expect(installCalls(commandRunner)).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ user)');
+    expect(stderr).toContain(
+      'Claude Code: PlanBridge installed (marketplace contextbridge; plugin planbridge@contextbridge @ user)',
+    );
     expect(stderr).toContain('Installed 0 of 1 detected harness (1 already installed, skipped).');
   });
 
   it('with --force re-runs install over an already-installed harness and drops the skipped suffix', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([{ id: 'cli@contextbridge', scope: 'user' }]),
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, io, commandRunner, prompter } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     await runInstall(context, { yes: true, force: true });
 
-    expect(installCalls(commandRunner)).toHaveLength(2);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'update'])).toHaveLength(1);
     expect(prompter.calls).toEqual([]);
     const stderr = io.stderr.text();
     expect(stderr).toContain('Installed 1 of 1 detected harness');
@@ -81,71 +76,65 @@ describe('runInstall', () => {
   });
 
   it('treats an install at a different scope as already installed and skips by default', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([{ id: 'cli@contextbridge', scope: 'project' }]),
-    );
+    const { context, io, commandRunner } = setupTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     await runInstall(context, { yes: true });
 
-    expect(installCalls(commandRunner)).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: installed (marketplace contextbridge; plugin cli@contextbridge @ project)');
+    expect(stderr).toContain(
+      'Claude Code: PlanBridge installed (marketplace contextbridge; plugin planbridge@contextbridge @ project)',
+    );
     expect(stderr).toContain('(1 already installed, skipped)');
   });
 
   it('does not skip Claude when only the marketplace is configured', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([{ name: 'contextbridge' }]),
-      pluginListResult([]),
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, io, commandRunner } = setupTest();
+    stubClaudeState(commandRunner, { marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME }] });
 
     await runInstall(context, { yes: true });
 
-    expect(installCalls(commandRunner)).toHaveLength(2);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toHaveLength(1);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toHaveLength(1);
     const stderr = io.stderr.text();
-    expect(stderr).toContain('Claude Code: not installed (marketplace contextbridge)');
+    expect(stderr).toContain('Claude Code: PlanBridge not installed (marketplace contextbridge)');
     expect(stderr).toContain('Installed 1 of 1 detected harness');
     expect(stderr).not.toContain('already installed, skipped');
   });
 
   it('records a status failure for one harness and still installs another detected harness', async () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-install-status-failure-'));
-    const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
+    const { context, io, commandRunner } = setupTest({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
-    commandRunner.script(
-      marketplaceListResult([]),
-      pluginListResult([]),
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
 
     try {
       const configDir = join(tmp, '.codex');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(join(configDir, 'hooks.json'), '{ bad json');
-      writeFileSync(join(configDir, 'config.toml'), '[features]\ncodex_hooks = true\n');
 
       const err = await captureError(runInstall(context, { yes: true }));
       expect(err).toBeInstanceOf(CommanderError);
       if (!(err instanceof CommanderError)) throw err;
       expect(err.message).toBe('Install failed for: Codex CLI');
 
-      expect(installCalls(commandRunner)).toEqual([
-        {
-          cmd: CLAUDE_BINARY,
-          args: ['plugin', 'marketplace', 'add', 'contextbridge/claude-plugin', '--scope', 'user'],
-          opts: {},
-        },
-        { cmd: CLAUDE_BINARY, args: ['plugin', 'install', 'cli@contextbridge', '--scope', 'user'], opts: {} },
+      const marketplaceAdd = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']);
+      const pluginInstall = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install']);
+      expect(marketplaceAdd).toHaveLength(1);
+      expect(marketplaceAdd[0]?.args).toEqual([
+        'plugin',
+        'marketplace',
+        'add',
+        CLAUDE_MARKETPLACE_SOURCE,
+        '--scope',
+        'user',
       ]);
+      expect(pluginInstall).toHaveLength(1);
+      expect(pluginInstall[0]?.args).toEqual(['plugin', 'install', CLAUDE_PLUGIN_ID, '--scope', 'user']);
       const stderr = io.stderr.text();
       expect(stderr).toContain('Codex CLI: status unavailable (invalid Codex hooks.json');
       expect(stderr).toContain('Installed 1 of 2 detected harnesses.');
@@ -155,43 +144,38 @@ describe('runInstall', () => {
   });
 
   it('without --yes prompts the user and skips when they decline', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(marketplaceListResult([]), pluginListResult([]));
+    const { context, io, commandRunner, prompter } = setupTest();
     prompter.setConfirm(false);
 
     await runInstall(context);
 
-    expect(installCalls(commandRunner)).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add'])).toEqual([]);
+    expect(commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install'])).toEqual([]);
     expect(prompter.calls).toEqual([{ message: 'Install PlanBridge into Claude Code?', default: true }]);
     expect(io.stderr.text()).toContain('Claude Code: skipped');
     expect(io.stderr.text()).toContain('Installed 0 of 1 detected harness');
   });
 
   it('without --yes runs confirm + scope prompts and installs at the chosen scope', async () => {
-    const { context, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      marketplaceListResult([]),
-      pluginListResult([]),
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, commandRunner, prompter } = setupTest();
     prompter.setConfirm(true);
     prompter.setSelect('project');
 
     await runInstall(context);
 
-    const calls = installCalls(commandRunner);
-    expect(calls).toHaveLength(2);
-    expect(calls[0]?.args).toContain('project');
+    const marketplaceAdd = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']);
+    const pluginInstall = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'install']);
+    expect(marketplaceAdd).toHaveLength(1);
+    expect(pluginInstall).toHaveLength(1);
+    expect(marketplaceAdd[0]?.args).toContain('project');
+    expect(pluginInstall[0]?.args).toContain('project');
     expect(prompter.calls).toHaveLength(1);
     expect(prompter.selectCalls).toHaveLength(1);
     expect(prompter.selectCalls[0]?.message).toBe('Install scope:');
   });
 
   it('throws when no supported harnesses are detected', () => {
-    const { context, commandRunner, io } = createStubContext();
+    const { context, commandRunner, io } = setupTest();
     commandRunner.setWhich(CLAUDE_BINARY, null);
 
     expect(runInstall(context, { yes: true })).rejects.toBeInstanceOf(CommanderError);
@@ -200,11 +184,10 @@ describe('runInstall', () => {
   });
 });
 
-function installCalls(commandRunner: FakeCommandRunner): FakeCommandCall[] {
-  return commandRunner.calls.filter((call) => {
-    const joined = call.args.join(' ');
-    return joined !== 'plugin marketplace list --json' && joined !== 'plugin list --json';
-  });
+function setupTest(overrides?: Parameters<typeof createStubContext>[0]) {
+  const stub = createStubContext(overrides);
+  primeClaudeShellouts(stub.commandRunner);
+  return stub;
 }
 
 async function captureError(promise: Promise<unknown>): Promise<unknown> {

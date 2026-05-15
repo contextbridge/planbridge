@@ -1,14 +1,14 @@
 ---
 paths:
-  - "tools/website/src/**/*.mdx"
-  - "tools/website/src/**/*.astro"
+  - "packages/website/src/**/*.mdx"
+  - "packages/website/src/**/*.astro"
 ---
 
 # Website writing style
 
 Copy on the docs and marketing site has to read like a human staff engineer wrote it, not a model. AI-generated text has a recognizable cadence and vocabulary, and readers register it as low-trust the same way they register stock photography.
 
-Apply this when writing or editing prose in `tools/website/`. Code samples, frontmatter, and the auto-generated CLI reference pages under `src/content/docs/cli/` are out of scope (their wording lives in the CLI's Commander definitions).
+Apply this when writing or editing prose in `packages/website/`. Code samples, frontmatter, and the auto-generated CLI reference pages under `src/content/docs/cli/` are out of scope (their wording lives in the CLI's Commander definitions).
 
 ## Avoid
 

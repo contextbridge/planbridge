@@ -5,9 +5,7 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: write
-  id-token: write
-  packages: read
+  contents: read
 
 jobs:
   test:
@@ -18,27 +16,31 @@ jobs:
     permissions:
       contents: read
       packages: read
-    secrets: inherit
 
   release:
     name: GoReleaser
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      packages: read
     steps:
       - name: Generate ContextBridge app token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           client-id: ${{ secrets.CB_PR_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
           owner: contextbridge
           repositories: planbridge
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
 
       - uses: ./.github/actions/bootstrap
 
@@ -63,7 +65,7 @@ jobs:
 
       - name: Mint Homebrew tap token
         id: tap-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           app-id: ${{ env.HOMEBREW_TAP_APP_ID }}
           private-key: ${{ env.HOMEBREW_TAP_APP_PRIVATE_KEY }}
@@ -84,7 +86,7 @@ jobs:
           done
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7.2.1
+        uses: goreleaser/goreleaser-action@1a80836c5c9d9e5755a25cb59ec6f45a3b5f41a8 # v7.2.1
         with:
           version: '~> v2'
           args: release --clean
@@ -151,3 +153,20 @@ jobs:
             --region us-east-1 \
             --content-type 'text/x-shellscript; charset=utf-8' \
             --cache-control 'public, max-age=300'
+
+  deploy-website:
+    name: Deploy website
+    needs: release
+    # Skip alpha releases so unreleased docs do not publish before stable CLI releases.
+    if: ${{ !contains(github.ref_name, '-') }}
+    uses: ./.github/workflows/deploy-website.yml
+    with:
+      cli_ref: ${{ github.ref_name }}
+    secrets:
+      website_deploy_role_arn: ${{ secrets.WEBSITE_DEPLOY_ROLE_ARN }}
+      website_bucket: ${{ secrets.WEBSITE_BUCKET }}
+      website_distribution_id: ${{ secrets.WEBSITE_DISTRIBUTION_ID }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: read

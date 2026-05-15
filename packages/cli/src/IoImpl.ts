@@ -1,24 +1,22 @@
-import type { Readable, Writable } from 'node:stream';
-import type { Public } from '@contextbridge/shared/types';
+import { BaseIo, type Io } from './BaseIo.ts';
+export type { Io, Reader, Writer } from './BaseIo.ts';
 
-export type Io = Public<IoImpl>;
+export interface IoImplOptions extends Partial<Pick<Io, 'stdout' | 'stderr' | 'stdin'>> {
+  readonly quiet?: boolean;
+}
 
-export class IoImpl {
-  readonly stdout: Writable & { isTTY?: boolean };
-  readonly stderr: Writable & { isTTY?: boolean };
-  readonly stdin: Readable & { isTTY?: boolean };
-
-  constructor() {
+export class IoImpl extends BaseIo {
+  constructor(options: IoImplOptions = {}) {
     // This is the one place that's allowed to touch the real process streams —
     // everything downstream receives them through ctx.io.
     /* eslint-disable no-restricted-properties */
-    const stdout = process.stdout;
-    const stderr = process.stderr;
-    const stdin = process.stdin;
+    const { quiet = false, stdout = process.stdout, stderr = process.stderr, stdin = process.stdin } = options;
     /* eslint-enable no-restricted-properties */
 
-    this.stdout = stdout;
-    this.stderr = stderr;
-    this.stdin = stdin;
+    super({ quiet, stdout, stderr, stdin });
+  }
+
+  static from(io: Io, options: Pick<IoImplOptions, 'quiet'> = {}): IoImpl {
+    return new IoImpl({ stdout: io.stdout, stderr: io.stderr, stdin: io.stdin, ...options });
   }
 }

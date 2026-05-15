@@ -1,0 +1,77 @@
+---
+const GITHUB_URL = 'https://github.com/contextbridge/planbridge';
+
+const faqs = [
+  {
+    question: 'How does PlanBridge work?',
+    answer: `PlanBridge opens your coding agent's plan as rendered markdown in a local browser. You select the lines that need work, comment inline, and the agent revises with your feedback before writing any code. See the <a href="/quickstart/" class="underline underline-offset-4">docs</a> or the <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">source on GitHub</a>.`,
+  },
+  {
+    question: 'What coding agents does this work with?',
+    answer:
+      'Claude Code and Codex are supported with auto-detected hooks. Any coding agent that can run a command and read a structured result can use PlanBridge directly. See <a href="/usage/other-agents/" class="underline underline-offset-4">setup for other harnesses</a>.',
+  },
+  {
+    question: 'Can I open a file in PlanBridge without going through plan mode?',
+    answer:
+      'Yes. The <code class="font-mono">/planbridge-open</code> skill (Claude Code) and <code class="font-mono">$planbridge-open</code> skill (Codex CLI) open any markdown file in the PlanBridge UI on demand. See <a href="/usage/open/" class="underline underline-offset-4">Open arbitrary content</a>.',
+  },
+  {
+    question: 'Does PlanBridge take over my agent workflow?',
+    answer:
+      'No. PlanBridge uses standard extension points: a Claude Code plugin, a Codex <code class="font-mono">Stop</code> hook, or a manual command for other agents. It runs only when review is requested, opens a local <code class="font-mono">localhost</code> browser UI, and <code class="font-mono">contextbridge uninstall</code> removes the harness entries if you want your old workflow back.',
+  },
+  {
+    question: 'How much does this cost?',
+    answer: 'PlanBridge is free and open source.',
+  },
+  {
+    question: 'Who built this?',
+    answer: `PlanBridge is built by <a href="https://github.com/floodfx" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">Donnie Flood</a>, <a href="https://github.com/jcarver989" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">Josh Carver</a>, and <a href="https://github.com/blimmer" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">Ben Limmer</a> at <a href="https://contextbridge.ai" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">ContextBridge AI</a>. Three engineers who've shipped to hundreds of millions of users, building tools to make AI coding more reliable.`,
+  },
+  {
+    question: 'Why did you build this?',
+    answer:
+      "Coding agents are optimized for chat, not review. They give you one text input for every revision, so you can't anchor comments to specific lines. Iteration friction wears you down and plans ship less refined than they could be. PlanBridge gives plans the same review experience developers expect from code review.",
+  },
+  {
+    question: 'Where can I request features?',
+    answer: `Open an issue in the <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">PlanBridge GitHub repository</a> or join the <a href="https://go.contextbridge.ai/join-community" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">ContextBridge Slack community</a>.`,
+  },
+];
+---
+
+<section id="faq" class="scroll-mt-24 border-t border-foreground bg-background px-8 py-32">
+  <div class="mx-auto max-w-7xl">
+    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
+      FAQ
+    </p>
+    <h2
+      class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
+    >
+      Common questions.
+    </h2>
+
+    <div class="mt-16 border-t border-foreground">
+      {
+        faqs.map((faq) => (
+          <details class="group border-b border-foreground">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-8 py-8 font-mono text-2xl font-bold tracking-tight text-foreground">
+              {faq.question}
+              <span
+                class="inline-block h-8 w-8 flex-shrink-0 text-[32px] leading-none transition-transform group-open:rotate-45"
+                aria-hidden="true"
+              >
+                +
+              </span>
+            </summary>
+            <p
+              class="pb-8 font-sans text-base leading-relaxed text-foreground"
+              set:html={faq.answer}
+            />
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

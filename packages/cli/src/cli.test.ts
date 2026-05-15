@@ -1,15 +1,16 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
 import { Command } from 'commander';
-import { getDescriptor } from '#src/harnesses/registry.ts';
+import { CLAUDE_MARKETPLACE_NAME, CLAUDE_PLUGIN_ID } from '#src/installers/ClaudeInstaller.ts';
 import { environment } from '#src/testFactories.ts';
-import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { createStubContext, primeClaudeShellouts, readErrorLogs, stubClaudeState } from '#src/testHelpers/index.ts';
 import { resolveCbCommand, runCli } from './cli.ts';
 
-const CLAUDE_BINARY = getDescriptor('claude').binaryName;
-const CODEX_BINARY = getDescriptor('codex').binaryName;
+const CLAUDE_BINARY = getHarness('claude').binaryName;
+const CODEX_BINARY = getHarness('codex').binaryName;
 
 describe('runCli', () => {
   it('prints the version on --version', async () => {
@@ -21,7 +22,9 @@ describe('runCli', () => {
 
   it.each<{ argv: string[]; contains: string }>([
     { argv: ['--help'], contains: 'plan' },
+    { argv: ['--help'], contains: 'open' },
     { argv: ['plan', '--help'], contains: '[path]' },
+    { argv: ['open', '--help'], contains: '[path]' },
   ])('$argv renders help text containing "$contains"', async ({ argv, contains }) => {
     const { context, io } = createStubContext();
     const exitCode = await runCli(context, argv);
@@ -35,6 +38,23 @@ describe('runCli', () => {
   it('routes argv into the plan subcommand', async () => {
     const { context, io } = createStubContext();
     const exitCode = await runCli(context, ['plan', '--bogus']);
+    expect(exitCode).not.toBe(0);
+    expect(io.stderr.text()).toContain('--bogus');
+  });
+
+  it.each(['abc', '3000.5', '0', '-1', '65536'])('rejects invalid plan --port value %s', async (port) => {
+    const { context, io } = createStubContext();
+    const exitCode = await runCli(context, ['plan', '--port', port]);
+    expect(exitCode).not.toBe(0);
+    expect(io.stderr.text()).toContain('port must be an integer between 1 and 65535');
+  });
+
+  // Open-handler behavior lives in open.test.ts. Here we only verify argv
+  // routes into the open subcommand — an unknown flag on `open` surfaces as
+  // a CommanderError with a non-zero exit.
+  it('routes argv into the open subcommand', async () => {
+    const { context, io } = createStubContext();
+    const exitCode = await runCli(context, ['open', '--bogus']);
     expect(exitCode).not.toBe(0);
     expect(io.stderr.text()).toContain('--bogus');
   });
@@ -89,15 +109,14 @@ describe('runCli', () => {
   });
 
   it('routes argv into the install claude subcommand with default user scope', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' }, { exitCode: 0, stdout: '', stderr: '' });
+    const { context, io, commandRunner } = setupClaudeTest();
 
     const exitCode = await runCli(context, ['install', 'claude']);
 
     expect(exitCode).toBe(0);
-    expect(commandRunner.calls[0]?.args).toContain('--scope');
-    expect(commandRunner.calls[0]?.args).toContain('user');
+    const marketplaceAdd = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'marketplace', 'add']);
+    expect(marketplaceAdd[0]?.args).toContain('--scope');
+    expect(marketplaceAdd[0]?.args).toContain('user');
     expect(io.stderr.text()).toContain('scope: user');
   });
 
@@ -105,6 +124,8 @@ describe('runCli', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
+    commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
@@ -113,27 +134,29 @@ describe('runCli', () => {
       expect(JSON.parse(readFileSync(join(tmp, '.codex', 'hooks.json'), 'utf8'))).toMatchObject({
         hooks: { Stop: [{ hooks: [{ command: 'contextbridge hook codex' }] }] },
       });
-      expect(readFileSync(join(tmp, '.codex', 'config.toml'), 'utf8')).toContain('codex_hooks = true');
+      expect(commandRunner.callsTo(CODEX_BINARY, ['features', 'enable', 'hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('scope: user');
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
   });
 
-  it('prints handler CommanderError messages from the install codex subcommand', async () => {
+  it('routes install codex without parsing Codex config.toml', async () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-cli-codex-test-'));
     const configDir = join(tmp, '.codex');
     mkdirSync(configDir, { recursive: true });
     writeFileSync(join(configDir, 'config.toml'), '[features\nbroken');
     const { context, io, commandRunner } = createStubContext({ env: environment.build({ HOME: tmp }) });
     commandRunner.setWhich(CODEX_BINARY, '/usr/local/bin/codex');
+    commandRunner.on(CODEX_BINARY, ['--version']).resolves({ stdout: 'codex-cli 0.129.0\n' });
+    commandRunner.on(CODEX_BINARY, ['features', 'enable', 'hooks']).resolves();
 
     try {
       const exitCode = await runCli(context, ['install', 'codex']);
 
-      expect(exitCode).toBe(1);
-      expect(io.stderr.text()).toContain('invalid Codex config.toml');
-      expect(existsSync(join(configDir, 'hooks.json'))).toBe(false);
+      expect(exitCode).toBe(0);
+      expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI');
+      expect(existsSync(join(configDir, 'hooks.json'))).toBe(true);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
@@ -147,30 +170,21 @@ describe('runCli', () => {
   });
 
   it('routes argv into the uninstall claude subcommand with --scope project', async () => {
-    const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'project' }]), stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'project' }] }],
+    });
 
     const exitCode = await runCli(context, ['uninstall', 'claude', '--scope', 'project']);
 
     expect(exitCode).toBe(0);
-    expect(commandRunner.calls[1]?.args).toEqual(['plugin', 'uninstall', 'cli@contextbridge', '--scope', 'project']);
+    const uninstallCalls = commandRunner.callsTo(CLAUDE_BINARY, ['plugin', 'uninstall']);
+    expect(uninstallCalls).toHaveLength(1);
+    expect(uninstallCalls[0]?.args).toEqual(['plugin', 'uninstall', CLAUDE_PLUGIN_ID, '--scope', 'project']);
   });
 
   it('routes argv into the no-target install orchestrator with --yes', async () => {
-    const { context, io, commandRunner, prompter } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: '[]', stderr: '' },
-      { exitCode: 0, stdout: '[]', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-      { exitCode: 0, stdout: '', stderr: '' },
-    );
+    const { context, io, prompter } = setupClaudeTest();
 
     const exitCode = await runCli(context, ['install', '--yes']);
 
@@ -180,12 +194,10 @@ describe('runCli', () => {
   });
 
   it('routes argv into install status with --json and emits to stdout', async () => {
-    const { context, io, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'user' }]), stderr: '' },
-    );
+    const { context, io, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -194,12 +206,10 @@ describe('runCli', () => {
   });
 
   it('registers cb_command and identifies before parsing for a top-level subcommand', async () => {
-    const { context, analytics, commandRunner } = createStubContext();
-    commandRunner.setWhich(CLAUDE_BINARY, '/usr/local/bin/claude');
-    commandRunner.script(
-      { exitCode: 0, stdout: JSON.stringify([{ name: 'contextbridge' }]), stderr: '' },
-      { exitCode: 0, stdout: JSON.stringify([{ id: 'cli@contextbridge', scope: 'user' }]), stderr: '' },
-    );
+    const { context, analytics, commandRunner } = setupClaudeTest();
+    stubClaudeState(commandRunner, {
+      marketplaces: [{ name: CLAUDE_MARKETPLACE_NAME, plugins: [{ id: CLAUDE_PLUGIN_ID, scope: 'user' }] }],
+    });
 
     const exitCode = await runCli(context, ['install', 'status', '--json']);
 
@@ -269,3 +279,9 @@ describe('resolveCbCommand', () => {
     expect(resolveCbCommand(program, ['parent', '--', 'child'])).toBe('parent');
   });
 });
+
+function setupClaudeTest(overrides?: Parameters<typeof createStubContext>[0]) {
+  const stub = createStubContext(overrides);
+  primeClaudeShellouts(stub.commandRunner);
+  return stub;
+}

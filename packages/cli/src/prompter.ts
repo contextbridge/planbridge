@@ -72,7 +72,7 @@ export function createClackPrompter(io: Io): Prompter {
 }
 
 function assertTty(io: Io): void {
-  if (!io.stdin.isTTY) {
+  if (io.stdinIsTTY !== true) {
     throw new CommanderError(
       1,
       PROMPTER_NON_TTY_CODE,

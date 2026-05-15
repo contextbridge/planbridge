@@ -1,0 +1,98 @@
+---
+/*
+ * Concentric-square tunnel inspired by the ContextBridge brand kit's
+ * generative geometry. The squares shrink and drift toward the lower-left,
+ * creating a vanishing-point illusion. The whole group rotates slowly around
+ * the innermost square's center so the outer frames appear to swirl while the
+ * core stays put.
+ */
+
+const layers = 16;
+const baseSize = 760;
+const scaleStep = 0.88;
+const offsetX = -1.5;
+const offsetY = 8;
+const baseRadius = 56;
+
+const squares = Array.from({ length: layers }, (_, i) => {
+  const factor = Math.pow(scaleStep, i);
+  const size = baseSize * factor;
+  const cx = 400 + i * offsetX;
+  const cy = 400 + i * offsetY;
+  return {
+    x: cx - size / 2,
+    y: cy - size / 2,
+    size,
+    rx: baseRadius * factor,
+  };
+});
+
+const innerCx = 400 + (layers - 1) * offsetX;
+const innerCy = 400 + (layers - 1) * offsetY;
+---
+
+<div class="hero-artwork" aria-hidden="true">
+  <svg
+    viewBox="0 0 800 800"
+    xmlns="http://www.w3.org/2000/svg"
+    class="hero-artwork__svg"
+    preserveAspectRatio="xMidYMid meet"
+  >
+    <g
+      class="hero-artwork__rotor"
+      style={`transform-origin: ${innerCx}px ${innerCy}px;`}
+    >
+      {
+        squares.map(({ x, y, size, rx }) => (
+          <rect
+            x={x}
+            y={y}
+            width={size}
+            height={size}
+            rx={rx}
+            ry={rx}
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            vector-effect="non-scaling-stroke"
+          />
+        ))
+      }
+    </g>
+  </svg>
+</div>
+
+<style>
+  .hero-artwork {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .hero-artwork__svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .hero-artwork__rotor {
+    animation: hero-artwork-rotate 72s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes hero-artwork-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-artwork__rotor {
+      animation: none;
+    }
+  }
+</style>

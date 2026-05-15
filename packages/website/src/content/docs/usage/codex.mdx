@@ -1,0 +1,165 @@
+---
+title: Codex CLI
+description: Run PlanBridge automatically inside Codex CLI via the Stop hook.
+---
+
+import { Code } from 'astro-expressive-code/components';
+
+If you have the PlanBridge Codex CLI hook installed (via `contextbridge install`), PlanBridge opens whenever Codex finishes a turn with a proposed plan. You review the plan in the browser, and your decision flows back through Codex's standard `Stop` hook.
+
+## Install
+
+PlanBridge's Codex installer requires Codex CLI `0.129.0` or newer.
+
+<Code code="contextbridge install codex" lang="sh" title="terminal" />
+
+This writes `~/.codex/hooks.json` by default, with a `Stop` hook that runs `contextbridge hook codex`. It also asks Codex to enable the current hooks feature flag by running `codex features enable hooks`.
+
+### Trust the Codex hook
+
+Codex requires new hooks to be reviewed before they can run. PlanBridge will not run in Codex until you trust the installed `Stop` hook.
+
+1. Restart Codex after installing the hook.
+2. When Codex reports a hook needs review, open `/hooks`.
+
+```text title="Codex CLI"
+⚠ 1 hook needs review before it can run. Open /hooks to review it.
+```
+
+3. In the hooks table, select the `Stop` row and press Enter.
+
+```text title="/hooks"
+⚠ 1 hook needs review before it can run. Open /hooks to review it.
+
+
+  Hooks
+  Lifecycle hooks from config and enabled plugins.
+
+  Event                 Installed   Active      Review      Description
+  PreToolUse            0           0           0           Before a tool executes
+  PermissionRequest     0           0           0           When permission is requested
+  PostToolUse           0           0           0           After a tool executes
+  PreCompact            0           0           0           Before context compaction
+  PostCompact           0           0           0           After context compaction
+  SessionStart          0           0           0           When a new session starts
+  UserPromptSubmit      0           0           0           When the user submits a prompt
+  Stop                  1           0           1           Right before Codex ends its turn
+
+  Press enter to view hooks; esc to close
+```
+
+4. Verify the command is `contextbridge hook codex`, then press `t` to trust it.
+
+```text title="Stop hooks"
+⚠ 1 hook needs review before it can run. Open /hooks to review it.
+
+
+  Stop hooks
+  1 hook needs review before it can run.
+
+  [!] Hook 1 · new
+
+  Event     Stop
+  Source    User config - ~/.codex/hooks.json
+  Command   contextbridge hook codex
+  Timeout   345600s
+  Trust     New hook - review required
+
+  Press t to trust; esc to go back
+```
+
+5. Confirm the hook shows `Trusted`, then press Esc to go back.
+
+```text title="Trusted Stop hook"
+⚠ 1 hook needs review before it can run. Open /hooks to review it.
+
+
+  Stop hooks
+  Turn hooks on or off. Your changes are saved automatically.
+
+  [x] Hook 1
+
+  Event     Stop
+  Source    User config - ~/.codex/hooks.json
+  Command   contextbridge hook codex
+  Timeout   345600s
+  Trust     Trusted
+
+  Press space or enter to toggle; esc to go back
+```
+
+The snippets above show a default user-scope install. Project-scope installs show a project config path instead of `~/.codex/hooks.json`.
+
+For a project-local install, run:
+
+<Code code="contextbridge install codex --scope project" lang="sh" title="terminal" />
+
+Project-local installs write `<repo>/.codex/hooks.json`. The hooks feature flag is still enabled through Codex's user-level `features` command.
+
+## Process
+
+1. Open Codex and put the agent in [Plan Mode](https://developers.openai.com/codex/learn/best-practices#plan-first-for-difficult-tasks) (via `/plan` or Shift + Tab).
+2. Type your prompt for Codex to plan.
+3. When Codex finishes a turn with a proposed plan, PlanBridge opens in your browser.
+4. Comment on the plan, approve it, or request changes.
+5. If you request changes, Codex receives your comments as the next continuation prompt and revises the plan. If you approve, PlanBridge returns control to Codex's native Plan Mode approval flow.
+
+After PlanBridge approval, you need to respond to Codex's native implementation prompt:
+
+```text
+  Implement this plan?
+
+› 1. Yes, implement this plan          Switch to Default and start coding.
+  2. Yes, clear context and implement  Fresh thread.
+  3. No, stay in Plan mode             Continue planning with the model.
+```
+
+## How It Works
+
+Codex lifecycle hooks are enabled by Codex's `hooks` feature flag and can be configured through `hooks.json` or inline `[hooks]` tables. PlanBridge uses `hooks.json` so it can install and remove its own entry without taking over the rest of your Codex config.
+
+When Codex calls the `Stop` hook, PlanBridge looks for the latest proposed plan in the hook payload and Codex transcript, opens the local review UI, and waits for your submission. For requested changes, PlanBridge returns a `decision: "block"` response with your review feedback as the continuation prompt. For approval, PlanBridge returns no continuation so Codex can use its normal plan approval behavior.
+
+## Verify
+
+<Code code="contextbridge install status" lang="sh" title="terminal" />
+
+You should see Codex CLI listed as installed.
+
+## Uninstall
+
+<Code code="contextbridge uninstall codex" lang="sh" title="terminal" />
+
+Or `contextbridge uninstall` to remove PlanBridge plugin and hook entries from every harness it was installed into.
+
+## Open a file manually
+
+The `Stop` hook fires automatically. To pull an arbitrary markdown file into the PlanBridge UI on demand, use the `$planbridge-open` skill that `contextbridge install codex` writes to `~/.agents/skills/planbridge-open/`. See [Open arbitrary content](/usage/open/).
+
+## Troubleshooting
+
+### `[features].codex_hooks` deprecation warning
+
+If you installed PlanBridge against an older Codex CLI (before `0.129.0`), you may see this warning every time Codex starts:
+
+```text title="Codex CLI"
+⚠ `[features].codex_hooks` is deprecated. Use `[features].hooks` instead.
+Enable it with `--enable hooks` or `[features].hooks` in config.toml. See
+https://developers.openai.com/codex/config-basic#feature-flags for details.
+```
+
+That earlier PlanBridge install set `codex_hooks` in your Codex config. Current installs use the replacement `hooks` flag instead, so the old key is just leftover state — Codex prints the warning whenever it's present (regardless of `true`/`false`).
+
+To clear it, open `~/.codex/config.toml` and delete the `codex_hooks` line from the `[features]` table. Leave the `hooks` line in place.
+
+```toml title="~/.codex/config.toml"
+[features]
+hooks = true
+codex_hooks = false  # delete this line
+```
+
+## Reference
+
+- [Codex hooks documentation](https://developers.openai.com/codex/hooks)
+- [Codex `Stop` hook behavior](https://developers.openai.com/codex/hooks#stop)
+- [Codex configuration reference](https://developers.openai.com/codex/config-reference#configtoml)

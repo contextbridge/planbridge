@@ -1,8 +1,8 @@
 ---
 paths:
-  - "packages/plan/**/*.tsx"
-  - "packages/plan/**/*.ts"
-  - "packages/plan/**/*.css"
+  - "packages/annotation/**/*.tsx"
+  - "packages/annotation/**/*.ts"
+  - "packages/annotation/**/*.css"
 ---
 
 # Plan review UI design language
@@ -74,7 +74,7 @@ content. Deletion is usually the right move.
 
 ## When this rule does not apply
 
-- `tools/website` is a marketing surface — the soft product surface
+- `packages/website` is a marketing surface — the soft product surface
   aesthetic is appropriate there.
 - shadcn primitives under `@contextbridge/ui/components/ui/*` follow
   their upstream defaults; do not retune them here.

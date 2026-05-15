@@ -1,25 +1,26 @@
 import {
   annotationAnchor,
+  annotationSubmission,
   annotationThread,
   commentMessage,
-  planReviewSubmission,
   reviewer,
 } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { codexStopResponse } from './codexStopResponse.ts';
-import { formatAsMarkdown } from './markdown.ts';
+import { PLAN_TEMPLATES } from './templates.ts';
 
 describe('codexStopResponse', () => {
   it('returns null when the review is approved so Codex uses its native Plan Mode approval flow', () => {
-    const submission = planReviewSubmission.build({ status: 'approved', threads: [] });
+    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const planContent = '# ignored\n';
 
     expect(codexStopResponse(submission, planContent)).toBe(null);
   });
 
-  it('returns a block continuation whose reason matches formatAsMarkdown for changes-requested submissions', () => {
+  it('returns a block continuation whose reason matches formatAgentResponse for changes-requested submissions', () => {
     const planContent = ['# Plan', '', '## Step one', '', '- do the thing'].join('\n');
-    const submission = planReviewSubmission.build({
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -47,7 +48,7 @@ describe('codexStopResponse', () => {
 
     expect(response).toEqual({
       decision: 'block',
-      reason: formatAsMarkdown(submission, planContent),
+      reason: formatAgentResponse(PLAN_TEMPLATES, submission, planContent),
     });
   });
 });

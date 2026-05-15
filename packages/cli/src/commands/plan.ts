@@ -1,25 +1,29 @@
 import { getErrorMessage } from '@contextbridge/shared/errors';
-import { type Command, CommanderError } from 'commander';
-import type { CliContext } from '#src/context.ts';
-import { formatAsMarkdown } from '#src/formatters/plan/markdown.ts';
+import { type Command, CommanderError, InvalidArgumentError } from 'commander';
 import {
-  type PlanReviewDependencies,
-  PlanReviewInterruptedError,
-  runPlanReview,
-} from '#src/planReview/runPlanReview.ts';
-import { readStreamToString } from '#src/streams.ts';
+  type AnnotationDependencies,
+  AnnotationInterruptedError,
+  runAnnotation,
+} from '#src/annotation/runAnnotation.ts';
+import type { CliContext } from '#src/context.ts';
+import { parsePort } from '#src/environment.ts';
+import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
+import { abort } from './abort.ts';
 
 export interface PlanArgs {
   path?: string;
+  port?: number;
 }
 
-export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReviewDependencies): Promise<void> {
+export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
   const { io, logger } = ctx;
-  const { path } = args;
+  const { path, port } = args;
 
-  if (!path && io.stdin.isTTY === true) {
+  if (!path && io.stdinIsTTY === true) {
     abort(
       ctx,
+      'plan',
       'input',
       'provide plan content via stdin (e.g. `cat plan.md | contextbridge plan`) or a file path via [path]',
     );
@@ -28,26 +32,30 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: PlanReview
   const source: 'file' | 'stdin' = path ? 'file' : 'stdin';
   let content: string;
   try {
-    content = path ? await Bun.file(path).text() : await readStreamToString(io.stdin);
+    content = path ? await Bun.file(path).text() : await io.readStdin();
   } catch (err) {
-    abort(ctx, 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
+    abort(ctx, 'plan', 'input', `failed to read plan from ${source}: ${getErrorMessage(err)}`);
   }
 
   if (content.trim().length === 0) {
-    abort(ctx, 'input', 'plan content is empty');
+    abort(ctx, 'plan', 'input', 'plan content is empty');
   }
 
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
 
   try {
-    const submission = await runPlanReview(ctx, { planContent: content, source }, deps);
-    io.stdout.write(formatAsMarkdown(submission, content));
+    const submission = await runAnnotation(
+      ctx,
+      { content, contentKind: 'plan', entrypoint: 'plan_command', port },
+      deps,
+    );
+    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
   } catch (err) {
-    if (err instanceof PlanReviewInterruptedError) {
+    if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');
       throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
     }
-    abort(ctx, 'runtime', getErrorMessage(err));
+    abort(ctx, 'plan', 'runtime', getErrorMessage(err));
   }
 }
 
@@ -58,19 +66,16 @@ export function registerPlan(ctx: CliContext, program: Command): void {
       'Run a PlanBridge plan review: reads the plan from stdin or [path], opens a local browser UI for a human to approve or annotate, and writes the markdown result to stdout.',
     )
     .argument('[path]', 'path to a file containing the plan (alternative to stdin)')
-    .action(async (path: string | undefined) => {
-      await runPlan(ctx, { path });
+    .option('--port <number>', 'serve the plan review browser UI on a specific port', parsePortOption)
+    .action(async (path: string | undefined, opts: { port?: number }) => {
+      await runPlan(ctx, { path, port: opts.port });
     });
 }
 
-function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {
-  const { logger } = ctx;
-  // 'input' is user-recoverable — logged at warn so Sentry's pinoIntegration
-  // (error/fatal only) doesn't forward it. 'runtime' is a genuine failure.
-  if (kind === 'input') {
-    logger.warn(message);
-  } else {
-    logger.error(message);
+function parsePortOption(value: string): number {
+  try {
+    return parsePort(value);
+  } catch {
+    throw new InvalidArgumentError('port must be an integer between 1 and 65535');
   }
-  throw new CommanderError(1, `contextbridge.plan.${kind}Error`, message);
 }

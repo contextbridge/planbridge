@@ -19,10 +19,11 @@
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@contextbridge/context": "workspace:*",
+    "@contextbridge/harness": "workspace:*",
     "@contextbridge/instrumentation": "workspace:*",
     "@contextbridge/server": "workspace:*",
     "@contextbridge/shared": "workspace:*",
-    "@decimalturn/toml-patch": "^1.2.0",
+    "@contextbridge/skills": "workspace:*",
     "commander": "^14.0.3",
     "handlebars": "^4.7.9",
     "mdast-util-from-markdown": "^2.0.3",

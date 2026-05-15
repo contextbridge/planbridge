@@ -299,7 +299,7 @@ describe('UpdaterImpl.performUpdate', () => {
     ['/home/linuxbrew/.linuxbrew/Cellar/contextbridge/0.1.0/bin/contextbridge', 'linuxbrew'],
   ])('detects %s as homebrew (%s layout)', async (execPath) => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.onAny().resolves();
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.2.0')));
     const updater = buildUpdater({
@@ -315,7 +315,7 @@ describe('UpdaterImpl.performUpdate', () => {
 
   it('builds the brew argv for homebrew + stable', async () => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.onAny().resolves();
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.2.0')));
     const updater = buildUpdater({
@@ -333,7 +333,7 @@ describe('UpdaterImpl.performUpdate', () => {
 
   it('builds the brew argv with @alpha cask for homebrew + alpha', async () => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.onAny().resolves();
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.1.0-alpha.2')));
     const updater = buildUpdater({
@@ -351,7 +351,7 @@ describe('UpdaterImpl.performUpdate', () => {
 
   it('builds the curl sh -c argv for curl + stable', async () => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.onAny().resolves();
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.2.0')));
     const updater = buildUpdater({
@@ -377,7 +377,7 @@ describe('UpdaterImpl.performUpdate', () => {
 
   it('builds the curl sh -c argv with --channel alpha for curl + alpha', async () => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+    commandRunner.onAny().resolves();
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.1.0-alpha.2')));
     const updater = buildUpdater({
@@ -408,7 +408,7 @@ describe('UpdaterImpl.performUpdate', () => {
     'preserves tarball install method on update via --no-brew (curl + %s)',
     async (channel, current, latest) => {
       const commandRunner = new FakeCommandRunner();
-      commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+      commandRunner.onAny().resolves();
       const fetcher = new FakeFetcher();
       fetcher.script(new Response(caskBody(latest)));
       const updater = buildUpdater({
@@ -430,7 +430,7 @@ describe('UpdaterImpl.performUpdate', () => {
     'skips post-install configure on update via --no-configure (curl + %s)',
     async (channel, current, latest) => {
       const commandRunner = new FakeCommandRunner();
-      commandRunner.script({ exitCode: 0, stdout: '', stderr: '' });
+      commandRunner.onAny().resolves();
       const fetcher = new FakeFetcher();
       fetcher.script(new Response(caskBody(latest)));
       const updater = buildUpdater({
@@ -447,7 +447,7 @@ describe('UpdaterImpl.performUpdate', () => {
 
   it('returns { status: error } with the captured stderr in the message on non-zero installer exits', async () => {
     const commandRunner = new FakeCommandRunner();
-    commandRunner.script({ exitCode: 17, stdout: '', stderr: 'boom' });
+    commandRunner.onAny().resolves({ exitCode: 17, stderr: 'boom' });
     const fetcher = new FakeFetcher();
     fetcher.script(new Response(caskBody('0.2.0')));
     const updater = buildUpdater({
@@ -511,6 +511,7 @@ function buildUpdater({
     LOG_LEVEL: 'info',
     DO_NOT_TRACK: false,
     CONTEXTBRIDGE_TELEMETRY_DISABLED: false,
+    CI: false,
     CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
     XDG_CONFIG_HOME: tmpRoot,
     ...envOverrides,

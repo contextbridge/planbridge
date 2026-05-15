@@ -3,10 +3,17 @@
   "mcps": [".aether/mcp.json", { "type": "file", "path": ".mcp.json", "proxy": true }],
   "agents": [
     {
-      "name": "Default",
-      "description": "Codex GPT-5.5 with high reasoning",
+      "name": "Planner",
+      "description": "Codex GPT-5.5 with xhigh reasoning",
       "model": "codex:gpt-5.5",
-      "reasoningEffort": "high",
+      "reasoningEffort": "xhigh",
+      "userInvocable": true
+    },
+    {
+      "name": "Implementor",
+      "description": "Codex GPT-5.5 with medium reasoning",
+      "model": "codex:gpt-5.5",
+      "reasoningEffort": "medium",
       "userInvocable": true
     },
     {

@@ -1,0 +1,266 @@
+/*
+ * App-specific styles for this Starlight site.
+ *
+ * This file is scaffolded once and then yours to edit. Add typography tweaks,
+ * layout overrides, or page-specific rules here. The @import below pulls in
+ * the shared brand foundation (fonts + OKLCH + Starlight) — keep it
+ * at the top unless you intentionally want to drop the brand contract.
+ */
+
+@import './base.css';
+@import './tailwind.css';
+@import './starlight.css';
+
+/* Your overrides below. */
+
+/*
+ * The Tailwind v4 imports here pull in theme + utilities only, not Preflight.
+ * Preflight is what normally sets `box-sizing: border-box` on every element,
+ * so without it `w-full` on a padded element overflows by `padding + border`.
+ * Apply the same reset selectively on the landing route, scoped to <main> so
+ * Starlight pages keep their own carefully-tuned reset.
+ */
+main *,
+main *::before,
+main *::after {
+  box-sizing: border-box;
+}
+
+/*
+ * The hero demo video overlaps the hero/value-props boundary 50/50: half
+ * sits on the dark hero, half on the light section below. The overlap
+ * amount is half the rendered video height. The video is 16:9 inside a
+ * max-w-7xl (80rem) container with section px-8 (4rem total horizontal
+ * padding), so half-height = container-width * 9/16 / 2 = container-width
+ * * 0.28125. min() caps the value at the container's max width.
+ */
+:root {
+  --hero-demo-overlap: min(22.5rem, calc((100vw - 4rem) * 0.28125));
+  --hero-diagonal-height: clamp(10rem, 22vw, 20rem);
+}
+
+/*
+ * Starlight uses --sl-color-text-invert for active sidebar links on top of
+ * --sl-color-text-accent. The shared brand tokens drive both modes with
+ * light-dark(), so keep the inverse text tied to the current page background
+ * instead of Starlight's default accent-low token.
+ */
+:root {
+  --sl-color-text-invert: var(--sl-color-black);
+}
+
+/*
+ * Starlight docs should feel like the product site: black masthead, square
+ * mark, ESBuild headings, and high-contrast document surfaces.
+ */
+.header {
+  --sl-color-text: var(--color-neutral-50);
+  --sl-color-text-accent: var(--color-neutral-50);
+  --sl-color-gray-2: var(--color-neutral-200);
+  --sl-color-gray-3: var(--color-neutral-300);
+  --sl-color-gray-5: var(--color-neutral-800);
+  --sl-color-bg-nav: oklch(0% 0 0);
+  --sl-color-bg: oklch(0% 0 0);
+  background: oklch(0% 0 0);
+  border-bottom-color: oklch(0% 0 0);
+}
+
+.header > div {
+  padding-inline: 2rem;
+}
+
+.site-title {
+  gap: 0.75rem;
+  color: var(--color-neutral-50);
+  font-family: var(--cb-font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-title::before {
+  content: '';
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg viewBox='-0.348 -0.445 151 164' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M127.035 43.2306L134.972 0H21.973L0 119.88H23.2335L37.303 43.2306H127.035Z'/%3E%3Cpath d='M127.037 43.231L113.001 119.881H23.2355L15.332 163.111H128.297L150.304 43.231H127.037Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.header site-search button {
+  border: 1px solid var(--color-neutral-700);
+  border-radius: 0;
+  background: oklch(0% 0 0);
+  color: var(--color-neutral-50);
+  font-family: var(--cb-font-heading);
+}
+
+.header site-search button:hover,
+.header site-search button:focus-visible {
+  border-color: var(--color-neutral-50);
+  background: var(--color-neutral-950);
+}
+
+.header .social-icons a,
+.header starlight-theme-select label,
+.header starlight-theme-select select,
+.header starlight-theme-select svg {
+  color: var(--color-neutral-50);
+}
+
+.sidebar-pane {
+  border-inline-end: 1px solid oklch(0% 0 0);
+  background: var(--background);
+}
+
+.sidebar-content {
+  padding-inline: 1rem;
+  padding-block-start: 1.25rem;
+}
+
+.sidebar-pane summary,
+.sidebar-pane .group-label .large {
+  color: var(--foreground);
+  font-family: var(--cb-font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sidebar-pane a {
+  border-radius: 0;
+  color: var(--foreground);
+}
+
+.sidebar-pane a[aria-current='page'] {
+  background: light-dark(oklch(0% 0 0), var(--color-neutral-50));
+  color: light-dark(var(--color-neutral-50), oklch(0% 0 0));
+  font-weight: 700;
+}
+
+.sidebar-pane a:hover,
+.sidebar-pane a:focus-visible {
+  background: light-dark(var(--color-neutral-100), var(--color-neutral-900));
+  color: var(--foreground);
+}
+
+.sidebar-pane a[aria-current='page']:hover,
+.sidebar-pane a[aria-current='page']:focus-visible {
+  background: light-dark(oklch(0% 0 0), var(--color-neutral-50));
+  color: light-dark(var(--color-neutral-50), oklch(0% 0 0));
+}
+
+.right-sidebar-panel {
+  border-inline-start: 1px solid var(--foreground);
+}
+
+.content-panel + .main-pane,
+.content-panel {
+  border: 0;
+}
+
+.sl-container {
+  max-width: 72rem;
+}
+
+.sl-markdown-content,
+.content-panel .sl-container {
+  font-size: 1.0625rem;
+}
+
+.content-panel h1,
+.sl-markdown-content :is(h1, h2, h3) {
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+.content-panel h1 {
+  max-width: 48rem;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.sl-markdown-content h2 {
+  border-top: 1px solid var(--foreground);
+  padding-top: 2rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.sl-markdown-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--foreground);
+  text-decoration-color: var(--foreground);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+.sl-markdown-content code:not(:where(.expressive-code *)) {
+  border-radius: 0.25rem;
+  border: 1px solid light-dark(var(--color-neutral-200), var(--color-neutral-800));
+  background: light-dark(var(--color-neutral-50), var(--color-neutral-950));
+  color: var(--foreground);
+  font-family: var(--sl-font-mono);
+  font-size: 0.875em;
+  padding: 0.125em 0.35em;
+}
+
+.expressive-code,
+.card,
+.link-card,
+.pagination-links a {
+  --sl-color-hairline-light: var(--foreground);
+  --sl-color-gray-6: var(--background);
+  border-radius: 0;
+}
+
+.pagination-links a {
+  border-color: var(--foreground);
+  box-shadow: none;
+}
+
+@media (max-width: 50rem) {
+  .header > div {
+    padding-inline: 1rem;
+  }
+
+  .site-title::before {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .content-panel h1 {
+    font-size: clamp(2.75rem, 14vw, 4.5rem);
+  }
+}
+
+/*
+ * Markdown table density. Starlight's default cell padding hugs the row
+ * borders, which makes multi-line descriptions feel cramped. Tables on this
+ * site lean reference-heavy (CLI args, install flags, exit codes), so they
+ * need room to breathe.
+ */
+.sl-markdown-content :is(th, td) {
+  padding-block: 0.875rem;
+  padding-inline: 1rem;
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+/*
+ * Inline code in table cells reads as one atomic token: a flag, an env var,
+ * a subcommand path. Breaking `install claude` or `--channel alpha` mid-token
+ * to save column width is worse than letting the table widen. Starlight
+ * already wraps tables in a horizontal-scroll container at narrow widths.
+ */
+.sl-markdown-content :is(td, th) code {
+  white-space: nowrap;
+}

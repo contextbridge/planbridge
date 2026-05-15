@@ -1,21 +1,21 @@
 import { Factory } from 'fishery';
 import type {
+  AnnotationSubmission,
   CommentAuthor,
   CommentMessage,
   CommentThread,
-  PlanReviewSubmission,
   StoredAnnotationAnchor,
-} from './planReviewSchema.ts';
+} from './annotationSchema.ts';
 
 export const LOCAL_AUTHOR = {
   id: 'local-user',
-  kind: 'human' as const,
+  kind: 'user' as const,
   displayName: 'You',
 };
 
 export const reviewer = Factory.define<CommentAuthor>(() => ({
   id: 'reviewer',
-  kind: 'human',
+  kind: 'user',
   displayName: 'Reviewer',
 }));
 
@@ -69,7 +69,7 @@ export const globalThread = Factory.define<CommentThread>(() => {
   };
 });
 
-export const planReviewSubmission = Factory.define<PlanReviewSubmission>(() => ({
+export const annotationSubmission = Factory.define<AnnotationSubmission>(() => ({
   status: 'changes_requested',
   threads: [globalThread.build(), annotationThread.build()],
 }));

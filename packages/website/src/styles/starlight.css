@@ -1,0 +1,62 @@
+/*
+ * Starlight CSS variable overrides.
+ *
+ * Wires Starlight's --sl-* variables to the canonical brand tokens defined in
+ * base.css. Theme-invariant mappings reference auto-flipping semantic tokens
+ * (--background, --foreground, --secondary, --muted) directly. Tokens that
+ * genuinely differ by mode (gray scale orientation, accent shade) use
+ * `light-dark()` and resolve via `color-scheme`, which base.css drives from
+ * `data-theme`.
+ */
+
+:root {
+  --sl-font: var(--cb-font-sans);
+  --sl-font-mono: var(--cb-font-heading);
+
+  /* Contrasting / receding semantic pair — flips via --foreground / --background. */
+  --sl-color-white: var(--foreground);
+  --sl-color-black: var(--background);
+
+  /* Gray scale — light mode: dark-end is text. Dark mode: light-end is text. */
+  --sl-color-gray-1: light-dark(var(--color-neutral-800), var(--color-neutral-300));
+  --sl-color-gray-2: light-dark(var(--color-neutral-700), var(--color-neutral-400));
+  --sl-color-gray-3: var(--color-neutral-500);
+  --sl-color-gray-4: light-dark(var(--color-neutral-400), var(--color-neutral-600));
+  --sl-color-gray-5: light-dark(var(--color-neutral-300), var(--color-neutral-700));
+  --sl-color-gray-6: light-dark(var(--color-neutral-200), var(--color-neutral-800));
+
+  /* Brighter accent in dark mode for contrast against near-black backgrounds. */
+  --sl-color-accent: light-dark(var(--primary), var(--royal-light));
+  --sl-color-accent-low: light-dark(
+    color-mix(in oklch, var(--primary) 15%, transparent),
+    color-mix(in oklch, var(--royal-light) 18%, transparent)
+  );
+  --sl-color-accent-high: light-dark(
+    color-mix(in oklch, var(--primary) 90%, var(--foreground)),
+    color-mix(in oklch, var(--royal-light) 90%, var(--foreground))
+  );
+  --sl-color-text-accent: light-dark(var(--primary), var(--royal-light));
+
+  --sl-color-bg: var(--background);
+  --sl-color-bg-nav: var(--secondary);
+  --sl-color-bg-sidebar: var(--background);
+  --sl-color-bg-inline-code: var(--muted);
+}
+
+/* Headings use ESBuild brand face */
+:is(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .sl-markdown-content h1,
+  .sl-markdown-content h2,
+  .sl-markdown-content h3,
+  .sl-markdown-content h4,
+  .sl-markdown-content h5,
+  .sl-markdown-content h6
+) {
+  font-family: var(--cb-font-heading);
+}
