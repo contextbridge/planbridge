@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { withAppContext } from '../.storybook/appContextDecorator.tsx';
-import { iterationChanges } from './demo/iterationDiff/iterationChanges.ts';
+import { iterationChanges } from './demo/iterationDiff/iterationChanges.tsx';
 import { IterationDiffStage } from './demo/iterationDiff/IterationDiffStage.tsx';
-import { samplePlanV2 } from './demo/iterationDiff/samplePlanV2.ts';
+import { samplePlanV2 } from './demo/iterationDiff/samplePlanV2.tsx';
 
 const meta = {
   title: 'Plan/IterationDiff',

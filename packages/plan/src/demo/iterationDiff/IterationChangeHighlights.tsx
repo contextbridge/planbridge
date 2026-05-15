@@ -1,6 +1,6 @@
 import { type RefObject, useLayoutEffect } from 'react';
-import { findIterationChangeElement, isInlineChange } from './iterationChangeAnchors.ts';
-import type { IterationChange, IterationChangeKind } from './iterationChanges.ts';
+import { findIterationChangeElement, isInlineChange } from './iterationChangeAnchors.tsx';
+import type { IterationChange, IterationChangeKind } from './iterationChanges.tsx';
 
 export interface IterationChangeHighlightsProps {
   contentRef: RefObject<HTMLDivElement | null>;

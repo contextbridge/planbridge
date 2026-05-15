@@ -1,6 +1,6 @@
 import { cn } from '@contextbridge/ui/lib/utils';
 import { IterationChangeCard } from './IterationChangeCard.tsx';
-import type { IterationChange } from './iterationChanges.ts';
+import type { IterationChange } from './iterationChanges.tsx';
 
 export const iterationChangesSidebarTestIds = {
   container: 'iteration-changes-sidebar',

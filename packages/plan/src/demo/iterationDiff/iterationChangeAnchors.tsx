@@ -1,4 +1,4 @@
-import type { IterationChange } from './iterationChanges.ts';
+import type { IterationChange } from './iterationChanges.tsx';
 
 export function findIterationChangeElement(content: HTMLElement, change: IterationChange): HTMLElement | null {
   if (change.sourceLine === undefined) {

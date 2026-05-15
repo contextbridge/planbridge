@@ -1,8 +1,8 @@
 import { type RefObject, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineChangeThread } from './InlineChangeThread.tsx';
-import { findIterationChangeElement, isInlineChange } from './iterationChangeAnchors.ts';
-import type { IterationChange } from './iterationChanges.ts';
+import { findIterationChangeElement, isInlineChange } from './iterationChangeAnchors.tsx';
+import type { IterationChange } from './iterationChanges.tsx';
 
 export interface InlineChangeThreadsProps {
   contentRef: RefObject<HTMLDivElement | null>;

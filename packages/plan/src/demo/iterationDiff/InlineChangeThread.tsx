@@ -1,4 +1,4 @@
-import type { IterationChange } from './iterationChanges.ts';
+import type { IterationChange } from './iterationChanges.tsx';
 import { ThreadedCommentCard } from './ThreadedCommentCard.tsx';
 
 export const inlineChangeThreadTestIds = {

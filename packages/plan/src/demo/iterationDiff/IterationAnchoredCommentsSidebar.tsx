@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { IterationChangeCard } from './IterationChangeCard.tsx';
-import type { IterationChange } from './iterationChanges.ts';
+import type { IterationChange } from './iterationChanges.tsx';
 
 export const iterationAnchoredCommentsSidebarTestIds = {
   container: 'iteration-anchored-comments-sidebar',

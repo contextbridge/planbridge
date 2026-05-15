@@ -1,7 +1,7 @@
 import { cn } from '@contextbridge/ui/lib/utils';
 import type { KeyboardEvent } from 'react';
 import { useEffect, useRef } from 'react';
-import type { IterationChangeKind, IterationThreadComment } from './iterationChanges.ts';
+import type { IterationChangeKind, IterationThreadComment } from './iterationChanges.tsx';
 
 export interface ThreadedCommentCardProps {
   comments: IterationThreadComment[];
@@ -75,7 +75,11 @@ export function ThreadedCommentCard({ comments, kind, active = false, focusReply
         <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/90">
           <span
             aria-hidden
-            className={cn('size-2 rounded-full', presentation.dotClass, active ? 'cb-iteration-thread-dot-active' : null)}
+            className={cn(
+              'size-2 rounded-full',
+              presentation.dotClass,
+              active ? 'cb-iteration-thread-dot-active' : null,
+            )}
           />
           {presentation.label}
         </span>
