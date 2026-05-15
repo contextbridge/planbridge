@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/contextbridge/planbridge/compare/v0.6.0...v0.7.0) (2026-05-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename Claude Code `/open` skill to `/planbridge-open` for consistency ([#136](https://github.com/contextbridge/planbridge/issues/136))
+
+### Features
+
+* rename Claude Code `/open` skill to `/planbridge-open` for consistency ([#136](https://github.com/contextbridge/planbridge/issues/136)) ([7ca34e3](https://github.com/contextbridge/planbridge/commit/7ca34e3cb40184aaf160b1e3e7cf70f9ab919814)), closes [#133](https://github.com/contextbridge/planbridge/issues/133)
+* **website:** adopt Astro 6 best practices (prefetch, image pipeline, Fonts API) ([#129](https://github.com/contextbridge/planbridge/issues/129)) ([ec333e0](https://github.com/contextbridge/planbridge/commit/ec333e0fa2e3804ade787e0bf6497a0d76e77d30))
+
+
+### Bug Fixes
+
+* clarify Codex Stop hook status message ([#137](https://github.com/contextbridge/planbridge/issues/137)) ([fbcb095](https://github.com/contextbridge/planbridge/commit/fbcb09511bb7fc051f995e2144f047f78e4da927))
+* quiet post-update harness refresh ([#128](https://github.com/contextbridge/planbridge/issues/128)) ([e9c5c8e](https://github.com/contextbridge/planbridge/commit/e9c5c8eff5cf3df34d50fe0cc29e802fbf76f81c))
+
 ## [0.6.0](https://github.com/contextbridge/planbridge/compare/v0.5.0...v0.6.0) (2026-05-14)
 
 
