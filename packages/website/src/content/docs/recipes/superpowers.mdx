@@ -6,11 +6,16 @@ description: Pair PlanBridge with the obra/superpowers plugin.
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import { Code } from 'astro-expressive-code/components';
 
-[Superpowers](https://github.com/obra/superpowers) is a Claude Code and Codex plugin from Jesse Vincent that gives the agent a library of process skills (brainstorming, writing plans, executing plans, debugging). Two pause points in that workflow are good places to drop in PlanBridge for inline human review.
+[Superpowers](https://github.com/obra/superpowers) is a Claude Code and Codex plugin that gives the agent a library of process skills (brainstorming, writing plans, executing plans, debugging).
+
+It explicitly tells the agent to not use Plan mode, which breaks our default behavior. However, there are two pause points in that workflow that are good places to utilize PlanBridge for review: brainstorming and spec review.
 
 ## During brainstorming
 
-The brainstorming skill walks the agent through clarifying questions and presents the design back to you in sections, in the terminal. Pull the most recent section into PlanBridge by referring to it in plain language:
+The brainstorming skill walks the agent through clarifying questions and presents the design back to you in sections, in the terminal.
+Often, a section might have hundreds of lines of output, making it difficult to provide targeted feedback.
+
+You can pull the most recent section into PlanBridge for annotation:
 
 <Tabs syncKey="harness">
   <TabItem label="Claude Code">
@@ -21,11 +26,12 @@ The brainstorming skill walks the agent through clarifying questions and present
   </TabItem>
 </Tabs>
 
-The agent resolves the reference, pipes the section to `contextbridge open` via stdin, opens PlanBridge, and feeds your inline annotations back into the brainstorming loop.
+The agent will open the section in PlanBridge for your review and markup. This provides a much more granular way to provide feedback than the input box in your harness.
 
 ## Reviewing the spec
 
-Once you approve the design, the brainstorming skill writes a spec file under `docs/superpowers/specs/` and pauses for review. Open it by description rather than path. The filename is dated and topic-specific, and superpowers documents the location as overridable by user preference, so a hard-coded path here would lie:
+Once you approve the design, the brainstorming skill writes a spec file under `docs/superpowers/specs/` and pauses for review. This is
+another great time to use PlanBridge to review and annotate the spec. A better spec means cleaner code generation!
 
 <Tabs syncKey="harness">
   <TabItem label="Claude Code">
@@ -38,8 +44,8 @@ Once you approve the design, the brainstorming skill writes a spec file under `d
 
 Same loop: annotate inline, submit, and the agent revises the spec or moves on to writing the plan.
 
-## Notes
+## Future Improvements
 
-- Both flows work the same in Claude Code and Codex. Superpowers ships plugin manifests for both.
-- Superpowers writes specs and plans directly to disk and never enters Claude Code's plan mode, so PlanBridge's automatic plan-mode hook does not fire here. `/planbridge-open` is the right entry point.
-- See [Open arbitrary content](/usage/open/) for how `/planbridge-open` resolves natural-language references to conversation content and recently-written files.
+Do you love superpowers? We'd love to hear your feedback! We have a few ideas for how we might improve the PlanBridge ↔ Superpowers integration in the future.
+
+Please check out [the PlanBridge#143 issue](https://github.com/contextbridge/planbridge/issues/143) and weigh in!
