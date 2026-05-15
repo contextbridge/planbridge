@@ -16,7 +16,7 @@ This is the manual sibling to the automatic hook flow. Hooks fire when your agen
 ## When to use it
 
 - You want inline comments on a design doc, RFC, or spec.
-- Your agent uses a workflow that bypasses plan mode (the [superpowers plugin](https://github.com/obra/superpowers) writes plan files directly to disk, so the plan-mode hook never fires).
+- Your agent uses a workflow that bypasses plan mode. For example, the [obra/superpowers](https://github.com/obra/superpowers) plugin never enters Claude Code's plan mode. However, you can still use PlanBridge with it! See the [Superpowers recipe](/recipes/superpowers/) page for details.
 - You want to redirect the agent before it starts work, and the relevant context lives in a file rather than in plan mode.
 
 ## Claude Code

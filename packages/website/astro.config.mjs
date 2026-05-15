@@ -76,6 +76,10 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Recipes',
+          items: [{ label: 'Superpowers', slug: 'recipes/superpowers' }],
+        },
+        {
           label: 'About',
           items: [
             { label: 'Privacy & telemetry', slug: 'privacy' },
