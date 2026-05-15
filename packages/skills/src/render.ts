@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { HarnessDescriptor } from '@contextbridge/harness';
-import { Result, err } from 'neverthrow';
+import { Result } from 'neverthrow';
 import { stringify as yamlStringify } from 'yaml';
 import { type HandlebarsEnv, createHandlebars } from './handlebars.ts';
 import type { Skill } from './skills.ts';
@@ -8,14 +8,9 @@ import type { Skill } from './skills.ts';
 const PARTIALS_DIR = join(import.meta.dirname, '..', 'sources', '_partials');
 
 export function render(skill: Skill, harness: HarnessDescriptor): Result<string, Error> {
-  const rules = harness.skillRendering;
-  if (!rules) {
-    return err(new Error(`Harness ${harness.id} has no skill rendering rules`));
-  }
   return Result.fromThrowable(
     () => {
-      const frontmatter = { ...skill.frontmatter, name: rules.installName(skill.frontmatter.name) };
-      const frontmatterText = yamlStringify(frontmatter, { lineWidth: 0 });
+      const frontmatterText = yamlStringify(skill.frontmatter, { lineWidth: 0 });
       const env = createHandlebars(PARTIALS_DIR);
       const body = compileBody(env, skill, harness);
       return `---\n${frontmatterText}---\n\n${body}`;

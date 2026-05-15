@@ -1,5 +1,5 @@
 ---
-name: open
+name: planbridge-open
 description: Open a markdown file, document, or piece of content in the PlanBridge browser UI for human annotation. Use when the user wants to give human feedback on a file, draft, plan, spec, or any markdown content.
 ---
 

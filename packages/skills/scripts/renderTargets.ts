@@ -29,11 +29,11 @@ export function targetsFor(skill: Skill): ResultAsync<RenderTarget[], Error> {
 }
 
 export function outDirFor(harness: SkillRenderableHarness): string {
-  return join(REPO_ROOT, harness.skillRendering.destDir);
+  return join(REPO_ROOT, harness.skillDestDir);
 }
 
 function targetFor(skill: Skill, harness: SkillRenderableHarness): ResultAsync<RenderTarget, Error> {
-  const path = join(outDirFor(harness), harness.skillRendering.installName(skill.frontmatter.name), 'SKILL.md');
+  const path = join(outDirFor(harness), skill.frontmatter.name, 'SKILL.md');
   const rendered = render(skill, harness);
   if (rendered.isErr()) return errAsync(rendered.error);
 

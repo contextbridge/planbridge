@@ -5,7 +5,7 @@ description: Ask your coding agent to open any markdown file in the PlanBridge b
 
 import { Code } from 'astro-expressive-code/components';
 
-<Code code="/planbridge:open docs/spec.md" lang="text" title="Claude Code" />
+<Code code="/planbridge-open docs/spec.md" lang="text" title="Claude Code" />
 
 <Code code="$planbridge-open docs/spec.md" lang="text" title="Codex CLI" />
 
@@ -21,13 +21,15 @@ This is the manual sibling to the automatic hook flow. Hooks fire when your agen
 
 ## Claude Code
 
-The `open` skill ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
+The `planbridge-open` skill ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
 
-<Code code="/planbridge:open path/to/file.md" lang="text" title="Claude Code" />
+<Code code="/planbridge-open path/to/file.md" lang="text" title="Claude Code" />
+
+Claude Code may display the same plugin skill as `/planbridge:planbridge-open`. Use that form if it appears in your slash-command picker.
 
 You can also describe the file in plain language and Claude resolves it:
 
-<Code code="/planbridge:open the design doc we drafted yesterday" lang="text" title="Claude Code" />
+<Code code="/planbridge-open the design doc we drafted yesterday" lang="text" title="Claude Code" />
 
 ## Codex CLI
 
