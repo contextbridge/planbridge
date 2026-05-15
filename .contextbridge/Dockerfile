@@ -10,11 +10,10 @@ FROM debian:bookworm-slim
 ARG AGENT_UID=1000
 ARG AGENT_GID=1000
 ARG ASDF_VERSION=0.18.0
-ARG NODE_VERSION=24.15.0
 
 # Chromium runtime libs drive @contextbridge/annotation's vitest --browser tests.
 # libdbus-1-3 is required by aether's native ACP subprocess.
-# xz-utils unpacks the Node tarball; unzip is needed by the asdf bun plugin.
+# xz-utils unpacks tool archives for asdf plugins; unzip is needed by the asdf bun plugin.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -41,14 +40,6 @@ RUN apt-get update \
   && curl -fsSL "https://github.com/asdf-vm/asdf/releases/download/v${ASDF_VERSION}/asdf-v${ASDF_VERSION}-linux-$(dpkg --print-architecture).tar.gz" \
     | tar -xz -C /usr/local/bin asdf \
   && chmod +x /usr/local/bin/asdf \
-  && case "$(dpkg --print-architecture)" in \
-       amd64) NODE_ARCH=x64 ;; \
-       arm64) NODE_ARCH=arm64 ;; \
-       *) echo "Unsupported arch: $(dpkg --print-architecture)" >&2; exit 1 ;; \
-     esac \
-  && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
-    | tar -xJ -C /usr/local --strip-components=1 --no-same-owner \
-      --exclude='*.md' --exclude='LICENSE' \
   && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -g "${AGENT_GID}" agent \
@@ -65,6 +56,7 @@ COPY --chown=agent:agent .tool-versions /home/agent/.tool-versions
 WORKDIR /home/agent
 RUN asdf plugin add bun \
   && asdf plugin add just \
+  && asdf plugin add nodejs \
   && asdf install \
   && asdf reshim
 
