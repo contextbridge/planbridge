@@ -13,7 +13,12 @@ The setup is one instruction in your agent's system prompt or rules file: pipe t
 
 Add something like this to your prompt, system instructions, or rules file (`.cursorrules`, `AGENTS.md`, project README, wherever your agent picks up persistent guidance):
 
-> Before you start coding, write your plan to stdin of `contextbridge plan` and read the markdown returned on stdout. If the response starts with `# Plan review: changes requested`, revise the plan to address every comment, then run `contextbridge plan` again with the revised plan. Continue until you get `# Plan review: approved`, or stop if the command exits with code 130 (the user cancelled).
+```markdown
+Whenever you produce a plan, pipe it to `contextbridge plan` on stdin and read
+the markdown returned on stdout. The response will tell you whether your plan
+was approved or needs revision and what to change. Follow the instructions in
+the response. If the command exits with a non-zero status, stop.
+```
 
 The agent runs something like:
 
