@@ -1,0 +1,21 @@
+@keyframes cb-iteration-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-chart-3) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 0.5rem color-mix(in oklch, var(--color-chart-3) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-chart-3) 0%, transparent);
+  }
+}
+
+.cb-iteration-indicator {
+  animation: cb-iteration-pulse 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cb-iteration-indicator {
+    animation: none;
+  }
+}
