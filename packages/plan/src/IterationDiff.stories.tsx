@@ -22,13 +22,33 @@ export const Iteration2WithChanges: Story = {
     planTitle: 'Refactor auth middleware',
     iterationLabel: 'Iteration 2 of 2',
     changes: iterationChanges,
+    commentLayout: 'inline',
   },
   decorators: [withAppContext()],
   parameters: {
     docs: {
       description: {
         story:
-          'Prototype for the "what changed since last iteration" UX. Pulsing dots in the left gutter mark blocks the assistant updated; the right rail lists one assistant-authored summary per change (with the human feedback that drove it), and removed blocks pin to the top since they have no anchor in the document.',
+          'Prototype for the "what changed since last iteration" UX. Highlighted plan lines mark anchored changes; inline threads read like PR comments with the original human feedback followed by the assistant response. Removed blocks and feedback whose anchor no longer exists fall back to document-level threads in the right rail.',
+      },
+    },
+  },
+};
+
+export const Iteration2GoogleDocsComments: Story = {
+  args: {
+    planContent: samplePlanV2,
+    planTitle: 'Refactor auth middleware',
+    iterationLabel: 'Iteration 2 of 2',
+    changes: iterationChanges,
+    commentLayout: 'sidebar',
+  },
+  decorators: [withAppContext()],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Alternative Google Docs-style iteration review. The plan keeps anchored highlights in the text, every comment thread lives in the right sidebar, N/P moves between assistant responses, and C focuses the reply box for the active thread.',
       },
     },
   },

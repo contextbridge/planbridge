@@ -1,21 +1,65 @@
-@keyframes cb-iteration-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-chart-3) 60%, transparent);
-  }
-  70% {
-    box-shadow: 0 0 0 0.5rem color-mix(in oklch, var(--color-chart-3) 0%, transparent);
-  }
+@keyframes cb-iteration-thread-dot-pulse {
+  0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-chart-3) 0%, transparent);
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.65;
   }
 }
 
-.cb-iteration-indicator {
-  animation: cb-iteration-pulse 1.8s ease-out infinite;
+.cb-iteration-thread-dot-active {
+  animation: cb-iteration-thread-dot-pulse 1.4s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cb-iteration-indicator {
+  .cb-iteration-thread-dot-active {
     animation: none;
   }
+}
+
+.cb-iteration-change-highlight {
+  --cb-iteration-change-highlight-color: var(--color-amber-500);
+
+  border-radius: 0.25rem;
+  background: color-mix(in oklch, var(--cb-iteration-change-highlight-color) 16%, transparent);
+  box-shadow: 0 0 0 0.2rem color-mix(in oklch, var(--cb-iteration-change-highlight-color) 16%, transparent);
+}
+
+.cb-iteration-change-highlight-added {
+  --cb-iteration-change-highlight-color: var(--color-green-500);
+}
+
+.cb-iteration-change-highlight-modified {
+  --cb-iteration-change-highlight-color: var(--color-amber-500);
+}
+
+.cb-iteration-change-highlight-removed {
+  --cb-iteration-change-highlight-color: var(--red);
+}
+
+.cb-iteration-change-highlight-interactive {
+  cursor: pointer;
+}
+
+.cb-iteration-change-highlight-active {
+  background: color-mix(in oklch, var(--cb-iteration-change-highlight-color) 24%, transparent);
+  box-shadow: 0 0 0 0.25rem color-mix(in oklch, var(--cb-iteration-change-highlight-color) 24%, transparent);
+}
+
+tr.cb-iteration-change-highlight {
+  background: transparent;
+  box-shadow: none;
+}
+
+tr.cb-iteration-change-highlight > th,
+tr.cb-iteration-change-highlight > td {
+  background: color-mix(in oklch, var(--cb-iteration-change-highlight-color) 16%, transparent);
+}
+
+tr.cb-iteration-change-highlight-active > th,
+tr.cb-iteration-change-highlight-active > td {
+  background: color-mix(in oklch, var(--cb-iteration-change-highlight-color) 24%, transparent);
 }
