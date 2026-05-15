@@ -13,18 +13,6 @@ describe('HARNESSES', () => {
     const ids: HarnessId[] = ['claude', 'codex', 'gemini', 'cursor', 'aider', 'opencode', 'aether'];
     expect(HARNESSES.map((h) => h.id).sort()).toEqual([...ids].sort());
   });
-
-  it('claude installs skills with the logical name and no prefix', () => {
-    const claude = getHarness('claude');
-    expect(claude.skillRendering?.installName('open')).toBe('open');
-    expect(claude.skillRendering?.destDir).toBe('harnessIntegrations/claude/skills');
-  });
-
-  it('codex installs skills with the planbridge- prefix', () => {
-    const codex = getHarness('codex');
-    expect(codex.skillRendering?.installName('open')).toBe('planbridge-open');
-    expect(codex.skillRendering?.destDir).toBe('harnessIntegrations/codex/skills');
-  });
 });
 
 describe('INSTALLABLE_HARNESSES', () => {

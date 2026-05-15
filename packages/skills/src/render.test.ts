@@ -10,7 +10,7 @@ const codex = getHarness('codex');
 describe('render(skill, claude)', () => {
   it('preserves the source byte-for-byte', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -26,9 +26,9 @@ Some content.
 });
 
 describe('render(skill, codex)', () => {
-  it('rewrites the frontmatter name with the planbridge- prefix', () => {
+  it('preserves the canonical frontmatter name for Codex', () => {
     const canonical = parseSkill(`---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -48,9 +48,9 @@ body
     `);
   });
 
-  it('only rewrites the name field, leaving other frontmatter lines untouched', () => {
+  it('preserves frontmatter values that contain `name:` inside their prose', () => {
     const canonical = parseSkill(`---
-name: open
+name: planbridge-open
 description: "Open a thing. The description mentions name: something as part of its prose."
 ---
 
@@ -69,26 +69,12 @@ body
       "
     `);
   });
-
-  it('returns an error when the harness has no skill rendering rules', () => {
-    const canonical = parseSkill(`---
-name: open
-description: Open.
----
-
-body
-`);
-    const result = render(canonical, getHarness('gemini'));
-
-    assert(result.isErr());
-    expect(result.error.message).toMatch(/no skill rendering rules/);
-  });
 });
 
 describe('render(skill, …) template evaluation', () => {
   it('evaluates an eq-based conditional against the harness id', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -112,7 +98,7 @@ Post.
 
   it('renders bodies without any template directives byte-equivalent to the source body', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -126,7 +112,7 @@ Plain markdown with no directives.
 
   it('expands partials registered from sources/_partials/', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -145,7 +131,7 @@ After.
 
   it('omits content cleanly when a partial reference is wrapped in a false conditional', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -169,7 +155,7 @@ After.
 
   it('returns a clear error when a template references a missing partial', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -178,6 +164,6 @@ description: Open a thing.
     const result = render(parseSkill(source), codex);
 
     assert(result.isErr());
-    expect(result.error.message).toMatch(/open.*codex\/does-not-exist/);
+    expect(result.error.message).toMatch(/planbridge-open.*codex\/does-not-exist/);
   });
 });

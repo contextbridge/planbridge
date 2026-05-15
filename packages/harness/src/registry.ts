@@ -6,20 +6,14 @@ export const HARNESSES: readonly HarnessDescriptor[] = [
     displayName: 'Claude Code',
     binaryName: 'claude',
     installUrl: 'https://docs.claude.com/en/docs/claude-code/setup',
-    skillRendering: {
-      installName: (name) => name,
-      destDir: 'harnessIntegrations/claude/skills',
-    },
+    skillDestDir: 'harnessIntegrations/claude/skills',
   },
   {
     id: 'codex',
     displayName: 'Codex CLI',
     binaryName: 'codex',
     installUrl: 'https://developers.openai.com/codex/cli/',
-    skillRendering: {
-      installName: (name) => `planbridge-${name}`,
-      destDir: 'harnessIntegrations/codex/skills',
-    },
+    skillDestDir: 'harnessIntegrations/codex/skills',
   },
   { id: 'gemini', displayName: 'Gemini CLI', binaryName: 'gemini' },
   { id: 'cursor', displayName: 'Cursor', binaryName: 'cursor' },
@@ -49,5 +43,5 @@ function isInstallable(harness: HarnessDescriptor): harness is InstallableHarnes
 }
 
 function isSkillRenderable(harness: HarnessDescriptor): harness is SkillRenderableHarness {
-  return harness.skillRendering !== undefined;
+  return harness.skillDestDir !== undefined;
 }
