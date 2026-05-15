@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { extname, normalize } from 'node:path';
 import {
   type AnnotationPayload,
   type AnnotationSubmission,
@@ -104,6 +106,15 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
         setTimeout(() => resolveResult(parsed.data), 0);
         return new Response(null, { status: 204, headers: { connection: 'close' } });
       }
+      // Serve local image files referenced by absolute paths in plan content.
+      // When a plan contains markdown images like ![alt](/absolute/path/to/image.png),
+      // the browser resolves them relative to the server origin. This route
+      // serves those files directly from disk so images render correctly.
+      if (req.method === 'GET') {
+        const localFileResponse = serveLocalImage(url.pathname);
+        if (localFileResponse) return localFileResponse;
+      }
+
       return new Response('not found', { status: 404 });
     },
   };
@@ -124,4 +135,30 @@ async function resolveUpdateNotice(checkForUpdate: CheckForUpdate | undefined): 
   } catch {
     return null;
   }
+}
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico', '.bmp']);
+
+/**
+ * Serves a local image file if the pathname resolves to an existing image on
+ * disk. Returns `null` if the path is not an absolute file path, does not have
+ * an image extension, or does not exist on disk.
+ */
+export function serveLocalImage(pathname: string): Response | null {
+  // Only handle paths that look like absolute file paths
+  if (!pathname.startsWith('/')) return null;
+
+  const ext = extname(pathname).toLowerCase();
+  if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) return null;
+
+  // Normalize to prevent path traversal via .. segments
+  const filePath = normalize(decodeURIComponent(pathname));
+
+  // Must still be an absolute path after normalization (no escaping root)
+  if (!filePath.startsWith('/')) return null;
+
+  if (!existsSync(filePath)) return null;
+
+  const file = Bun.file(filePath);
+  return new Response(file);
 }

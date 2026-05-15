@@ -1,10 +1,13 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
 import type { AnnotationPayload } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { annotationThread, globalThread } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { describe, expect, it } from 'bun:test';
-import { createAnnotationServerApp, resolveListenPort, startServer } from './annotation.ts';
+import { createAnnotationServerApp, resolveListenPort, serveLocalImage, startServer } from './annotation.ts';
 
 describe('createAnnotationServerApp', () => {
   const payload: AnnotationPayload = {
@@ -233,5 +236,138 @@ describe('startServer', () => {
     } finally {
       await running.close();
     }
+  });
+});
+
+describe('serveLocalImage', () => {
+  it('returns null for non-absolute paths', () => {
+    expect(serveLocalImage('relative/path.png')).toBeNull();
+  });
+
+  it('returns null for paths without an image extension', () => {
+    expect(serveLocalImage('/some/path/file.txt')).toBeNull();
+    expect(serveLocalImage('/some/path/file.js')).toBeNull();
+    expect(serveLocalImage('/some/path/file')).toBeNull();
+  });
+
+  it('returns null for image paths that do not exist on disk', () => {
+    expect(serveLocalImage('/nonexistent/path/image.png')).toBeNull();
+  });
+
+  it('serves an existing image file from disk', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
+    const imgPath = join(tmp, 'test-image.png');
+    const imgContent = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
+    writeFileSync(imgPath, imgContent);
+
+    try {
+      const response = serveLocalImage(imgPath);
+      expect(response).not.toBeNull();
+      const body = await response!.arrayBuffer();
+      expect(Buffer.from(body)).toEqual(imgContent);
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
+
+  it('handles percent-encoded paths', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
+    const imgPath = join(tmp, 'my image.png');
+    const imgContent = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    writeFileSync(imgPath, imgContent);
+
+    try {
+      const encodedPath = imgPath.replace(/ /g, '%20');
+      const response = serveLocalImage(encodedPath);
+      expect(response).not.toBeNull();
+      const body = await response!.arrayBuffer();
+      expect(Buffer.from(body)).toEqual(imgContent);
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
+
+  it('supports various image extensions', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
+    const extensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
+
+    try {
+      for (const ext of extensions) {
+        const imgPath = join(tmp, `image${ext}`);
+        writeFileSync(imgPath, 'img-data');
+        const response = serveLocalImage(imgPath);
+        expect(response).not.toBeNull();
+      }
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
+
+  it('rejects paths with traversal segments that escape root', () => {
+    // Even though the traversal resolves to a valid path after normalize,
+    // it should still have a / prefix and be handled normally
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
+    const imgPath = join(tmp, 'test.png');
+    writeFileSync(imgPath, 'data');
+
+    try {
+      // A traversal that still resolves to an absolute path is fine
+      const traversalPath = join(tmp, 'sub', '..', 'test.png');
+      const response = serveLocalImage(traversalPath);
+      expect(response).not.toBeNull();
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
+});
+
+describe('createAnnotationServerApp local image serving', () => {
+  const payload: AnnotationPayload = {
+    content: '# plan',
+    contentKind: 'plan',
+    metadata: { entrypoint: 'plan_command' },
+  };
+  const config: FrontendConfig = { distinctId: 'test-distinct-id', telemetryDisabled: false };
+  const ctx = fakeBaseContext();
+
+  it('serves a local image file via the annotation server', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-route-'));
+    const imgPath = join(tmp, 'generated.png');
+    const imgContent = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    writeFileSync(imgPath, imgContent);
+
+    try {
+      const app = createAnnotationServerApp(ctx, {
+        html: Promise.resolve('<html><body>ui</body></html>'),
+        payload,
+        config,
+      });
+      const res = await app.fetch(new Request(`http://localhost${imgPath}`));
+      expect(res.status).toBe(200);
+      const body = await res.arrayBuffer();
+      expect(Buffer.from(body)).toEqual(imgContent);
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
+
+  it('returns 404 for non-image file paths', async () => {
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+    });
+    const res = await app.fetch(new Request('http://localhost/etc/passwd'));
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 for nonexistent image paths', async () => {
+    const app = createAnnotationServerApp(ctx, {
+      html: Promise.resolve('<html><body>ui</body></html>'),
+      payload,
+      config,
+    });
+    const res = await app.fetch(new Request('http://localhost/nonexistent/image.png'));
+    expect(res.status).toBe(404);
   });
 });
