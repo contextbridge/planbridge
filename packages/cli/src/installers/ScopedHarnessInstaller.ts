@@ -1,5 +1,6 @@
 import { type Command, Option } from 'commander';
 import type { CliContext } from '#src/context.ts';
+import { IoImpl } from '#src/IoImpl.ts';
 import { HarnessInstaller, type InstallActionOptions } from './HarnessInstaller.ts';
 
 export type InstallScope = 'user' | 'project';
@@ -20,7 +21,9 @@ export abstract class ScopedHarnessInstaller extends HarnessInstaller {
   async install(ctx: CliContext, options: ScopedInstallActionOptions): Promise<void> {
     const scope = await this.resolveScope(ctx, options, 'install');
     this.requireBinary(ctx, this.binaryMissingCode);
-    await this.runInstall(ctx, scope);
+    const { quiet = false } = options;
+    const installCtx = quiet ? { ...ctx, io: IoImpl.from(ctx.io, { quiet }) } : ctx;
+    await this.runInstall(installCtx, scope);
   }
 
   async uninstall(ctx: CliContext, options: ScopedInstallActionOptions): Promise<void> {
@@ -34,8 +37,10 @@ export abstract class ScopedHarnessInstaller extends HarnessInstaller {
       .command(this.descriptor.id)
       .description(this.installDescription)
       .addOption(this.createScopeOption('install'))
-      .action(async (opts: { scope: InstallScope }) => {
-        await this.install(ctx, { yes: true, scope: opts.scope });
+      .addOption(new Option('--quiet').hideHelp())
+      .action(async (opts: { scope: InstallScope; quiet?: boolean }) => {
+        const { quiet = false, scope } = opts;
+        await this.install(ctx, { yes: true, quiet, scope });
       });
   }
 

@@ -18,6 +18,8 @@ export interface ManagedEntry {
 export interface InstallActionOptions {
   /** When true, skip per-harness prompts and use defaults (e.g. user scope for Claude). */
   readonly yes: boolean;
+  /** Suppress success/onboarding prose for parent commands that report their own summary. */
+  readonly quiet?: boolean;
 }
 
 export abstract class HarnessInstaller {
