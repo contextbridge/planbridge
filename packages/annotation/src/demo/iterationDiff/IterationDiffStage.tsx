@@ -1,10 +1,10 @@
-import { DOCS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { DOCS_URL, GITHUB_DISCUSSIONS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import { Header } from '@contextbridge/ui/components/Header';
 import 'highlight.js/styles/github-dark.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import '../../codeHighlightStyles.css';
-import { MarkdownPlan } from '../../MarkdownPlan.tsx';
-import { usePlanAppContext } from '../../useAppContext.ts';
+import { AnnotatedMarkdown } from '../../AnnotatedMarkdown.tsx';
+import { useAnnotationAppContext } from '../../useAppContext.ts';
 import { InlineChangeThreads } from './InlineChangeThreads.tsx';
 import { IterationAnchoredCommentsSidebar, type ReplyFocusRequest } from './IterationAnchoredCommentsSidebar.tsx';
 import { findIterationChangeElement, isInlineChange } from './iterationChangeAnchors.tsx';
@@ -42,7 +42,7 @@ export function IterationDiffStage({
   changes,
   commentLayout = 'inline',
 }: IterationDiffStageProps) {
-  const { buildInfo } = usePlanAppContext();
+  const { buildInfo } = useAnnotationAppContext();
   const planRef = useRef<HTMLDivElement | null>(null);
   const [anchorResolution, setAnchorResolution] = useState<AnchorResolutionState>({
     ready: false,
@@ -150,6 +150,7 @@ export function IterationDiffStage({
       <main className="min-h-screen bg-background text-foreground" data-testid={iterationDiffStageTestIds.container}>
         <Header
           docsHref={DOCS_URL}
+          feedbackHref={GITHUB_DISCUSSIONS_URL}
           githubRepoHref={GITHUB_REPO_URL}
           slackHelpHref={SLACK_COMMUNITY_URL}
           version={buildInfo.version}
@@ -166,7 +167,7 @@ export function IterationDiffStage({
           <div className={contentGridClass}>
             <section className="min-w-0 pl-4">
               <div className="relative">
-                <MarkdownPlan containerRef={planRef} content={planContent} />
+                <AnnotatedMarkdown containerRef={planRef} content={planContent} />
                 <IterationChangeHighlights
                   activeChangeId={activeChangeId}
                   changes={changes}

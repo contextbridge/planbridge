@@ -1,4 +1,4 @@
-import type { AnnotationTargetKind } from '@contextbridge/shared/planReviewSchema';
+import type { AnnotationTargetKind } from '@contextbridge/shared/annotationSchema';
 
 export type IterationChangeKind = 'modified' | 'added' | 'removed' | 'reordered';
 
