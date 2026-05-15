@@ -28,7 +28,8 @@
     "motion": "^12.38.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "sharp": "^0.34.0"
+    "sharp": "^0.34.0",
+    "starlight-llms-txt": "^0.10.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
