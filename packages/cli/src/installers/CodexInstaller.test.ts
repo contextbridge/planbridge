@@ -35,7 +35,7 @@ describe('CodexInstaller', () => {
         type: 'command',
         command: 'contextbridge hook codex',
         timeout: 345600,
-        statusMessage: 'Opening PlanBridge',
+        statusMessage: 'Waiting for your plan review in PlanBridge...',
       });
       expect(commandRunnerCalls(context, ['features', 'enable', 'hooks'])).toHaveLength(1);
       expect(io.stderr.text()).toContain('PlanBridge hook installed for Codex CLI (scope: user)');
