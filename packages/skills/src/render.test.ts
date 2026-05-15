@@ -1,16 +1,16 @@
 import assert from 'node:assert';
 import { getHarness } from '@contextbridge/harness';
 import { describe, expect, it } from 'bun:test';
-import { render } from './render.ts';
+import { render, renderCommand } from './render.ts';
 import { parseSkill } from './skills.ts';
 
 const claude = getHarness('claude');
 const codex = getHarness('codex');
 
-describe('render(skill, claude)', () => {
-  it('preserves the source byte-for-byte', () => {
+describe('renderCommand(skill, claude)', () => {
+  it('omits the source name from command frontmatter', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -18,17 +18,27 @@ description: Open a thing.
 
 Some content.
 `;
-    const result = render(parseSkill(source), claude);
+    const result = renderCommand(parseSkill(source), claude);
 
     assert(result.isOk());
-    expect(result.value).toBe(source);
+    expect(result.value).toMatchInlineSnapshot(`
+      "---
+      description: Open a thing.
+      ---
+
+      # Body
+
+      Some content.
+      "
+    `);
+    expect(result.value).not.toContain('name:');
   });
 });
 
 describe('render(skill, codex)', () => {
-  it('rewrites the frontmatter name with the planbridge- prefix', () => {
+  it('preserves the public frontmatter name', () => {
     const canonical = parseSkill(`---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -48,9 +58,9 @@ body
     `);
   });
 
-  it('only rewrites the name field, leaving other frontmatter lines untouched', () => {
+  it('only applies the harness install name to the frontmatter name field', () => {
     const canonical = parseSkill(`---
-name: open
+name: planbridge-open
 description: "Open a thing. The description mentions name: something as part of its prose."
 ---
 
@@ -72,13 +82,13 @@ body
 
   it('returns an error when the harness has no skill rendering rules', () => {
     const canonical = parseSkill(`---
-name: open
+name: planbridge-open
 description: Open.
 ---
 
 body
 `);
-    const result = render(canonical, getHarness('gemini'));
+    const result = render(canonical, claude);
 
     assert(result.isErr());
     expect(result.error.message).toMatch(/no skill rendering rules/);
@@ -88,7 +98,7 @@ body
 describe('render(skill, …) template evaluation', () => {
   it('evaluates an eq-based conditional against the harness id', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -100,7 +110,7 @@ Post.
 `;
     const skill = parseSkill(source);
     const codexResult = render(skill, codex);
-    const claudeResult = render(skill, claude);
+    const claudeResult = renderCommand(skill, claude);
 
     assert(codexResult.isOk());
     assert(claudeResult.isOk());
@@ -110,23 +120,30 @@ Post.
     expect(claudeResult.value).not.toContain('codex-only');
   });
 
-  it('renders bodies without any template directives byte-equivalent to the source body', () => {
+  it('renders command bodies without any template directives byte-equivalent to the source body', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
 Plain markdown with no directives.
 `;
-    const result = render(parseSkill(source), claude);
+    const result = renderCommand(parseSkill(source), claude);
 
     assert(result.isOk());
-    expect(result.value).toBe(source);
+    expect(result.value).toMatchInlineSnapshot(`
+      "---
+      description: Open a thing.
+      ---
+
+      Plain markdown with no directives.
+      "
+    `);
   });
 
   it('expands partials registered from sources/_partials/', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -145,7 +162,7 @@ After.
 
   it('omits content cleanly when a partial reference is wrapped in a false conditional', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -157,7 +174,7 @@ Before.
 
 After.
 `;
-    const result = render(parseSkill(source), claude);
+    const result = renderCommand(parseSkill(source), claude);
 
     assert(result.isOk());
     expect(result.value).not.toContain('Running this from Codex');
@@ -169,7 +186,7 @@ After.
 
   it('returns a clear error when a template references a missing partial', () => {
     const source = `---
-name: open
+name: planbridge-open
 description: Open a thing.
 ---
 
@@ -178,6 +195,6 @@ description: Open a thing.
     const result = render(parseSkill(source), codex);
 
     assert(result.isErr());
-    expect(result.error.message).toMatch(/open.*codex\/does-not-exist/);
+    expect(result.error.message).toMatch(/planbridge-open.*codex\/does-not-exist/);
   });
 });

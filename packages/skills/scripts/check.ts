@@ -1,14 +1,14 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import type { BaseContext } from '@contextbridge/context';
-import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
 import { Result, err, fromThrowable, ok } from 'neverthrow';
+import type { RenderTarget } from '#src/outputs/GeneratedOutput.ts';
+import { GENERATED_OUTPUTS, targetsForAll } from '#src/outputs/generatedOutputs.ts';
+import { REPO_ROOT, SOURCES_DIR } from '#src/outputs/paths.ts';
 import { loadAllFrom } from '#src/skills.ts';
 import { createScriptContext } from './context.ts';
-import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsForAll } from './renderTargets.ts';
 
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));
-const safeReaddir = fromThrowable((dir: string) => readdirSync(dir, { withFileTypes: true }));
 
 async function main(ctx: BaseContext): Promise<void> {
   const { logger } = ctx;
@@ -19,16 +19,14 @@ async function main(ctx: BaseContext): Promise<void> {
     process.exit(1);
   }
   const targets = targetResult.value;
-  const expectedDirs = new Set(targets.map((t) => dirname(t.path)));
+  const expectedPaths = new Set(targets.map((target) => target.path));
 
   const driftErrors = Result.combineWithAllErrors(targets.map(checkDrift)).match(
     () => [],
     (errs) => errs,
   );
-  const orphanErrors = SKILL_RENDERABLE_HARNESSES.flatMap((harness) =>
-    findOrphans(outDirFor(harness), expectedDirs).map(
-      (dir) => `orphan: ${relative(REPO_ROOT, dir)} has no canonical source`,
-    ),
+  const orphanErrors = GENERATED_OUTPUTS.flatMap((output) =>
+    output.findOrphans(expectedPaths).map((path) => `orphan: ${relative(REPO_ROOT, path)} has no canonical source`),
   );
 
   const errors = [...driftErrors, ...orphanErrors];
@@ -48,14 +46,6 @@ function checkDrift({ path, body, harness }: RenderTarget): Result<void, string>
         ? ok(undefined)
         : err(`drift: ${relative(REPO_ROOT, path)} does not match rendered ${harness.id} output`),
     );
-}
-
-function findOrphans(parent: string, expectedDirs: Set<string>): string[] {
-  return safeReaddir(parent)
-    .unwrapOr([])
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => join(parent, entry.name))
-    .filter((dir) => !expectedDirs.has(dir));
 }
 
 await main(createScriptContext());

@@ -24,6 +24,19 @@ export function render(skill: Skill, harness: HarnessDescriptor): Result<string,
   )();
 }
 
+export function renderCommand(skill: Skill, harness: HarnessDescriptor): Result<string, Error> {
+  return Result.fromThrowable(
+    () => {
+      const { name: _name, ...frontmatter } = skill.frontmatter;
+      const frontmatterText = yamlStringify(frontmatter, { lineWidth: 0 });
+      const env = createHandlebars(PARTIALS_DIR);
+      const body = compileBody(env, skill, harness);
+      return `---\n${frontmatterText}---\n\n${body}`;
+    },
+    (cause) => renderError(skill, harness, cause),
+  )();
+}
+
 function compileBody(env: HandlebarsEnv, skill: Skill, harness: HarnessDescriptor): string {
   return env.compile(skill.body, { noEscape: true })({ harness });
 }

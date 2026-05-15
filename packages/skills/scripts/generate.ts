@@ -1,14 +1,15 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { BaseContext, Logger } from '@contextbridge/context';
-import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
+import type { RenderTarget } from '#src/outputs/GeneratedOutput.ts';
+import { GENERATED_OUTPUTS, targetsForAll } from '#src/outputs/generatedOutputs.ts';
+import { SOURCES_DIR } from '#src/outputs/paths.ts';
 import { loadAllFrom } from '#src/skills.ts';
 import { createScriptContext } from './context.ts';
-import { type RenderTarget, SOURCES_DIR, outDirFor, targetsForAll } from './renderTargets.ts';
 
 async function main(ctx: BaseContext): Promise<void> {
   const { logger } = ctx;
-  SKILL_RENDERABLE_HARNESSES.forEach((harness) => rmSync(outDirFor(harness), { recursive: true, force: true }));
+  GENERATED_OUTPUTS.forEach((output) => output.clean());
   const skills = loadAllFrom(SOURCES_DIR);
   const targetResult = await targetsForAll(skills);
   if (targetResult.isErr()) {

@@ -1,7 +1,7 @@
 export type HarnessId = 'claude' | 'codex' | 'gemini' | 'cursor' | 'aider' | 'opencode' | 'aether';
 
 export interface SkillRenderingRules {
-  /** On-disk install directory name for this harness. e.g. `(n) => n` for Claude, `(n) => `planbridge-${n}`` for Codex. */
+  /** On-disk install directory name for this harness. */
   readonly installName: (logicalName: string) => string;
   /** Output directory for rendered SKILL.md files, relative to the repo root. */
   readonly destDir: string;

@@ -1,5 +1,5 @@
 ---
-name: open
+name: planbridge-open
 description: Open a markdown file, document, or piece of content in the PlanBridge browser UI for human annotation. Use when the user wants to give human feedback on a file, draft, plan, spec, or any markdown content.
 ---
 
@@ -9,7 +9,7 @@ Opens a markdown file or piped content in the PlanBridge browser UI, where the u
 
 ## When to use
 
-Use this skill when the user wants to annotate something themselves in the browser. Typical triggers:
+Use this PlanBridge action when the user wants to annotate something themselves in the browser. Typical triggers:
 
 - "I want to annotate this in PlanBridge"
 - "Open this in the browser so I can mark it up"
@@ -25,6 +25,10 @@ The CLI takes a file path or stdin content:
 
     # Piped content (when the content lives in conversation, not on disk)
     printf %s "<content>" | contextbridge open
+
+{{#if (eq harness.id "codex")}}
+{{> codex/sandbox-escalation}}
+{{/if}}
 
 ### Resolving the argument
 

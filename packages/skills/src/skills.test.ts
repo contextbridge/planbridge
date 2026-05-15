@@ -8,10 +8,13 @@ import { loadAllFrom, parseSkill } from './skills.ts';
 describe('parseSkill', () => {
   it('extracts frontmatter and body', () => {
     const skill = parseSkill(
-      frontmatter({ name: 'open', description: 'Open a thing for review.' }, '# Body heading\n\nBody content.\n'),
+      frontmatter(
+        { name: 'planbridge-open', description: 'Open a thing for review.' },
+        '# Body heading\n\nBody content.\n',
+      ),
     );
 
-    expect(skill.frontmatter.name).toBe('open');
+    expect(skill.frontmatter.name).toBe('planbridge-open');
     expect(skill.frontmatter.description).toBe('Open a thing for review.');
     expect(skill.body).toBe('# Body heading\n\nBody content.\n');
   });
@@ -53,9 +56,12 @@ describe('loadAllFrom', () => {
   });
 
   it('returns one skill per `<name>/SKILL.md` entry, alphabetically by directory name', () => {
-    mkdirSync(join(dir, 'open'), { recursive: true });
+    mkdirSync(join(dir, 'planbridge-open'), { recursive: true });
     mkdirSync(join(dir, 'review'), { recursive: true });
-    writeFileSync(join(dir, 'open', 'SKILL.md'), frontmatter({ name: 'open', description: 'Open a thing.' }, 'body\n'));
+    writeFileSync(
+      join(dir, 'planbridge-open', 'SKILL.md'),
+      frontmatter({ name: 'planbridge-open', description: 'Open a thing.' }, 'body\n'),
+    );
     writeFileSync(
       join(dir, 'review', 'SKILL.md'),
       frontmatter({ name: 'review', description: 'Review a change.' }, 'body\n'),
@@ -63,7 +69,7 @@ describe('loadAllFrom', () => {
 
     const skills = loadAllFrom(dir);
 
-    expect(skills.map((s) => s.frontmatter.name)).toEqual(['open', 'review']);
+    expect(skills.map((s) => s.frontmatter.name)).toEqual(['planbridge-open', 'review']);
   });
 
   it('rejects when a directory name does not match the frontmatter name field', () => {

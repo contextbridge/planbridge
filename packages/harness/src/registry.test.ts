@@ -14,15 +14,14 @@ describe('HARNESSES', () => {
     expect(HARNESSES.map((h) => h.id).sort()).toEqual([...ids].sort());
   });
 
-  it('claude installs skills with the logical name and no prefix', () => {
+  it('claude has no skill rendering rules', () => {
     const claude = getHarness('claude');
-    expect(claude.skillRendering?.installName('open')).toBe('open');
-    expect(claude.skillRendering?.destDir).toBe('harnessIntegrations/claude/skills');
+    expect(claude.skillRendering).toBeUndefined();
   });
 
-  it('codex installs skills with the planbridge- prefix', () => {
+  it('codex installs skills with the public source name', () => {
     const codex = getHarness('codex');
-    expect(codex.skillRendering?.installName('open')).toBe('planbridge-open');
+    expect(codex.skillRendering?.installName('planbridge-open')).toBe('planbridge-open');
     expect(codex.skillRendering?.destDir).toBe('harnessIntegrations/codex/skills');
   });
 });
@@ -41,7 +40,7 @@ describe('INSTALLABLE_HARNESSES', () => {
 
 describe('SKILL_RENDERABLE_HARNESSES', () => {
   it('contains only harnesses with rendering rules', () => {
-    expect(SKILL_RENDERABLE_HARNESSES.map((h) => h.id).sort()).toEqual(['claude', 'codex']);
+    expect(SKILL_RENDERABLE_HARNESSES.map((h) => h.id)).toEqual(['codex']);
   });
 });
 

@@ -6,10 +6,6 @@ export const HARNESSES: readonly HarnessDescriptor[] = [
     displayName: 'Claude Code',
     binaryName: 'claude',
     installUrl: 'https://docs.claude.com/en/docs/claude-code/setup',
-    skillRendering: {
-      installName: (name) => name,
-      destDir: 'harnessIntegrations/claude/skills',
-    },
   },
   {
     id: 'codex',
@@ -17,7 +13,7 @@ export const HARNESSES: readonly HarnessDescriptor[] = [
     binaryName: 'codex',
     installUrl: 'https://developers.openai.com/codex/cli/',
     skillRendering: {
-      installName: (name) => `planbridge-${name}`,
+      installName: (name) => name,
       destDir: 'harnessIntegrations/codex/skills',
     },
   },

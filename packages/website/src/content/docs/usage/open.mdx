@@ -5,13 +5,13 @@ description: Ask your coding agent to open any markdown file in the PlanBridge b
 
 import { Code } from 'astro-expressive-code/components';
 
-<Code code="/planbridge:open docs/spec.md" lang="text" title="Claude Code" />
+<Code code="/planbridge-open docs/spec.md" lang="text" title="Claude Code" />
 
 <Code code="$planbridge-open docs/spec.md" lang="text" title="Codex CLI" />
 
 The file opens in your browser for inline annotation. Your comments come back to the agent on stdout.
 
-This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The `open` skill fires whenever you ask for it.
+This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The manual open action fires whenever you ask for it.
 
 ## When to use it
 
@@ -21,13 +21,13 @@ This is the manual sibling to the automatic hook flow. Hooks fire when your agen
 
 ## Claude Code
 
-The `open` skill ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
+The `planbridge-open` command ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
 
-<Code code="/planbridge:open path/to/file.md" lang="text" title="Claude Code" />
+<Code code="/planbridge-open path/to/file.md" lang="text" title="Claude Code" />
 
 You can also describe the file in plain language and Claude resolves it:
 
-<Code code="/planbridge:open the design doc we drafted yesterday" lang="text" title="Claude Code" />
+<Code code="/planbridge-open the design doc we drafted yesterday" lang="text" title="Claude Code" />
 
 ## Codex CLI
 
@@ -47,7 +47,7 @@ The output is feedback for discussion, not a directive. The agent treats your co
 
 ## Direct CLI use
 
-The skill is a thin wrapper around `contextbridge open`. You can run the binary yourself from any harness:
+The manual command and skill are thin wrappers around `contextbridge open`. You can run the binary yourself from any harness:
 
 <Code code="contextbridge open path/to/file.md" lang="sh" title="terminal" />
 

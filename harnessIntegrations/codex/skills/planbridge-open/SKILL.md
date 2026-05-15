@@ -9,7 +9,7 @@ Opens a markdown file or piped content in the PlanBridge browser UI, where the u
 
 ## When to use
 
-Use this skill when the user wants to annotate something themselves in the browser. Typical triggers:
+Use this PlanBridge action when the user wants to annotate something themselves in the browser. Typical triggers:
 
 - "I want to annotate this in PlanBridge"
 - "Open this in the browser so I can mark it up"
