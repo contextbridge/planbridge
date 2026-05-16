@@ -240,18 +240,18 @@ describe('startServer', () => {
 });
 
 describe('serveLocalImage', () => {
-  it('returns null for non-absolute paths', () => {
-    expect(serveLocalImage('relative/path.png')).toBeNull();
+  it('returns null for non-absolute paths', async () => {
+    expect(await serveLocalImage('relative/path.png')).toBeNull();
   });
 
-  it('returns null for paths without an image extension', () => {
-    expect(serveLocalImage('/some/path/file.txt')).toBeNull();
-    expect(serveLocalImage('/some/path/file.js')).toBeNull();
-    expect(serveLocalImage('/some/path/file')).toBeNull();
+  it('returns null for paths without an image extension', async () => {
+    expect(await serveLocalImage('/some/path/file.txt')).toBeNull();
+    expect(await serveLocalImage('/some/path/file.js')).toBeNull();
+    expect(await serveLocalImage('/some/path/file')).toBeNull();
   });
 
-  it('returns null for image paths that do not exist on disk', () => {
-    expect(serveLocalImage('/nonexistent/path/image.png')).toBeNull();
+  it('returns null for image paths that do not exist on disk', async () => {
+    expect(await serveLocalImage('/nonexistent/path/image.png')).toBeNull();
   });
 
   it('serves an existing image file from disk', async () => {
@@ -261,7 +261,7 @@ describe('serveLocalImage', () => {
     writeFileSync(imgPath, imgContent);
 
     try {
-      const response = serveLocalImage(imgPath);
+      const response = await serveLocalImage(imgPath);
       expect(response).not.toBeNull();
       const body = await response!.arrayBuffer();
       expect(Buffer.from(body)).toEqual(imgContent);
@@ -278,7 +278,7 @@ describe('serveLocalImage', () => {
 
     try {
       const encodedPath = imgPath.replace(/ /g, '%20');
-      const response = serveLocalImage(encodedPath);
+      const response = await serveLocalImage(encodedPath);
       expect(response).not.toBeNull();
       const body = await response!.arrayBuffer();
       expect(Buffer.from(body)).toEqual(imgContent);
@@ -287,7 +287,7 @@ describe('serveLocalImage', () => {
     }
   });
 
-  it('supports various image extensions', () => {
+  it('supports various image extensions', async () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
     const extensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 
@@ -295,7 +295,7 @@ describe('serveLocalImage', () => {
       for (const ext of extensions) {
         const imgPath = join(tmp, `image${ext}`);
         writeFileSync(imgPath, 'img-data');
-        const response = serveLocalImage(imgPath);
+        const response = await serveLocalImage(imgPath);
         expect(response).not.toBeNull();
       }
     } finally {
@@ -303,7 +303,7 @@ describe('serveLocalImage', () => {
     }
   });
 
-  it('rejects paths with traversal segments that escape root', () => {
+  it('rejects paths with traversal segments that escape root', async () => {
     // Even though the traversal resolves to a valid path after normalize,
     // it should still have a / prefix and be handled normally
     const tmp = mkdtempSync(join(tmpdir(), 'cb-server-img-test-'));
@@ -313,7 +313,7 @@ describe('serveLocalImage', () => {
     try {
       // A traversal that still resolves to an absolute path is fine
       const traversalPath = join(tmp, 'sub', '..', 'test.png');
-      const response = serveLocalImage(traversalPath);
+      const response = await serveLocalImage(traversalPath);
       expect(response).not.toBeNull();
     } finally {
       rmSync(tmp, { recursive: true });

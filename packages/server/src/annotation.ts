@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import { extname, normalize } from 'node:path';
 import {
   type AnnotationPayload,
@@ -111,7 +110,7 @@ export function createAnnotationServerApp(ctx: ServerContext, opts: StartServerO
       // the browser resolves them relative to the server origin. This route
       // serves those files directly from disk so images render correctly.
       if (req.method === 'GET') {
-        const localFileResponse = serveLocalImage(url.pathname);
+        const localFileResponse = await serveLocalImage(url.pathname);
         if (localFileResponse) return localFileResponse;
       }
 
@@ -144,7 +143,7 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg
  * disk. Returns `null` if the path is not an absolute file path, does not have
  * an image extension, or does not exist on disk.
  */
-export function serveLocalImage(pathname: string): Response | null {
+export async function serveLocalImage(pathname: string): Promise<Response | null> {
   // Only handle paths that look like absolute file paths
   if (!pathname.startsWith('/')) return null;
 
@@ -157,8 +156,8 @@ export function serveLocalImage(pathname: string): Response | null {
   // Must still be an absolute path after normalization (no escaping root)
   if (!filePath.startsWith('/')) return null;
 
-  if (!existsSync(filePath)) return null;
-
   const file = Bun.file(filePath);
+  if (!(await file.exists())) return null;
+
   return new Response(file);
 }
