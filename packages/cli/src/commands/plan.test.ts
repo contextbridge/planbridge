@@ -112,6 +112,28 @@ describe('plan handler', () => {
     expect(readErrorLogs(logs).some((r) => r.msg.includes('open failed'))).toBe(true);
   });
 
+  it('surfaces local network sandbox bind failures without error-level logs', async () => {
+    const { context, io, logs } = createStubContext();
+    const deps = createAnnotationDependencies();
+    deps.startReviewServer = () => {
+      throw Object.assign(new Error('Failed to start server. Is port 0 in use?'), { code: 'EADDRINUSE' });
+    };
+    io.stdin.write('# Plan\n');
+    io.stdin.end();
+
+    const caught = await runPlan(context, {}, deps).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    expect(caught).toBeInstanceOf(CommanderError);
+    expect((caught as CommanderError).code).toBe('contextbridge.plan.environmentError');
+    expect((caught as CommanderError).message).toContain('network sandbox');
+    expect(io.stdout.text()).toBe('');
+    expect(readWarnLogs(logs).some((r) => r.msg.includes('network sandbox'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
+  });
+
   it('closes the server and exits cleanly (without error-level logs) when SIGINT is received', async () => {
     const { context, io, logs } = createStubContext();
     const deps = createAnnotationDependencies({ result: createDeferred<AnnotationSubmission>().promise });

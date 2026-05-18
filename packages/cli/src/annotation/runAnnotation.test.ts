@@ -3,7 +3,7 @@ import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
 import { annotationArgs, environment } from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext } from '#src/testHelpers/index.ts';
-import { runAnnotation } from './runAnnotation.ts';
+import { AnnotationEnvironmentError, runAnnotation } from './runAnnotation.ts';
 
 describe('runAnnotation', () => {
   it('opens the browser and returns the submitted review', async () => {
@@ -66,6 +66,49 @@ describe('runAnnotation', () => {
     expect(deps.closeCount).toBe(1);
     expect(deps.sigintHandlerRemoved).toBe(true);
     expect(analytics.captures.some((c) => c.event === 'plan_review_submitted')).toBe(false);
+  });
+
+  it('maps the port-0 Bun bind failure to an annotation environment error', async () => {
+    const { context } = createStubContext();
+    const deps = createAnnotationDependencies();
+    const cause = Object.assign(new Error('Failed to start server. Is port 0 in use?'), { code: 'EADDRINUSE' });
+    deps.startReviewServer = () => {
+      throw cause;
+    };
+
+    const caught = await runAnnotation(context, annotationArgs.build(), deps).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    expect(caught).toBeInstanceOf(AnnotationEnvironmentError);
+    expect((caught as AnnotationEnvironmentError).cause).toBe(cause);
+    expect((caught as AnnotationEnvironmentError).message).toContain('network sandbox');
+    expect(deps.closeCount).toBe(0);
+  });
+
+  it('keeps explicit-port EADDRINUSE failures as regular runtime failures', () => {
+    const { context } = createStubContext();
+    const deps = createAnnotationDependencies();
+    const cause = Object.assign(new Error('Failed to start server. Is port 3456 in use?'), { code: 'EADDRINUSE' });
+    deps.startReviewServer = () => {
+      throw cause;
+    };
+
+    expect(runAnnotation(context, annotationArgs.build({ port: 3456 }), deps)).rejects.toBe(cause);
+    expect(deps.closeCount).toBe(0);
+  });
+
+  it('keeps CONTEXTBRIDGE_PORT EADDRINUSE failures as regular runtime failures', () => {
+    const { context } = createStubContext({ env: environment.build({ CONTEXTBRIDGE_PORT: 3456 }) });
+    const deps = createAnnotationDependencies();
+    const cause = Object.assign(new Error('Failed to start server. Is port 3456 in use?'), { code: 'EADDRINUSE' });
+    deps.startReviewServer = () => {
+      throw cause;
+    };
+
+    expect(runAnnotation(context, annotationArgs.build(), deps)).rejects.toBe(cause);
+    expect(deps.closeCount).toBe(0);
   });
 
   it('closes the server and rejects when SIGINT is received', async () => {

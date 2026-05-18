@@ -7,6 +7,7 @@ import type {
   AnnotationSubmission,
   ContentKind,
 } from '@contextbridge/shared/annotationSchema';
+import { getErrorMessage, hasErrorCode } from '@contextbridge/shared/errors';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
@@ -17,6 +18,16 @@ export class AnnotationInterruptedError extends Error {
   constructor(message = 'annotation interrupted by SIGINT') {
     super(message);
     this.name = 'AnnotationInterruptedError';
+  }
+}
+
+export class AnnotationEnvironmentError extends Error {
+  constructor(cause: unknown) {
+    super(
+      'ContextBridge could not start its local browser server. Your coding harness may be running contextbridge in a network sandbox that blocks localhost. Allow local network access for contextbridge or run it outside the sandbox, then try again.',
+      { cause },
+    );
+    this.name = 'AnnotationEnvironmentError';
   }
 }
 
@@ -80,13 +91,20 @@ export async function runAnnotation(
     const htmlPromise = deps.loadHtml();
     htmlPromise.catch((err: unknown) => logger.error({ err }, 'failed to load annotation UI bundle'));
 
-    server = deps.startReviewServer(ctx, {
-      html: htmlPromise,
-      payload,
-      config: frontendConfig,
-      port,
-      checkForUpdate: () => updater.checkForUpdate().catch(() => null),
-    });
+    try {
+      server = deps.startReviewServer(ctx, {
+        html: htmlPromise,
+        payload,
+        config: frontendConfig,
+        port,
+        checkForUpdate: () => updater.checkForUpdate().catch(() => null),
+      });
+    } catch (err) {
+      if (isLikelyLocalServerNetworkSandboxError(err, port ?? 0)) {
+        throw new AnnotationEnvironmentError(err);
+      }
+      throw err;
+    }
     removeSigintHandler = deps.registerSigintHandler(() => {
       if (sigintHandled) {
         return;
@@ -120,6 +138,14 @@ export async function runAnnotation(
     closePromise ??= server.close();
     return closePromise;
   }
+}
+
+export function isLikelyLocalServerNetworkSandboxError(err: unknown, port: number): boolean {
+  if (hasErrorCode(err, 'EACCES') || hasErrorCode(err, 'EPERM')) {
+    return true;
+  }
+
+  return port === 0 && hasErrorCode(err, 'EADDRINUSE') && getErrorMessage(err).includes('port 0');
 }
 
 const defaultAnnotationDependencies: AnnotationDependencies = {

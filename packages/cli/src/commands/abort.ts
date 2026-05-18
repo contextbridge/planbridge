@@ -2,14 +2,20 @@ import { CommanderError } from 'commander';
 import type { CliContext } from '#src/context.ts';
 
 /**
- * Log and throw a CommanderError for a user-recoverable ('input') or runtime
- * failure inside a subcommand handler.
+ * Log and throw a CommanderError for a user-recoverable ('input' or 'environment')
+ * or runtime failure inside a subcommand handler.
  */
-export function abort(ctx: CliContext, command: string, kind: 'input' | 'runtime', message: string): never {
+export function abort(
+  ctx: CliContext,
+  command: string,
+  kind: 'input' | 'runtime' | 'environment',
+  message: string,
+): never {
   const { logger } = ctx;
-  // 'input' is user-recoverable — logged at warn so Sentry's pinoIntegration
-  // (error/fatal only) doesn't forward it. 'runtime' is a genuine failure.
-  if (kind === 'input') {
+  // 'input' and 'environment' are user-recoverable — logged at warn so Sentry's
+  // pinoIntegration (error/fatal only) doesn't forward them. 'runtime' is a
+  // genuine failure.
+  if (kind === 'input' || kind === 'environment') {
     logger.warn(message);
   } else {
     logger.error(message);

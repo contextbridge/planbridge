@@ -3,9 +3,10 @@ import { getErrorMessage, toError } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
 import { type Command, CommanderError } from 'commander';
 import { ResultAsync, err, ok } from 'neverthrow';
-import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
+import { AnnotationEnvironmentError, type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type CodexStopResponse, codexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
+import { abort as abortCommand } from './abort.ts';
 import {
   type CodexStopHookPayload,
   CodexStopHookPayloadSchema,
@@ -109,7 +110,12 @@ async function handleStop(
     toError,
   ).match(
     (submission: AnnotationSubmission) => codexStopResponse(submission, planContent),
-    (e) => abort(ctx, 'runtime', getErrorMessage(e)),
+    (e) => {
+      if (e instanceof AnnotationEnvironmentError) {
+        abortCommand(ctx, 'hookCodex', 'environment', e.message);
+      }
+      abort(ctx, 'runtime', getErrorMessage(e));
+    },
   );
 }
 

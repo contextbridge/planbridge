@@ -3,6 +3,7 @@ import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError } from 'commander';
 import {
   type AnnotationDependencies,
+  AnnotationEnvironmentError,
   AnnotationInterruptedError,
   runAnnotation,
 } from '#src/annotation/runAnnotation.ts';
@@ -55,6 +56,9 @@ export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: Annotation
     if (err instanceof AnnotationInterruptedError) {
       logger.info('open session interrupted');
       throw new CommanderError(130, 'contextbridge.open.sigint', 'open session interrupted');
+    }
+    if (err instanceof AnnotationEnvironmentError) {
+      abort(ctx, 'open', 'environment', err.message);
     }
     abort(ctx, 'open', 'runtime', getErrorMessage(err));
   }

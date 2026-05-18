@@ -1,9 +1,10 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError } from 'commander';
-import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
+import { AnnotationEnvironmentError, type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type ClaudeHookResponse, claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
+import { abort as abortCommand } from './abort.ts';
 import { type ClaudeHookPayload, ClaudeHookPayloadSchema } from './claudeHookSchema.ts';
 
 export interface HookClaudeDependencies {
@@ -97,6 +98,9 @@ async function handleExitPlanMode(
   try {
     submission = await runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_claude' });
   } catch (err) {
+    if (err instanceof AnnotationEnvironmentError) {
+      abortCommand(ctx, 'hookClaude', 'environment', err.message);
+    }
     abort(ctx, 'runtime', getErrorMessage(err));
   }
 
