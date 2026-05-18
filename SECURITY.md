@@ -1,6 +1,6 @@
 # Security Policy
 
-PlanBridge is open source, and we take security reports seriously. If you find a vulnerability, please report it privately so we can investigate and ship a fix before details become public.
+PlanBridge is open source. If you find a vulnerability, please report it privately so we can investigate and ship a fix before details become public.
 
 ## How to report
 
