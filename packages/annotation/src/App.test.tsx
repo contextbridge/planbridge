@@ -1,5 +1,5 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
-import { DOCS_URL, GITHUB_DISCUSSIONS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
@@ -556,11 +556,11 @@ Run \`${longCode}\` now.
       expect(screen.getByTestId(headerTestIds.helpSlackItem)).toHaveAttribute('href', SLACK_COMMUNITY_URL);
     });
 
-    it('renders a feedback button linking to GitHub Discussions', () => {
+    it('renders a feedback button linking to the feedback page', () => {
       renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
 
       const feedbackButton = screen.getByTestId(headerTestIds.feedbackButton);
-      expect(feedbackButton).toHaveAttribute('href', GITHUB_DISCUSSIONS_URL);
+      expect(feedbackButton).toHaveAttribute('href', FEEDBACK_URL);
       expect(feedbackButton).toHaveAttribute('target', '_blank');
       expect(feedbackButton).toHaveTextContent('Feedback');
     });
