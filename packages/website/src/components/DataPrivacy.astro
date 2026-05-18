@@ -1,0 +1,153 @@
+---
+import { Icon } from 'astro-icon/components';
+
+const flowSteps = [
+  {
+    icon: 'lucide:file-text',
+    title: 'Plan markdown',
+    body: 'stdin or local file',
+  },
+  {
+    icon: 'lucide:terminal-square',
+    title: 'contextbridge CLI',
+    body: 'local process',
+  },
+  {
+    icon: 'lucide:monitor',
+    title: 'Browser UI',
+    body: 'localhost window',
+  },
+  {
+    icon: 'lucide:file-check-2',
+    title: 'Markdown result',
+    body: 'stdout to the agent',
+  },
+];
+
+const trustSignals = [
+  { icon: 'lucide:monitor', label: 'Localhost UI' },
+  { icon: 'lucide:cloud-off', label: 'No plan upload' },
+  { icon: 'lucide:user-round-x', label: 'No account' },
+  { icon: 'lucide:badge-check', label: 'MIT licensed' },
+  { icon: 'lucide:code-2', label: 'Public source' },
+  { icon: 'lucide:trash-2', label: 'Uninstalls cleanly' },
+];
+---
+
+<section
+  id="data-privacy"
+  class="scroll-mt-24 border-t border-foreground bg-background px-8 pb-16 pt-24 sm:py-32"
+>
+  <div class="mx-auto max-w-7xl">
+    <div class="grid grid-cols-1 gap-px bg-foreground">
+      <div class="bg-background p-8 md:p-12 lg:p-14">
+        <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
+          Data Privacy
+        </p>
+        <h2
+          class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[36px] sm:text-[64px]"
+        >
+          Your plan stays on your machine.
+        </h2>
+        <p class="mt-8 font-sans text-lg leading-relaxed text-foreground sm:text-xl">
+          PlanBridge opens a local browser review UI and returns markdown to your agent. There is no
+          remote PlanBridge service sitting in the middle.
+        </p>
+        <p class="mt-8 font-sans text-base text-foreground">
+          <a
+            href="/privacy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-foreground underline underline-offset-4"
+          >
+            Read more about privacy &rarr;
+          </a>
+        </p>
+        <h3
+          class="m-0 mt-12 max-w-3xl font-mono text-lg font-bold leading-tight text-foreground sm:text-2xl"
+        >
+          PlanBridge is local-first, open source, and privacy friendly.
+        </h3>
+        <p class="m-0 mt-4 max-w-3xl font-sans text-base leading-relaxed text-foreground">
+          A local browser window gives you review ergonomics without putting PlanBridge between your
+          agent and your plan.
+        </p>
+      </div>
+
+      <div class="bg-background p-8 md:p-12 lg:p-14">
+        <p class="m-0 font-mono text-sm font-bold uppercase tracking-[0.16em] text-foreground">
+          Local review path
+        </p>
+
+        <ol
+          class="m-0 mt-8 grid list-none grid-cols-1 gap-6 p-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-stretch"
+        >
+          {
+            flowSteps.map((step, index) => (
+              <>
+                <li class="grid grid-cols-[3rem_minmax(0,1fr)] gap-5 lg:flex lg:min-h-40 lg:flex-col lg:justify-between lg:gap-6 lg:border lg:border-foreground lg:p-6">
+                  <div class="flex flex-col items-center lg:contents">
+                    <div class="flex h-12 w-12 items-center justify-center border border-foreground bg-background lg:border-0">
+                      <Icon name={step.icon} class="h-7 w-7 text-foreground" aria-hidden="true" />
+                    </div>
+                    {index < flowSteps.length - 1 && (
+                      <div class="h-12 border-l border-foreground lg:hidden" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div class={index < flowSteps.length - 1 ? 'pb-8 lg:pb-0' : ''}>
+                    <h3 class="m-0 font-mono text-lg font-bold leading-tight text-foreground sm:text-xl">
+                      {step.title}
+                    </h3>
+                    <p class="m-0 mt-2 font-sans text-base leading-relaxed text-foreground">
+                      {step.body}
+                    </p>
+                  </div>
+                </li>
+                {index < flowSteps.length - 1 && (
+                  <li
+                    class="hidden items-center justify-center font-mono text-2xl font-bold text-foreground lg:flex"
+                    aria-hidden="true"
+                  >
+                    &rarr;
+                  </li>
+                )}
+              </>
+            ))
+          }
+        </ol>
+
+      </div>
+
+      <div class="bg-background p-8 md:p-12 lg:p-14">
+        <p class="m-0 font-mono text-sm font-bold uppercase tracking-[0.16em] text-foreground">
+          Uninstalls easily
+        </p>
+        <div class="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <p class="m-0 max-w-2xl font-sans text-base leading-relaxed text-foreground">
+            If PlanBridge is not for you, uninstall removes the harness entries and returns your
+            workflow to its previous state.
+          </p>
+          <p
+            class="m-0 inline-flex max-w-full items-center gap-3 border border-foreground px-4 py-3 font-mono text-sm font-bold leading-none text-foreground"
+          >
+            <span aria-hidden="true">$</span>
+            <code class="overflow-x-auto whitespace-nowrap font-mono">contextbridge uninstall</code>
+          </p>
+        </div>
+      </div>
+
+      <ul class="m-0 grid list-none grid-cols-2 gap-px bg-foreground p-0 md:grid-cols-3 lg:grid-cols-6">
+        {
+          trustSignals.map((signal) => (
+            <li class="flex min-h-32 flex-col justify-center gap-6 bg-background p-6">
+              <Icon name={signal.icon} class="h-9 w-9 text-foreground" aria-hidden="true" />
+              <span class="font-mono text-base font-bold leading-tight text-foreground">
+                {signal.label}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>

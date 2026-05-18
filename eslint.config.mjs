@@ -39,6 +39,7 @@ export default defineConfig(
       'dist/**',
       'node_modules/**',
       'coverage/**',
+      'tools/**',
       'packages/*/dist/**',
       'packages/*/node_modules/**',
       'packages/*/.astro/**',
