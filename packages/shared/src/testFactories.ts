@@ -1,11 +1,13 @@
 import { Factory } from 'fishery';
 import type {
+  AnnotationPayload,
   AnnotationSubmission,
   CommentAuthor,
   CommentMessage,
   CommentThread,
   StoredAnnotationAnchor,
 } from './annotationSchema.ts';
+import type { FrontendConfig } from './frontendConfigSchema.ts';
 
 export const LOCAL_AUTHOR = {
   id: 'local-user',
@@ -72,4 +74,15 @@ export const globalThread = Factory.define<CommentThread>(() => {
 export const annotationSubmission = Factory.define<AnnotationSubmission>(() => ({
   status: 'changes_requested',
   threads: [globalThread.build(), annotationThread.build()],
+}));
+
+export const annotationPayload = Factory.define<AnnotationPayload>(() => ({
+  content: '# plan',
+  contentKind: 'plan',
+  metadata: { entrypoint: 'plan_command' },
+}));
+
+export const frontendConfig = Factory.define<FrontendConfig>(() => ({
+  distinctId: 'test-distinct-id',
+  telemetryDisabled: false,
 }));
