@@ -1,6 +1,7 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { ServerContext } from './context.ts';
+import { handleAsset } from './routes/assets.ts';
 import { handleConfig } from './routes/config.ts';
 import { handleHtml } from './routes/html.ts';
 import { handlePayload } from './routes/payload.ts';
@@ -36,6 +37,7 @@ export function startServer(ctx: ServerContext, opts: StartServerOptions): Runni
     port: resolveListenPort(opts),
     routes: {
       '/': { GET: () => handleHtml(ctx, html) },
+      '/assets/:id': { GET: (req) => handleAsset(payload, req.params.id) },
       '/config': { GET: () => handleConfig(config) },
       '/payload': { GET: () => handlePayload(payload) },
       '/update-notice': { GET: () => handleUpdateNotice(checkForUpdate) },
