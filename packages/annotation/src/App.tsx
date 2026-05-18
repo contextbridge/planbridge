@@ -1,5 +1,5 @@
 import type { AnnotationPayload, CommentThread } from '@contextbridge/shared/annotationSchema';
-import { DOCS_URL, GITHUB_DISCUSSIONS_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { Header } from '@contextbridge/ui/components/Header';
 import {
@@ -82,7 +82,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
           <Header
             docsHref={DOCS_URL}
-            feedbackHref={GITHUB_DISCUSSIONS_URL}
+            feedbackHref={FEEDBACK_URL}
             githubRepoHref={GITHUB_REPO_URL}
             slackHelpHref={SLACK_COMMUNITY_URL}
             version={buildInfo.version}
@@ -97,7 +97,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
           <Header
             docsHref={DOCS_URL}
-            feedbackHref={GITHUB_DISCUSSIONS_URL}
+            feedbackHref={FEEDBACK_URL}
             githubRepoHref={GITHUB_REPO_URL}
             slackHelpHref={SLACK_COMMUNITY_URL}
             version={buildInfo.version}

@@ -8,6 +8,9 @@ import starlightLlmsTxt from 'starlight-llms-txt';
 
 export default defineConfig({
   site: 'https://plan.contextbridge.ai',
+  redirects: {
+    '/community/': '/feedback/',
+  },
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'viewport',
@@ -156,7 +159,7 @@ export default defineConfig({
           label: 'About',
           items: [
             { label: 'Privacy & telemetry', slug: 'privacy' },
-            { label: 'Community', slug: 'community' },
+            { label: 'Feedback', slug: 'feedback' },
           ],
         },
         {
