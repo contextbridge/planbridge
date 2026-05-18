@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, fontProviders } from 'astro/config';
 import expressiveCode from 'astro-expressive-code';
 import icon from 'astro-icon';
+import starlightLlmsTxt from 'starlight-llms-txt';
 
 export default defineConfig({
   site: 'https://plan.contextbridge.ai',
@@ -56,6 +57,78 @@ export default defineConfig({
       components: {
         Head: './src/components/Head.astro',
       },
+      plugins: [
+        starlightLlmsTxt({
+          projectName: 'PlanBridge',
+          description: 'Inline comments on coding-agent plans and markdown docs.',
+          details: [
+            'PlanBridge is an open-source CLI that opens coding-agent plans, specs, RFCs, and other markdown documents in a local browser review UI. Reviewers can highlight text, leave inline comments, approve, or request changes before the agent continues.',
+            '',
+            'What PlanBridge does:',
+            '',
+            '- Opens a local browser UI for reviewing markdown before an agent writes code or continues work.',
+            '- Supports `contextbridge plan` for proposed implementation plans and `contextbridge open <file>` for specs, RFCs, design docs, and saved plans.',
+            '- Returns the reviewer’s approval, general feedback, and inline annotations as markdown on stdout so the calling agent can act on it.',
+            '- Runs locally. The review UI talks to a short-lived server on `localhost`; there is no hosted review backend.',
+            '',
+            'PlanBridge includes Claude Code and Codex CLI integrations, but the core commands are harness-agnostic. Any agent that can run shell commands can use the same CLI contract.',
+            '',
+            'Use the abridged documentation for setup and normal usage. Use the complete documentation when you need command reference details.',
+          ].join('\n'),
+          promote: [
+            'quickstart',
+            'install',
+            'how-it-works',
+            'usage',
+            'usage/open',
+            'usage/claude-code',
+            'usage/codex',
+            'usage/other-agents',
+            'cli/open',
+            'cli/plan',
+          ],
+          demote: ['privacy', 'community', 'cli/**'],
+          exclude: ['privacy', 'community', 'cli/**'],
+          customSets: [
+            {
+              label: 'Plan and markdown review workflow',
+              description:
+                'setup and usage docs for reviewing coding-agent plans, specs, RFCs, and other markdown documents',
+              paths: [
+                'quickstart',
+                'install',
+                'how-it-works',
+                'usage',
+                'usage/open',
+                'usage/claude-code',
+                'usage/codex',
+                'usage/other-agents',
+              ],
+            },
+            {
+              label: 'CLI command reference',
+              description:
+                'generated command reference for contextbridge plan, contextbridge open, and harness integration commands',
+              paths: ['cli/**'],
+            },
+          ],
+          optionalLinks: [
+            {
+              label: 'Homepage',
+              url: 'https://plan.contextbridge.ai/',
+              description: 'product overview and installation entrypoint',
+            },
+            {
+              label: 'GitHub repository',
+              url: 'https://github.com/contextbridge/planbridge',
+              description: 'source code, issues, and releases',
+            },
+          ],
+          customSelectors: {
+            all: ['script', 'style', 'video', 'dialog'],
+          },
+        }),
+      ],
       sidebar: [
         {
           label: 'Start here',
