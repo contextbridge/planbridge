@@ -24,6 +24,8 @@ jobs:
           private-key: ${{ secrets.CB_PR_AUTOMATION_APP_PRIVATE_KEY }}
           owner: contextbridge
           repositories: planbridge
+          permission-contents: write
+          permission-pull-requests: write
 
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
