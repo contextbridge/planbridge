@@ -61,6 +61,7 @@ jobs:
           private-key: ${{ env.HOMEBREW_TAP_APP_PRIVATE_KEY }}
           owner: contextbridge
           repositories: homebrew-tap
+          permission-contents: write
 
       - name: Validate telemetry build config
         shell: bash
