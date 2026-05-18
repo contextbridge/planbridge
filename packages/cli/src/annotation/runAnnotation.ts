@@ -12,6 +12,7 @@ import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema'
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { CliContext } from '#src/context.ts';
+import { extractAssets } from './extractAssets.ts';
 import { extractDocumentTitle } from './extractDocumentTitle.ts';
 
 export class AnnotationInterruptedError extends Error {
@@ -73,6 +74,14 @@ export async function runAnnotation(
     },
   };
   analytics.capture('plan_review_started', { source: args.entrypoint });
+
+  const assets = await extractAssets(ctx, {
+    content: args.content,
+    sourcePath: args.sourcePath,
+  });
+  if (assets.length > 0) {
+    payload.assets = assets;
+  }
 
   let server: RunningServer | null = null;
   let removeSigintHandler = () => {};

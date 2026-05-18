@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve as resolvePath } from 'node:path';
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
@@ -56,6 +56,19 @@ describe('plan handler', () => {
 
     expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content));
     expect(deps.payloads[0]?.content).toBe('# From positional path\n');
+  });
+
+  it('forwards args.path as sourcePath to runAnnotation', async () => {
+    const planPath = join(tmp, 'plan.md');
+    writeFileSync(planPath, '# plan\n');
+
+    const { context, io } = createStubContext();
+    const deps = createAnnotationDependencies();
+    io.stdin.isTTY = true;
+
+    await runPlan(context, { path: planPath }, deps);
+
+    expect(deps.payloads[0]?.metadata?.sourcePath).toBe(resolvePath(planPath));
   });
 
   it('prefers the positional path when stdin is also piped', async () => {
