@@ -19,7 +19,12 @@ const CACHE_FILE_NAME = 'update-check.json';
 const CASK_BASE = 'https://raw.githubusercontent.com/contextbridge/homebrew-tap/main/Casks';
 const FETCH_TIMEOUT_MS = 2_000;
 const INSTALL_SH_URL = 'https://downloads.contextbridge.ai/cli/install.sh';
-const HOMEBREW_MARKERS = [`${sep}Cellar${sep}`, `${sep}opt${sep}homebrew${sep}`, `${sep}linuxbrew${sep}`];
+const HOMEBREW_MARKERS = [
+  `${sep}Cellar${sep}`,
+  `${sep}Caskroom${sep}`,
+  `${sep}opt${sep}homebrew${sep}`,
+  `${sep}linuxbrew${sep}`,
+];
 
 export type Duration = ReturnType<typeof Temporal.Duration.from>;
 

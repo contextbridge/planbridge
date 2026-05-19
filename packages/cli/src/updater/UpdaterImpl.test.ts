@@ -294,9 +294,11 @@ describe('UpdaterImpl.performUpdate', () => {
   });
 
   it.each([
-    ['/opt/homebrew/Cellar/contextbridge/0.1.0/bin/contextbridge', 'Apple Silicon brew'],
-    ['/usr/local/Cellar/contextbridge/0.1.0/bin/contextbridge', 'Intel brew'],
-    ['/home/linuxbrew/.linuxbrew/Cellar/contextbridge/0.1.0/bin/contextbridge', 'linuxbrew'],
+    ['/opt/homebrew/Cellar/contextbridge/0.1.0/bin/contextbridge', 'Apple Silicon brew formula'],
+    ['/usr/local/Cellar/contextbridge/0.1.0/bin/contextbridge', 'Intel brew formula'],
+    ['/home/linuxbrew/.linuxbrew/Cellar/contextbridge/0.1.0/bin/contextbridge', 'linuxbrew formula'],
+    ['/opt/homebrew/Caskroom/cli/0.1.0/contextbridge', 'Apple Silicon brew cask'],
+    ['/usr/local/Caskroom/cli/0.1.0/contextbridge', 'Intel brew cask'],
   ])('detects %s as homebrew (%s layout)', async (execPath) => {
     const commandRunner = new FakeCommandRunner();
     commandRunner.onAny().resolves();
