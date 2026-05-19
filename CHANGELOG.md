@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/contextbridge/planbridge/compare/v0.7.1...v0.7.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* **annotation:** confirm before discarding draft comments ([#174](https://github.com/contextbridge/planbridge/issues/174)) ([becad44](https://github.com/contextbridge/planbridge/commit/becad446b5b662cdeb84717a5e47dda964ea7a40))
+* **cli:** detect Homebrew cask installs on Intel macOS ([#176](https://github.com/contextbridge/planbridge/issues/176)) ([1edd638](https://github.com/contextbridge/planbridge/commit/1edd6381a1ad056e92a67e9895258dfa52331ada))
+
 ## [0.7.1](https://github.com/contextbridge/planbridge/compare/v0.7.0...v0.7.1) (2026-05-19)
 
 
