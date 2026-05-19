@@ -4,14 +4,13 @@ interface Props {
 }
 const { size = 'default' } = Astro.props;
 const INSTALL_COMMAND = '/bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"';
-const sizeClasses =
-  size === 'large'
-    ? 'px-6 py-4 text-base'
-    : 'px-4 py-2 text-base';
+const sizeClasses = size === 'large' ? 'px-6 py-4 text-base' : 'px-4 py-2 text-base';
 ---
 
 <div class="flex max-w-full flex-col sm:inline-flex" data-install-command>
-  <div class="mb-2 flex items-baseline justify-between gap-6 font-mono text-xs font-bold uppercase tracking-[0.16em] text-tangerine">
+  <div
+    class="mb-2 flex items-baseline justify-between gap-6 font-mono text-xs font-bold uppercase tracking-[0.16em] text-tangerine"
+  >
     <span>Install</span>
     <span>macOS · Linux</span>
   </div>
@@ -22,7 +21,9 @@ const sizeClasses =
     ]}
   >
     <span aria-hidden="true" class="text-foreground select-none font-bold">$</span>
-    <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-base [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <code
+      class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-base [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       {INSTALL_COMMAND}<span class="install-cursor" aria-hidden="true">_</span>
     </code>
     <button
@@ -68,8 +69,14 @@ const sizeClasses =
 
 <style>
   @keyframes cb-cursor-blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+    0%,
+    50% {
+      opacity: 1;
+    }
+    51%,
+    100% {
+      opacity: 0;
+    }
   }
   .install-cursor {
     display: inline-block;
@@ -78,7 +85,9 @@ const sizeClasses =
     animation: cb-cursor-blink 1.1s step-end infinite;
   }
   @media (prefers-reduced-motion: reduce) {
-    .install-cursor { animation: none; }
+    .install-cursor {
+      animation: none;
+    }
   }
 </style>
 

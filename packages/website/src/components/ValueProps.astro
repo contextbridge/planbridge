@@ -19,17 +19,10 @@ const valueProps = [
 ];
 ---
 
-<section
-  class="relative bg-background px-8 pb-32"
-  style="padding-top: calc(var(--hero-demo-overlap) + 8rem);"
->
+<section class="relative bg-background px-8 pb-32" style="padding-top: calc(var(--hero-demo-overlap) + 8rem);">
   <div class="mx-auto max-w-7xl">
-    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
-      Why it matters
-    </p>
-    <h2
-      class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
-    >
+    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">Why it matters</p>
+    <h2 class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]">
       The most expensive bugs are the ones you didn't catch at plan time.
     </h2>
 
@@ -40,16 +33,10 @@ const valueProps = [
         valueProps.map((valueProp, index) => (
           <li class="list-none bg-background p-8">
             <div class="flex items-baseline gap-6">
-              <span class="font-mono text-2xl font-bold text-foreground">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <h3 class="font-mono text-2xl font-bold leading-tight text-foreground">
-                {valueProp.title}
-              </h3>
+              <span class="font-mono text-2xl font-bold text-foreground">{String(index + 1).padStart(2, '0')}</span>
+              <h3 class="font-mono text-2xl font-bold leading-tight text-foreground">{valueProp.title}</h3>
             </div>
-            <p class="mt-8 font-sans text-base leading-relaxed text-foreground">
-              {valueProp.body}
-            </p>
+            <p class="mt-8 font-sans text-base leading-relaxed text-foreground">{valueProp.body}</p>
           </li>
         ))
       }
