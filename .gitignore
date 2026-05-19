@@ -4,7 +4,6 @@ coverage/
 claude-tmp/
 .npmrc.local
 storybook-static/
-tools/
 .bun/
 .DS_Store
 *.swp
