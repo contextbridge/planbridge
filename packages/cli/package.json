@@ -32,7 +32,10 @@
     "neverthrow": "^8.2.0",
     "open": "^11.0.0",
     "pino": "^10.3.1",
+    "remark-parse": "^11.0.0",
     "semver": "^7.7.4",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

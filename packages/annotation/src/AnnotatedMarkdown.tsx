@@ -1,4 +1,4 @@
-import type { AnnotationTargetKind } from '@contextbridge/shared/annotationSchema';
+import type { AnnotationTargetKind, Asset } from '@contextbridge/shared/annotationSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
 import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
@@ -14,9 +14,23 @@ export interface AnnotatedMarkdownProps {
   content: string;
   containerRef: Ref<HTMLDivElement>;
   onMouseUp?: () => void;
+  assets?: Asset[];
 }
 
-export function AnnotatedMarkdown({ content, containerRef, onMouseUp }: AnnotatedMarkdownProps) {
+export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: AnnotatedMarkdownProps) {
+  const assetsByPath = new Map<string, Asset>();
+  for (const asset of assets ?? []) {
+    assetsByPath.set(asset.originalPath, asset);
+  }
+
+  const components = {
+    ...markdownComponents,
+    img: ({ src, alt, ...rest }: ComponentPropsWithoutRef<'img'>) => {
+      const match = assetsByPath.get(src ?? '');
+      return <img src={match ? `/assets/${match.id}` : src} alt={alt} {...rest} />;
+    },
+  };
+
   return (
     <div
       ref={containerRef}
@@ -27,7 +41,7 @@ export function AnnotatedMarkdown({ content, containerRef, onMouseUp }: Annotate
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true }]]}
-        components={markdownComponents}
+        components={components}
       >
         {content}
       </ReactMarkdown>

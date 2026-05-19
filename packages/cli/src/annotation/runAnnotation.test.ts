@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
@@ -146,5 +149,26 @@ describe('runAnnotation', () => {
       runAnnotation(context, { content: '# doc', contentKind: 'document', entrypoint: 'open_command' }, deps),
     ).resolves.toEqual(deps.submission);
     expect(deps.payloads[0]?.metadata?.sourcePath).toBeUndefined();
+  });
+
+  it('extracts referenced local images into payload.assets while preserving original content', async () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cb-runannotation-img-'));
+    const imgPath = join(tmp, 'fixture.png');
+    writeFileSync(imgPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    try {
+      const content = `# plan\n\n![diagram](${imgPath})\n`;
+      const { context } = createStubContext();
+      const deps = createAnnotationDependencies();
+
+      await runAnnotation(context, { content, contentKind: 'plan', entrypoint: 'plan_command' }, deps);
+
+      const captured = deps.payloads[0];
+      expect(captured?.assets).toHaveLength(1);
+      expect(captured?.assets?.[0]?.originalPath).toBe(imgPath);
+      expect(captured?.content).toBe(content);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });

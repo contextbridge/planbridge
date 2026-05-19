@@ -120,6 +120,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                     key={payload.content}
                     containerRef={annotationInteractions.handlePlanContainer}
                     content={payload.content}
+                    assets={payload.assets}
                     onMouseUp={annotationInteractions.handleSelectionCapture}
                   />
                 ) : (

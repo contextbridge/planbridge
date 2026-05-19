@@ -2,6 +2,7 @@ import { Factory } from 'fishery';
 import type {
   AnnotationPayload,
   AnnotationSubmission,
+  Asset,
   CommentAuthor,
   CommentMessage,
   CommentThread,
@@ -14,6 +15,13 @@ export const LOCAL_AUTHOR = {
   kind: 'user' as const,
   displayName: 'You',
 };
+
+export const asset = Factory.define<Asset>(() => ({
+  id: 'asset_01',
+  originalPath: '/tmp/diagram.png',
+  mimeType: 'image/png',
+  dataBase64: 'iVBORw0KGgo=',
+}));
 
 export const reviewer = Factory.define<CommentAuthor>(() => ({
   id: 'reviewer',

@@ -1,3 +1,4 @@
+import { resolve as resolvePath } from 'node:path';
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError, InvalidArgumentError } from 'commander';
 import {
@@ -42,12 +43,14 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
     abort(ctx, 'plan', 'input', 'plan content is empty');
   }
 
+  const sourcePath = path ? resolvePath(path) : undefined;
+
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
 
   try {
     const submission = await runAnnotation(
       ctx,
-      { content, contentKind: 'plan', entrypoint: 'plan_command', port },
+      { content, contentKind: 'plan', entrypoint: 'plan_command', port, sourcePath },
       deps,
     );
     io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));

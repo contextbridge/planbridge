@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  ASSET_FILE_EXTENSIONS,
+  ASSET_MIME_TYPES,
   AnnotationEntrypointSchema,
   AnnotationPayloadSchema,
   AnnotationSubmissionSchema,
+  AssetFileExtensionSchema,
+  AssetSchema,
   ContentKindSchema,
 } from './annotationSchema.ts';
-import { annotationAnchor, annotationThread, commentMessage, globalThread } from './testFactories.ts';
+import { annotationAnchor, annotationThread, asset, commentMessage, globalThread } from './testFactories.ts';
 import { Temporal, instantFromString, instantToString } from './time.ts';
 
 describe('AnnotationSubmissionSchema', () => {
@@ -170,6 +174,76 @@ describe('AnnotationPayloadSchema', () => {
         metadata: { entrypoint: 'open_command', sourcePath: '   ' },
       }),
     ).toThrow();
+  });
+});
+
+describe('AssetSchema', () => {
+  it('parses a valid asset record', () => {
+    const parsed = AssetSchema.parse(
+      asset.build({ id: 'abc123', originalPath: '/Users/alice/diagram.png', dataBase64: 'iVBORw0KGgo=' }),
+    );
+
+    expect(parsed).toMatchObject({
+      id: 'abc123',
+      originalPath: '/Users/alice/diagram.png',
+      mimeType: 'image/png',
+      dataBase64: 'iVBORw0KGgo=',
+    });
+  });
+
+  it('rejects an empty id', () => {
+    expect(() => AssetSchema.parse(asset.build({ id: '' }))).toThrow();
+  });
+
+  it('rejects an empty originalPath', () => {
+    expect(() => AssetSchema.parse(asset.build({ originalPath: '' }))).toThrow();
+  });
+
+  it('rejects an unsupported mime type', () => {
+    expect(() =>
+      AssetSchema.parse({ ...asset.build({ originalPath: '/x.svg' }), mimeType: 'image/svg+xml' }),
+    ).toThrow();
+  });
+
+  it('rejects non-base64 asset data', () => {
+    expect(() => AssetSchema.parse(asset.build({ dataBase64: 'not base64!' }))).toThrow();
+  });
+
+  it('accepts each allowed mime type', () => {
+    for (const mimeType of ASSET_MIME_TYPES) {
+      expect(() => AssetSchema.parse(asset.build({ mimeType }))).not.toThrow();
+    }
+  });
+});
+
+describe('AssetFileExtensionSchema', () => {
+  it('accepts each allowed file extension', () => {
+    for (const extension of ASSET_FILE_EXTENSIONS) {
+      expect(AssetFileExtensionSchema.parse(extension)).toBe(extension);
+    }
+  });
+
+  it('rejects svg files', () => {
+    expect(() => AssetFileExtensionSchema.parse('.svg')).toThrow();
+  });
+});
+
+describe('AnnotationPayloadSchema with assets', () => {
+  it('accepts a payload with an optional assets array', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+      assets: [asset.build({ id: 'abc', originalPath: '/x.png' })],
+    });
+    expect(parsed.assets).toHaveLength(1);
+  });
+
+  it('accepts a payload with no assets field (backward compatible)', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+    });
+    expect(parsed.assets).toBeUndefined();
   });
 });
 

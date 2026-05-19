@@ -133,6 +133,37 @@ export type AnnotationSubmission = z.infer<typeof AnnotationSubmissionSchema>;
 export const AnnotationEntrypointSchema = z.enum(['plan_command', 'hook_claude', 'hook_codex', 'open_command']);
 export type AnnotationEntrypoint = z.infer<typeof AnnotationEntrypointSchema>;
 
+export const ASSET_FILE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.ico', '.bmp'] as const;
+export const AssetFileExtensionSchema = z.enum(ASSET_FILE_EXTENSIONS);
+export type AssetFileExtension = z.infer<typeof AssetFileExtensionSchema>;
+
+export const ASSET_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/x-icon',
+  'image/x-ms-bmp',
+] as const;
+export const AssetMimeTypeSchema = z.enum(ASSET_MIME_TYPES);
+export type AssetMimeType = z.infer<typeof AssetMimeTypeSchema>;
+
+export const AssetDataBase64Schema = z
+  .string()
+  .trim()
+  .nonempty()
+  .refine((value) => isStandardBase64(value), { message: 'must be standard base64-encoded asset data' });
+export type AssetDataBase64 = z.infer<typeof AssetDataBase64Schema>;
+
+export const AssetSchema = z.object({
+  id: z.string().nonempty(),
+  originalPath: z.string().nonempty(),
+  mimeType: AssetMimeTypeSchema,
+  dataBase64: AssetDataBase64Schema,
+});
+export type Asset = z.infer<typeof AssetSchema>;
+
 export const AnnotationPayloadSchema = z.object({
   content: z.string(),
   title: z
@@ -147,5 +178,10 @@ export const AnnotationPayloadSchema = z.object({
       sourcePath: z.string().trim().nonempty().optional(),
     })
     .optional(),
+  assets: z.array(AssetSchema).optional(),
 });
 export type AnnotationPayload = z.infer<typeof AnnotationPayloadSchema>;
+
+function isStandardBase64(value: string): boolean {
+  return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
+}
