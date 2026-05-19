@@ -7,6 +7,8 @@ import guruAvatar from '../assets/testimonials/guru.jpeg';
 import jacobBAvatar from '../assets/testimonials/jacob_b.jpeg';
 import larryOAvatar from '../assets/testimonials/larry_o.jpeg';
 import seanMAvatar from '../assets/testimonials/sean_m.jpeg';
+import scottLAvatar from '../assets/testimonials/scott_l.jpeg';
+import jesseSAvatar from '../assets/testimonials/jesse_s.jpeg';
 
 interface Testimonial {
   quote: string;
@@ -76,6 +78,26 @@ const testimonials: Testimonial[] = [
     company: 'Gamechanger',
     initials: 'SM',
     avatar: seanMAvatar,
+  },
+  {
+    quote:
+      'I’ve been happy with PlanBridge. It’s so much better than trying to describe what you’re talking about in a TUI to give feedback on plans.',
+    firstName: 'Scott',
+    lastInitial: 'L',
+    role: 'Distinguished Engineer',
+    company: 'Ibotta, Inc.',
+    initials: 'SL',
+    avatar: scottLAvatar,
+  },
+  {
+    quote:
+      'With PlanBridge, I give a lot more feedback on plans because it’s easier to click and type a comment compared to typing in-terminal and having to scroll back and forth.',
+    firstName: 'Jesse',
+    lastInitial: 'S',
+    role: 'Senior Software Engineer',
+    company: 'Stripe',
+    initials: 'JS',
+    avatar: jesseSAvatar,
   },
 ];
 ---
@@ -162,12 +184,25 @@ const testimonials: Testimonial[] = [
 <script>
   const section = document.querySelector<HTMLElement>('[data-user-quotes]');
   if (section) {
+    const grid = section.querySelector<HTMLElement>('[data-quote-grid]');
     const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-quote-index]'));
     const dotsContainer = section.querySelector<HTMLElement>('[data-quote-dots]');
     const prev = section.querySelector<HTMLButtonElement>('[data-quote-prev]');
     const next = section.querySelector<HTMLButtonElement>('[data-quote-next]');
     const total = cards.length;
     const query = window.matchMedia('(min-width: 768px)');
+
+    const fillers: HTMLElement[] = [];
+    if (grid) {
+      for (let i = 0; i < 2; i++) {
+        const filler = document.createElement('div');
+        filler.className = 'bg-background';
+        filler.setAttribute('aria-hidden', 'true');
+        filler.style.display = 'none';
+        grid.appendChild(filler);
+        fillers.push(filler);
+      }
+    }
 
     let pageSize = query.matches ? 3 : 1;
     let activePage = 0;
@@ -179,6 +214,10 @@ const testimonials: Testimonial[] = [
       const end = start + pageSize;
       cards.forEach((card, i) => {
         card.style.display = i >= start && i < end ? '' : 'none';
+      });
+      const emptySlots = pageSize === 3 ? pageSize - Math.min(pageSize, total - start) : 0;
+      fillers.forEach((filler, i) => {
+        filler.style.display = i < emptySlots ? '' : 'none';
       });
     };
 
