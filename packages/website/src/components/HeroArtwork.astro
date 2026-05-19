@@ -38,10 +38,7 @@ const innerCy = 400 + (layers - 1) * offsetY;
     class="hero-artwork__svg"
     preserveAspectRatio="xMidYMid meet"
   >
-    <g
-      class="hero-artwork__rotor"
-      style={`transform-origin: ${innerCx}px ${innerCy}px;`}
-    >
+    <g class="hero-artwork__rotor" style={`transform-origin: ${innerCx}px ${innerCy}px;`}>
       {
         squares.map(({ x, y, size, rx }) => (
           <rect

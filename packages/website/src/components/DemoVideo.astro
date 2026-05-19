@@ -1,5 +1,5 @@
 ---
-import { getImage, Picture } from 'astro:assets';
+import { Picture, getImage } from 'astro:assets';
 import posterImage from '../assets/demo/plan-review-poster.jpg';
 
 interface Props {
@@ -50,7 +50,14 @@ const optimizedPoster = await getImage({
 
 <dialog data-demo-video-modal class="demo-video-modal">
   <button type="button" data-demo-video-close class="demo-video-modal__close" aria-label="Close">×</button>
-  <video data-demo-video-modal-video class="demo-video-modal__video" controls playsinline preload="metadata" poster={optimizedPoster.src}>
+  <video
+    data-demo-video-modal-video
+    class="demo-video-modal__video"
+    controls
+    playsinline
+    preload="metadata"
+    poster={optimizedPoster.src}
+  >
     <source src={src} type="video/webm" />
   </video>
 </dialog>

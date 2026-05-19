@@ -1,7 +1,7 @@
 ---
-import "../styles/main.css";
-import { Font, Image } from 'astro:assets';
+import '../styles/main.css';
 import { Icon } from 'astro-icon/components';
+import { Font, Image } from 'astro:assets';
 import tasteInTheLoopBadge from '../assets/brands/taste-in-the-loop.svg';
 
 const { title, description } = Astro.props.frontmatter;
@@ -44,10 +44,7 @@ const { title, description } = Astro.props.frontmatter;
     <header
       class="section-dark sticky top-0 z-50 flex items-center gap-4 border-b border-border bg-background px-8 py-6"
     >
-      <a
-        href="/"
-        class="inline-flex flex-1 items-center gap-3 text-foreground no-underline"
-      >
+      <a href="/" class="inline-flex flex-1 items-center gap-3 text-foreground no-underline">
         <svg
           aria-hidden="true"
           fill="currentColor"
@@ -61,14 +58,8 @@ const { title, description } = Astro.props.frontmatter;
         <span class="font-mono text-base font-bold tracking-tight">PlanBridge</span>
       </a>
       <nav class="ml-8 flex items-center gap-8">
-        <a
-          href="/#faq"
-          class="font-mono text-base font-medium text-foreground no-underline hover:underline"
-          >FAQ</a
-        >
-        <a
-          href="/quickstart/"
-          class="font-mono text-base font-medium text-foreground no-underline hover:underline"
+        <a href="/#faq" class="font-mono text-base font-medium text-foreground no-underline hover:underline">FAQ</a>
+        <a href="/quickstart/" class="font-mono text-base font-medium text-foreground no-underline hover:underline"
           >Docs</a
         >
         <a
@@ -94,9 +85,7 @@ const { title, description } = Astro.props.frontmatter;
           <div class="flex flex-col gap-2 font-sans text-base text-foreground">
             <p class="m-0 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span class="font-mono text-base font-bold">PlanBridge</span>
-              <a
-                href="https://contextbridge.ai"
-                class="text-foreground no-underline hover:underline"
+              <a href="https://contextbridge.ai" class="text-foreground no-underline hover:underline"
                 >by ContextBridge</a
               >
             </p>
@@ -121,16 +110,8 @@ const { title, description } = Astro.props.frontmatter;
             </p>
           </div>
           <div class="flex items-center gap-8">
-            <a
-              href="/#faq"
-              class="font-sans text-base text-foreground no-underline hover:underline"
-              >FAQ</a
-            >
-            <a
-              href="/quickstart/"
-              class="font-sans text-base text-foreground no-underline hover:underline"
-              >Docs</a
-            >
+            <a href="/#faq" class="font-sans text-base text-foreground no-underline hover:underline">FAQ</a>
+            <a href="/quickstart/" class="font-sans text-base text-foreground no-underline hover:underline">Docs</a>
             <a
               href="https://github.com/contextbridge/planbridge"
               target="_blank"

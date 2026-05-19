@@ -20,3 +20,9 @@ Astro + Starlight marketing and docs site for ContextBridge. Root repo conventio
 ## Demo asset
 
 The homepage demo video and poster live in `public/demo/`. Regenerate them from the annotation package with `just record-demo` after material UI changes.
+
+## Images and assets
+
+- Put images in `src/assets/<group>/` and reference them through `astro:assets` — `<Image>` / `<Picture>` in `.astro` files, or `getImage()` when you need a URL (e.g. for `og:image` or a TSX component receiving a pre-resolved src). This routes everything through Astro's asset pipeline (hashing, optimization, responsive variants).
+- `public/` is reserved for files that must be served verbatim at a stable URL: `favicon.svg`, `robots.txt`, the `demo/` video and poster. Don't drop new images there to skip the pipeline.
+- A repo-level ESLint rule (`no-restricted-syntax` scoped to `packages/website/src/**/*.{astro,tsx}`) bans raw `<img>` tags. If you hit the error, switch to `<Image>` / `<Picture>` or pass a processed src via `getImage()`.

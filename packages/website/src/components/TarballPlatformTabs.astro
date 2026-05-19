@@ -1,6 +1,6 @@
 ---
+import { TabItem, Tabs } from '@astrojs/starlight/components';
 import { Code } from 'astro-expressive-code/components';
-import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 const buildSnippet = (os: string, arch: string) =>
   `curl -fsSL "https://downloads.contextbridge.ai/cli/latest/contextbridge_latest_${os}_${arch}.tar.gz" -o contextbridge.tar.gz
