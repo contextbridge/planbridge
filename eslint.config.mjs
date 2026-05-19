@@ -40,6 +40,18 @@ const rawImgRestrictedSelector = {
     "Use <Image /> or <Picture /> from astro:assets, and import images from src/assets/. Raw <img> bypasses Astro's asset pipeline.",
 };
 
+const annotationRuntimeWindowRestrictedSelectors = [
+  {
+    selector: "CallExpression[callee.object.name='window'][callee.property.name=/^(close|setTimeout|clearTimeout)$/]",
+    message: 'Production annotation runtime code must use FrontendContext.browser for window lifecycle APIs.',
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='window'][callee.property.name=/^(addEventListener|removeEventListener)$/][arguments.0.value='beforeunload']",
+    message: 'Production annotation runtime code must use FrontendContext.browser for beforeunload guards.',
+  },
+];
+
 export default defineConfig(
   ...baseConfig,
   {
@@ -128,6 +140,18 @@ export default defineConfig(
   {
     files: reactFiles,
     extends: [reactHooks.configs.flat.recommended],
+  },
+  {
+    files: ['packages/annotation/src/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/annotation/src/**/*.test.{ts,tsx}',
+      'packages/annotation/src/**/*.stories.{ts,tsx}',
+      'packages/annotation/src/demo/**',
+      'packages/annotation/src/testHelpers/**',
+    ],
+    rules: {
+      'no-restricted-syntax': ['error', ...dateRestrictedSelectors, ...annotationRuntimeWindowRestrictedSelectors],
+    },
   },
   {
     files: ['packages/website/**/*.astro'],

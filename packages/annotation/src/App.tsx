@@ -41,7 +41,13 @@ export interface AppProps {
 }
 
 export function App({ initialPayload, initialThreads, initialGlobalComment }: AppProps = {}) {
-  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo } = useAnnotationAppContext();
+  const {
+    fetchPayload,
+    fetchUpdateNotice,
+    analytics,
+    buildInfo,
+    browser: { addBeforeUnloadGuard },
+  } = useAnnotationAppContext();
   const [payload, setPayload] = useState<AnnotationPayload | null>(initialPayload ?? null);
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(null);
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false);
@@ -73,6 +79,16 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
       .then(setUpdateNotice)
       .catch(() => {});
   }, [fetchUpdateNotice]);
+
+  const { submitted } = reviewState.submission;
+  useEffect(() => {
+    if (submitted) {
+      return;
+    }
+    return addBeforeUnloadGuard((event) => {
+      event.preventDefault();
+    });
+  }, [submitted, addBeforeUnloadGuard]);
 
   const documentTitle = resolveDocumentTitle(payload);
 

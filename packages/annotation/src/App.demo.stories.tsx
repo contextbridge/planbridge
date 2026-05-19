@@ -217,8 +217,17 @@ export const FullDemo: Story = {
     withAppContext({
       submitAnnotation: () => new Promise((resolve) => setTimeout(resolve, 350)),
       autoCloseDelaySeconds: AUTO_CLOSE_SECONDS,
-      closeWindow: () => {
-        window.__demoCloseBrowser?.();
+      browser: {
+        closeWindow: () => {
+          window.__demoCloseBrowser?.();
+        },
+        scheduleTimeout: (callback, delayMs) => {
+          const id = window.setTimeout(callback, delayMs);
+          return () => {
+            window.clearTimeout(id);
+          };
+        },
+        addBeforeUnloadGuard: () => () => {},
       },
       buildInfo: buildInfoFactory.build({ version: '0.2.0' }),
     }),

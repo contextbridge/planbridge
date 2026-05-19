@@ -602,6 +602,52 @@ Run \`${longCode}\` now.
       expect(feedbackButton).toHaveTextContent('Feedback');
     });
   });
+
+  describe('beforeunload guard', () => {
+    it('registers a guard on mount even with no feedback', () => {
+      const { unloadGuard } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+
+      expect(unloadGuard.isRegistered()).toBe(true);
+      expect(unloadGuard.trigger().defaultPrevented).toBe(true);
+    });
+
+    it('removes the guard after a successful submission', async () => {
+      const user = userEvent.setup();
+      const { unloadGuard } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+
+      await user.click(screen.getByTestId(submitBarTestIds.button));
+      await screen.findByTestId(submitBarTestIds.countdown);
+
+      expect(unloadGuard.isRegistered()).toBe(false);
+    });
+
+    it('keeps the guard attached after a failed submission', async () => {
+      const user = userEvent.setup();
+      const submitAnnotation = vi
+        .fn<(submission: AnnotationSubmission) => Promise<void>>()
+        .mockRejectedValue(new Error('network down'));
+      const { unloadGuard } = renderApp(
+        { initialPayload: { contentKind: 'plan', content: '# Ship it' } },
+        { submitAnnotation },
+      );
+
+      await user.click(screen.getByTestId(submitBarTestIds.button));
+      await waitFor(() => {
+        expect(submitAnnotation).toHaveBeenCalledTimes(1);
+      });
+
+      expect(unloadGuard.isRegistered()).toBe(true);
+      expect(unloadGuard.trigger().defaultPrevented).toBe(true);
+    });
+
+    it('removes the guard on unmount', () => {
+      const { result, unloadGuard } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+
+      result.unmount();
+
+      expect(unloadGuard.isRegistered()).toBe(false);
+    });
+  });
 });
 
 /** Assert that `child`'s right edge does not extend beyond `parent`'s right border. */

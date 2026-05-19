@@ -18,11 +18,17 @@ export { type BuildInfo, BUILD_INFO } from './buildInfo.ts';
 export { type FrontendTelemetry } from '@contextbridge/instrumentation/frontend';
 
 export type ScheduleTimeout = (handler: () => void, delayMs: number) => () => void;
+export type AddBeforeUnloadGuard = (handler: (event: BeforeUnloadEvent) => void) => () => void;
+
+export interface FrontendBrowser {
+  readonly closeWindow: () => void;
+  readonly scheduleTimeout: ScheduleTimeout;
+  readonly addBeforeUnloadGuard: AddBeforeUnloadGuard;
+}
 
 export interface FrontendContext extends BaseContext {
   readonly telemetry: FrontendTelemetry;
-  readonly closeWindow: () => void;
-  readonly scheduleTimeout: ScheduleTimeout;
+  readonly browser: FrontendBrowser;
 }
 
 export interface CreateFrontendContextInput {
@@ -30,19 +36,11 @@ export interface CreateFrontendContextInput {
   readonly surface: string;
   readonly buildInfo?: BuildInfo;
   readonly logger?: Logger;
-  readonly closeWindow?: () => void;
-  readonly scheduleTimeout?: ScheduleTimeout;
+  readonly browser?: Partial<FrontendBrowser>;
 }
 
 export function createFrontendContext(input: CreateFrontendContextInput): FrontendContext {
-  const {
-    config,
-    surface,
-    buildInfo = BUILD_INFO,
-    logger: loggerOverride,
-    closeWindow = defaultCloseWindow,
-    scheduleTimeout = defaultScheduleTimeout,
-  } = input;
+  const { config, surface, buildInfo = BUILD_INFO, logger: loggerOverride, browser: browserOverride } = input;
 
   const { distinctId, telemetryDisabled } = config;
 
@@ -62,18 +60,27 @@ export function createFrontendContext(input: CreateFrontendContextInput): Fronte
   return Object.freeze({
     ...createBaseContext({ buildInfo, logger, distinctId, telemetryDisabled, analytics, telemetry }),
     telemetry,
-    closeWindow,
-    scheduleTimeout,
+    browser: Object.freeze({
+      ...defaultFrontendBrowser,
+      ...browserOverride,
+    }),
   });
 }
 
-function defaultCloseWindow(): void {
-  window.close();
-}
-
-function defaultScheduleTimeout(handler: () => void, delayMs: number): () => void {
-  const id = window.setTimeout(handler, delayMs);
-  return () => {
-    window.clearTimeout(id);
-  };
-}
+const defaultFrontendBrowser: FrontendBrowser = Object.freeze({
+  closeWindow: () => {
+    window.close();
+  },
+  scheduleTimeout: (handler: () => void, delayMs: number) => {
+    const id = window.setTimeout(handler, delayMs);
+    return () => {
+      window.clearTimeout(id);
+    };
+  },
+  addBeforeUnloadGuard: (handler: (event: BeforeUnloadEvent) => void) => {
+    window.addEventListener('beforeunload', handler);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
+  },
+});

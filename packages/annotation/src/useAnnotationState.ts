@@ -35,7 +35,11 @@ type PendingDraftAction =
   | { kind: 'remove'; threadId: string };
 
 export function useAnnotationState({ initialThreads, initialGlobalComment }: UseAnnotationStateArgs = {}) {
-  const { submitAnnotation, scheduleTimeout, closeWindow, autoCloseDelaySeconds } = useAnnotationAppContext();
+  const {
+    submitAnnotation,
+    browser: { scheduleTimeout, closeWindow },
+    autoCloseDelaySeconds,
+  } = useAnnotationAppContext();
 
   const [threads, setThreads] = useState<CommentThread[]>(() =>
     (initialThreads ?? []).filter(isAnnotationCommentThread),

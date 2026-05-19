@@ -6,13 +6,16 @@ import { AnnotationAppContext } from '../src/useAppContext.ts';
 export function createStoryAppContext(overrides?: Partial<AnnotationAppContextValue>): AnnotationAppContextValue {
   return {
     ...fakeFrontendContext({
-      scheduleTimeout: (callback, delayMs) => {
-        const id = window.setTimeout(callback, delayMs);
-        return () => {
-          window.clearTimeout(id);
-        };
+      browser: {
+        closeWindow: () => {},
+        scheduleTimeout: (callback, delayMs) => {
+          const id = window.setTimeout(callback, delayMs);
+          return () => {
+            window.clearTimeout(id);
+          };
+        },
+        addBeforeUnloadGuard: () => () => {},
       },
-      closeWindow: () => {},
     }),
     fetchPayload: () => Promise.resolve({ content: '', contentKind: 'plan' }),
     fetchUpdateNotice: () => Promise.resolve(null),

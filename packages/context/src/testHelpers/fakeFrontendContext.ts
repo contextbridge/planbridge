@@ -6,8 +6,11 @@ export function fakeFrontendContext(overrides: Partial<FrontendContext> = {}): F
   return {
     ...fakeBaseContext(),
     telemetry: createFakeFrontendTelemetry(),
-    closeWindow: () => {},
-    scheduleTimeout: () => () => {},
+    browser: {
+      closeWindow: () => {},
+      scheduleTimeout: () => () => {},
+      addBeforeUnloadGuard: () => () => {},
+    },
     ...overrides,
   };
 }

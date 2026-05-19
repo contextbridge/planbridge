@@ -26,15 +26,17 @@ describe('fakeFrontendContext', () => {
   it('returns a FrontendContext with no-op browser hooks and a passthrough ErrorBoundary', () => {
     const ctx = fakeFrontendContext();
     expect(ctx.buildInfo.version).toBe('test');
-    expect(typeof ctx.closeWindow).toBe('function');
-    expect(typeof ctx.scheduleTimeout).toBe('function');
+    expect(typeof ctx.browser.closeWindow).toBe('function');
+    expect(typeof ctx.browser.scheduleTimeout).toBe('function');
+    expect(typeof ctx.browser.addBeforeUnloadGuard).toBe('function');
     expect(typeof ctx.telemetry.ErrorBoundary).toBe('function');
   });
 
   it('applies overrides', () => {
     let closed = false;
-    const ctx = fakeFrontendContext({ closeWindow: () => (closed = true) });
-    ctx.closeWindow();
+    const browser = fakeFrontendContext().browser;
+    const ctx = fakeFrontendContext({ browser: { ...browser, closeWindow: () => (closed = true) } });
+    ctx.browser.closeWindow();
     expect(closed).toBe(true);
   });
 });
