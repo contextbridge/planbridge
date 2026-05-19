@@ -237,6 +237,43 @@ describe('App', () => {
     expect(submission?.threads[0]?.messages[0]?.body).toBe('Why annotate the heading?');
   });
 
+  it('uses the generic discard workflow before submitting with an unsaved annotation draft', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Title\n\nExplain the parser ordering.' },
+    });
+
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Title' });
+    await waitFor(() => {
+      expect(heading).toHaveAttribute('data-target-id');
+    });
+
+    await user.click(heading);
+    await user.type(await screen.findByTestId(annotationPopoverTestIds.textarea), 'Unsaved annotation');
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    expect(await screen.findByTestId(appTestIds.discardDraftDialog)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Discard unsaved comment?' })).toBeInTheDocument();
+    expect(submitAnnotation).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Keep Editing' }));
+
+    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Unsaved annotation');
+    expect(submitAnnotation).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+    await user.click(await screen.findByRole('button', { name: 'Discard' }));
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+    expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({
+      status: 'approved',
+      threads: [],
+    });
+  });
+
   it('updates the visible countdown after submission without waiting on real timers', async () => {
     const user = userEvent.setup();
     const { timers } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });

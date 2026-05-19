@@ -29,6 +29,11 @@ export interface OpenAnnotationCommentDraftArgs {
   getRect: () => DOMRect | null;
 }
 
+type PendingDraftAction =
+  | { kind: 'close' }
+  | { kind: 'replace'; draft: OpenAnnotationCommentDraftArgs }
+  | { kind: 'remove'; threadId: string };
+
 export function useAnnotationState({ initialThreads, initialGlobalComment }: UseAnnotationStateArgs = {}) {
   const { submitAnnotation, scheduleTimeout, closeWindow, autoCloseDelaySeconds } = useAnnotationAppContext();
 
@@ -44,16 +49,31 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   const [closeCountdownSeconds, setCloseCountdownSeconds] = useState<number | null>(null);
 
   const trimmedGlobal = globalCommentBody.trim();
-  const feedbackCount = threads.length + (trimmedGlobal.length > 0 ? 1 : 0);
-  const submitStatus: AnnotationStatus = feedbackCount === 0 ? 'approved' : 'changes_requested';
+  const feedbackCount = getFeedbackCount(threads, trimmedGlobal);
   const submitLabel = submitted ? 'Submitted' : feedbackCount === 0 ? 'Approve Plan' : 'Submit Feedback';
+
+  const [pendingDraftAction, setPendingDraftAction] = useState<PendingDraftAction | null>(null);
 
   const closeDraft = () => {
     setActiveDraft(null);
+    setPendingDraftAction(null);
+  };
+
+  const requestDraftAction = (action: PendingDraftAction) => {
+    if (!activeDraft || !getDraftDirty(activeDraft, threads)) {
+      runDraftAction(action);
+      return;
+    }
+
+    setPendingDraftAction(action);
+  };
+
+  const requestCloseDraft = () => {
+    requestDraftAction({ kind: 'close' });
   };
 
   const openAnnotationCommentDraft = (draft: OpenAnnotationCommentDraftArgs) => {
-    setActiveDraft({ ...draft });
+    requestDraftAction({ kind: 'replace', draft });
   };
 
   const setDraftBody = (body: string) => {
@@ -84,6 +104,20 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     setActiveDraft((current) => (current?.threadId === threadId ? null : current));
   };
 
+  const requestRemove = (threadId: string | null) => {
+    if (!threadId) {
+      setPendingRemoveId(null);
+      return;
+    }
+
+    if (activeDraft?.threadId === threadId && getDraftDirty(activeDraft, threads)) {
+      setPendingDraftAction({ kind: 'remove', threadId });
+      return;
+    }
+
+    setPendingRemoveId(threadId);
+  };
+
   const confirmRemove = () => {
     if (!pendingRemoveId) {
       return;
@@ -93,18 +127,18 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     setPendingRemoveId(null);
   };
 
-  const submit = async () => {
-    if (submitting) {
+  const submitThreads = async (nextThreads: CommentThread[]) => {
+    if (submitting || submitted) {
       return;
     }
 
-    const submissionThreads: CommentThread[] = [...threads];
+    const submissionThreads: CommentThread[] = [...nextThreads];
     if (trimmedGlobal.length > 0) {
       submissionThreads.push(createGlobalCommentThread(trimmedGlobal));
     }
 
     const submission: AnnotationSubmission = {
-      status: submitStatus,
+      status: getSubmitStatus(nextThreads, trimmedGlobal),
       threads: submissionThreads,
     };
 
@@ -122,6 +156,40 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
       setSubmitting(false);
     }
   };
+
+  const submit = async () => {
+    if (activeDraft && getDraftDirty(activeDraft, threads)) {
+      requestCloseDraft();
+      return;
+    }
+
+    await submitThreads(threads);
+  };
+
+  const confirmDiscardDraft = () => {
+    if (!pendingDraftAction) {
+      return;
+    }
+
+    runDraftAction(pendingDraftAction);
+  };
+
+  function runDraftAction(action: PendingDraftAction): void {
+    switch (action.kind) {
+      case 'close':
+        closeDraft();
+        return;
+      case 'replace':
+        setActiveDraft({ ...action.draft });
+        setPendingDraftAction(null);
+        return;
+      case 'remove':
+        setActiveDraft(null);
+        setPendingDraftAction(null);
+        setPendingRemoveId(action.threadId);
+        return;
+    }
+  }
 
   useEffect(() => {
     if (!submitted) {
@@ -151,9 +219,12 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     draft: {
       active: activeDraft,
       open: openAnnotationCommentDraft,
-      close: closeDraft,
+      requestClose: requestCloseDraft,
       setBody: setDraftBody,
       save: saveDraft,
+      discardDialogOpen: pendingDraftAction !== null,
+      confirmDiscard: confirmDiscardDraft,
+      dismissDiscardDialog: () => setPendingDraftAction(null),
     },
     globalComment: {
       body: globalCommentBody,
@@ -170,8 +241,26 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     },
     removal: {
       pendingId: pendingRemoveId,
-      request: setPendingRemoveId,
+      request: requestRemove,
       confirm: confirmRemove,
     },
   };
+}
+
+function getDraftDirty(draft: ActiveCommentDraft, threads: CommentThread[]): boolean {
+  const nextBody = draft.body.trim();
+  if (!draft.threadId) {
+    return nextBody.length > 0;
+  }
+
+  const savedBody = threads.find((thread) => thread.id === draft.threadId)?.messages[0]?.body ?? '';
+  return nextBody !== savedBody.trim();
+}
+
+function getFeedbackCount(threads: CommentThread[], trimmedGlobal: string): number {
+  return threads.length + (trimmedGlobal.length > 0 ? 1 : 0);
+}
+
+function getSubmitStatus(threads: CommentThread[], trimmedGlobal: string): AnnotationStatus {
+  return getFeedbackCount(threads, trimmedGlobal) === 0 ? 'approved' : 'changes_requested';
 }
