@@ -1,0 +1,236 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Icon } from 'astro-icon/components';
+import { Image } from 'astro:assets';
+import alexBAvatar from '../assets/testimonials/alex_b.jpeg';
+import guruAvatar from '../assets/testimonials/guru.jpeg';
+import jacobBAvatar from '../assets/testimonials/jacob_b.jpeg';
+import larryOAvatar from '../assets/testimonials/larry_o.jpeg';
+import seanMAvatar from '../assets/testimonials/sean_m.jpeg';
+
+interface Testimonial {
+  quote: string;
+  firstName: string;
+  lastInitial: string;
+  role: string;
+  company: string;
+  initials: string;
+  avatar?: ImageMetadata;
+}
+
+const testimonials: Testimonial[] = [
+  {
+    quote:
+      'With better coding models, planning is where most of the dev time should be spent nowadays. PlanBridge makes that experience 10X better and thus increased my productivity.',
+    firstName: 'Alex',
+    lastInitial: 'B',
+    role: 'Co-founder / CTO',
+    company: 'Fanstake',
+    initials: 'AB',
+    avatar: alexBAvatar,
+  },
+  {
+    quote: 'Opening up a browser with the ability to comment inline is awesome! Highly recommend PlanBridge.',
+    firstName: 'Gururaj',
+    lastInitial: 'S',
+    role: 'Chief Product Officer',
+    company: 'LeadLabs',
+    initials: 'GS',
+    avatar: guruAvatar,
+  },
+  {
+    quote:
+      "I'd recommend this for any engineer that believes planning is the new point of leverage in agentic engineering",
+    firstName: 'Larry',
+    lastInitial: 'O',
+    role: 'Distinguished Engineer',
+    company: 'Homebound',
+    initials: 'LO',
+    avatar: larryOAvatar,
+  },
+  {
+    quote:
+      '[PlanBridge] is very convenient. It was so hard before to make comments to the various pieces in the plan to get it adjusted. And hard to read in the CLI.',
+    firstName: 'Jacob',
+    lastInitial: 'B',
+    role: 'VP Engineering',
+    company: 'Stellarus',
+    initials: 'JB',
+    avatar: jacobBAvatar,
+  },
+  {
+    quote:
+      "PlanBridge lets me get more quality iterations on a plan in half the time. Reviewing inline like a GitHub PR means I'm not pasting markdown into my Codex terminal like a savage.",
+    firstName: 'Alex',
+    lastInitial: 'K',
+    role: 'Co-founder / CTO',
+    company: 'Parallax',
+    initials: 'AK',
+  },
+  {
+    quote:
+      'I think [PlanBridge] is really cool. My team is adopting it and I am going to tell everyone to start using it.',
+    firstName: 'Sean',
+    lastInitial: 'M',
+    role: 'Director of Analytics',
+    company: 'Gamechanger',
+    initials: 'SM',
+    avatar: seanMAvatar,
+  },
+];
+---
+
+<section data-user-quotes class="border-t border-foreground bg-background px-8 py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl">
+    <div class="flex flex-col justify-between gap-8 md:flex-row md:items-end">
+      <div>
+        <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">Testimonials</p>
+        <h2
+          class="mt-8 max-w-5xl font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
+        >
+          Engineers love PlanBridge
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          data-quote-prev
+          class="inline-flex h-12 w-12 items-center justify-center border border-foreground bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          aria-label="Show previous testimonial page"
+        >
+          <Icon name="lucide:chevron-left" class="h-5 w-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-quote-next
+          class="inline-flex h-12 w-12 items-center justify-center border border-foreground bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          aria-label="Show next testimonial page"
+        >
+          <Icon name="lucide:chevron-right" class="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-10 h-px w-full bg-foreground sm:mt-16"></div>
+
+    <div data-quote-grid class="mt-10 grid grid-cols-1 gap-px bg-foreground sm:mt-16 md:grid-cols-3" aria-live="polite">
+      {
+        testimonials.map((testimonial, index) => (
+          <figure
+            data-quote-index={index}
+            class="m-0 flex min-h-[22rem] flex-col justify-between bg-background p-6 transition-opacity duration-200 sm:p-8 md:min-h-[28rem]"
+          >
+            <blockquote class="m-0 font-mono text-xl font-bold leading-tight text-foreground sm:text-2xl">
+              &ldquo;{testimonial.quote}&rdquo;
+            </blockquote>
+            <figcaption class="mt-12 flex items-center gap-5 border-t border-foreground pt-8">
+              {testimonial.avatar ? (
+                <Image
+                  src={testimonial.avatar}
+                  alt=""
+                  width={80}
+                  height={80}
+                  loading="lazy"
+                  class="h-20 w-20 flex-shrink-0 rounded-full border border-foreground object-cover"
+                />
+              ) : (
+                <span
+                  class="inline-flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full border border-foreground bg-muted font-mono text-xl font-bold text-foreground"
+                  aria-hidden="true"
+                >
+                  {testimonial.initials}
+                </span>
+              )}
+              <span class="font-sans text-base leading-relaxed text-foreground">
+                <span class="block font-mono text-xl font-bold">
+                  {testimonial.firstName} {testimonial.lastInitial}.
+                </span>
+                <span class="block">{testimonial.role}</span>
+                <span class="block">{testimonial.company}</span>
+              </span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+
+    <div data-quote-dots class="mt-8 flex flex-wrap items-center justify-center gap-3"></div>
+  </div>
+</section>
+
+<script>
+  const section = document.querySelector<HTMLElement>('[data-user-quotes]');
+  if (section) {
+    const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-quote-index]'));
+    const dotsContainer = section.querySelector<HTMLElement>('[data-quote-dots]');
+    const prev = section.querySelector<HTMLButtonElement>('[data-quote-prev]');
+    const next = section.querySelector<HTMLButtonElement>('[data-quote-next]');
+    const total = cards.length;
+    const query = window.matchMedia('(min-width: 768px)');
+
+    let pageSize = query.matches ? 3 : 1;
+    let activePage = 0;
+
+    const pageCount = () => Math.ceil(total / pageSize);
+
+    const renderCards = () => {
+      const start = activePage * pageSize;
+      const end = start + pageSize;
+      cards.forEach((card, i) => {
+        card.style.display = i >= start && i < end ? '' : 'none';
+      });
+    };
+
+    const renderDots = () => {
+      if (!dotsContainer) return;
+      const count = pageCount();
+      dotsContainer.innerHTML = '';
+      if (count <= 1) return;
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = `h-3 w-3 border border-foreground ${i === activePage ? 'bg-foreground' : 'bg-background'}`;
+        dot.setAttribute('aria-label', `Show testimonial page ${i + 1} of ${count}`);
+        if (i === activePage) dot.setAttribute('aria-current', 'true');
+        dot.addEventListener('click', () => {
+          activePage = i;
+          render();
+        });
+        dotsContainer.appendChild(dot);
+      }
+    };
+
+    const renderNav = () => {
+      const visible = pageCount() > 1;
+      if (prev) prev.style.display = visible ? '' : 'none';
+      if (next) next.style.display = visible ? '' : 'none';
+    };
+
+    const render = () => {
+      renderCards();
+      renderDots();
+      renderNav();
+    };
+
+    prev?.addEventListener('click', () => {
+      const count = pageCount();
+      activePage = (activePage - 1 + count) % count;
+      render();
+    });
+
+    next?.addEventListener('click', () => {
+      const count = pageCount();
+      activePage = (activePage + 1) % count;
+      render();
+    });
+
+    query.addEventListener('change', (event) => {
+      pageSize = event.matches ? 3 : 1;
+      activePage = 0;
+      render();
+    });
+
+    render();
+  }
+</script>

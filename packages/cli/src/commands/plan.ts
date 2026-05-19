@@ -2,6 +2,7 @@ import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError, InvalidArgumentError } from 'commander';
 import {
   type AnnotationDependencies,
+  AnnotationEnvironmentError,
   AnnotationInterruptedError,
   runAnnotation,
 } from '#src/annotation/runAnnotation.ts';
@@ -54,6 +55,9 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
     if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');
       throw new CommanderError(130, 'contextbridge.plan.sigint', 'plan review interrupted');
+    }
+    if (err instanceof AnnotationEnvironmentError) {
+      abort(ctx, 'plan', 'environment', err.message);
     }
     abort(ctx, 'plan', 'runtime', getErrorMessage(err));
   }

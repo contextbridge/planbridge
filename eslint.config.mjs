@@ -1,8 +1,10 @@
 import baseConfig from '@contextbridge-ai/eslint-config/base';
 import { defineConfig } from 'eslint/config';
+import astro from 'eslint-plugin-astro';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 const reactFiles = ['packages/annotation/src/**/*.{ts,tsx}', 'packages/ui/src/**/*.{ts,tsx}'];
 
@@ -31,6 +33,12 @@ const dateRestrictedSelectors = [
     message: 'Use Temporal from @contextbridge/shared/time instead of Date.UTC().',
   },
 ];
+
+const rawImgRestrictedSelector = {
+  selector: "JSXOpeningElement[name.name='img']",
+  message:
+    "Use <Image /> or <Picture /> from astro:assets, and import images from src/assets/. Raw <img> bypasses Astro's asset pipeline.",
+};
 
 export default defineConfig(
   ...baseConfig,
@@ -121,5 +129,19 @@ export default defineConfig(
   {
     files: reactFiles,
     extends: [reactHooks.configs.flat.recommended],
+  },
+  {
+    files: ['packages/website/**/*.astro'],
+    extends: [astro.configs['flat/recommended']],
+  },
+  {
+    files: ['**/*.astro'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['packages/website/src/**/*.{astro,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', ...dateRestrictedSelectors, rawImgRestrictedSelector],
+    },
   },
 );

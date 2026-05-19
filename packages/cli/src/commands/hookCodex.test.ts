@@ -2,7 +2,7 @@ import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchem
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
-import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
+import { AnnotationEnvironmentError, type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CodexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
 import {
   annotationArgs,
@@ -10,7 +10,12 @@ import {
   codexTranscriptHookPromptLine,
   codexTranscriptPlanLine,
 } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import {
+  createAnnotationDependencies,
+  createStubContext,
+  readErrorLogs,
+  readWarnLogs,
+} from '#src/testHelpers/index.ts';
 import type { CodexStopHookPayload } from './codexHookSchema.ts';
 import { type HookCodexDependencies, extractLatestPlanFromTranscript, runHookCodex } from './hookCodex.ts';
 
@@ -98,6 +103,32 @@ describe('hookCodex handler', () => {
     expect(io.stdout.text().trim()).toBe('{}');
     expect(deps.calls).toEqual([]);
     expect(readErrorLogs(logs).some((r) => r.msg.includes('failed to read codex transcript'))).toBe(true);
+  });
+
+  it('surfaces local network sandbox failures without error-level logs', async () => {
+    const { context, io, logs } = createStubContext();
+    const deps = createHookDependencies({
+      transcript: transcriptWithPlan('# Plan\n'),
+      runReview: () =>
+        Promise.reject(
+          new AnnotationEnvironmentError(
+            Object.assign(new Error('Failed to start server. Is port 0 in use?'), { code: 'EADDRINUSE' }),
+          ),
+        ),
+    });
+    writeStopPayload(io, { transcript_path: '/tmp/codex-transcript.jsonl', last_assistant_message: null });
+
+    const caught = await runHookCodex(context, deps).then(
+      () => null,
+      (e: unknown) => e,
+    );
+
+    expect(caught).toBeInstanceOf(CommanderError);
+    expect((caught as CommanderError).code).toBe('contextbridge.hookCodex.environmentError');
+    expect((caught as CommanderError).message).toContain('network sandbox');
+    expect(io.stdout.text()).toBe('');
+    expect(readWarnLogs(logs).some((r) => r.msg.includes('network sandbox'))).toBe(true);
+    expect(readErrorLogs(logs)).toEqual([]);
   });
 
   it('reviews an approved proposed_plan tag from last_assistant_message without reading the transcript', async () => {

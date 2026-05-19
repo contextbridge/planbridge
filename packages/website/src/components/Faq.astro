@@ -43,12 +43,8 @@ const faqs = [
 
 <section id="faq" class="scroll-mt-24 border-t border-foreground bg-background px-8 py-32">
   <div class="mx-auto max-w-7xl">
-    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">
-      FAQ
-    </p>
-    <h2
-      class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]"
-    >
+    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">FAQ</p>
+    <h2 class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]">
       Common questions.
     </h2>
 
@@ -65,10 +61,7 @@ const faqs = [
                 +
               </span>
             </summary>
-            <p
-              class="pb-8 font-sans text-base leading-relaxed text-foreground"
-              set:html={faq.answer}
-            />
+            <p class="pb-8 font-sans text-base leading-relaxed text-foreground" set:html={faq.answer} />
           </details>
         ))
       }
