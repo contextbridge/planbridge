@@ -1,7 +1,7 @@
 {
   "name": "planbridge",
   "description": "PlanBridge — opens plan reviews in the browser on ExitPlanMode.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": {
     "name": "ContextBridge AI, Inc."
   },

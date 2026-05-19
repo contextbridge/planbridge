@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/contextbridge/planbridge/compare/v0.7.0...v0.7.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* clarify sandboxed local server failures ([#167](https://github.com/contextbridge/planbridge/issues/167)) ([c3de712](https://github.com/contextbridge/planbridge/commit/c3de7129ba546121b4fa6eafeb161325debd3a56))
+* **website:** typo in website agent instructions copy ([#149](https://github.com/contextbridge/planbridge/issues/149)) ([6c85ebd](https://github.com/contextbridge/planbridge/commit/6c85ebd58eb829a3a5204b20bc0e2f3e91844f5a))
+
 ## [0.7.0](https://github.com/contextbridge/planbridge/compare/v0.6.0...v0.7.0) (2026-05-15)
 
 
