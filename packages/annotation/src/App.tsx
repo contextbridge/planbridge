@@ -31,6 +31,7 @@ export const appTestIds = {
   highlightWarning: 'plan-review-highlight-warning',
   emptyState: 'plan-review-empty-state',
   removeDialog: 'plan-review-remove-dialog',
+  discardDraftDialog: 'plan-review-discard-draft-dialog',
 };
 
 export interface AppProps {
@@ -147,7 +148,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
               body={reviewState.draft.active?.body ?? ''}
               getRect={reviewState.draft.active?.getRect ?? null}
               onBodyChange={reviewState.draft.setBody}
-              onCancel={reviewState.draft.close}
+              onCancel={reviewState.draft.requestClose}
               onSave={reviewState.draft.save}
               open={reviewState.draft.active !== null}
             />
@@ -171,6 +172,30 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={reviewState.removal.confirm} variant="destructive">
                     Remove
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) {
+                  reviewState.draft.dismissDiscardDialog();
+                }
+              }}
+              open={reviewState.draft.discardDialogOpen}
+            >
+              <AlertDialogContent data-testid={appTestIds.discardDraftDialog} size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Discard unsaved comment?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your comment has not been saved. If you leave now your text will be lost.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+                  <AlertDialogAction onClick={reviewState.draft.confirmDiscard} variant="destructive">
+                    Discard
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
