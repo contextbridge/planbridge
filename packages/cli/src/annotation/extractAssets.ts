@@ -5,7 +5,7 @@ import { dirname, extname, isAbsolute, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ASSET_FILE_EXTENSIONS, type Asset, AssetMimeTypeSchema } from '@contextbridge/shared/annotationSchema';
 import type { Image } from 'mdast';
-import { Result, ResultAsync } from 'neverthrow';
+import { Result, ResultAsync, err, ok } from 'neverthrow';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
@@ -25,6 +25,21 @@ export async function extractAssets(ctx: CliContext, input: ExtractAssetsInput):
   const candidates = collectImageCandidates(ctx, content, sourcePath);
   return loadAssets(ctx, candidates);
 }
+
+type AssetExtractionIssue =
+  | { kind: 'unsupportedScheme'; urlString: string }
+  | { kind: 'unresolvablePath'; urlString: string }
+  | { kind: 'unsupportedExtension'; urlString: string; readPath: string }
+  | { kind: 'nonAbsolutePath'; urlString: string; readPath: string }
+  | { kind: 'statFailed'; urlString: string; readPath: string; err: unknown }
+  | { kind: 'readFailed'; urlString: string; readPath: string; err: unknown }
+  | { kind: 'notAFile'; urlString: string; readPath: string }
+  | { kind: 'unsupportedMime'; urlString: string; readPath: string; mime: string }
+  | { kind: 'emptyFile'; urlString: string; readPath: string }
+  | { kind: 'exceedsPerAssetLimit'; urlString: string; readPath: string; bytes: number }
+  | { kind: 'exceedsTotalLimit'; urlString: string; readPath: string; bytes: number; totalAssetBytes: number };
+
+type AssetFilter<T> = (value: T) => Result<void, AssetExtractionIssue>;
 
 const ALLOWED_EXTENSIONS: ReadonlySet<string> = new Set(ASSET_FILE_EXTENSIONS);
 
@@ -50,18 +65,25 @@ interface ResolvedImageReadPath {
 
 const safeDecodeURIComponent = Result.fromThrowable(
   (value: string) => decodeURIComponent(value),
-  (err) => err,
+  (cause) => cause,
 );
 
 const safeFileUrlToPath = Result.fromThrowable(
   (value: string) => fileURLToPath(value),
-  (err) => err,
+  (cause) => cause,
 );
 
 function collectImageCandidates(ctx: CliContext, content: string, sourcePath: string | undefined): ImageCandidate[] {
-  return unique(collectMarkdownImageUrls(content))
-    .map((urlString) => toImageCandidate(ctx, urlString, sourcePath))
-    .filter(isPresent);
+  const candidates: ImageCandidate[] = [];
+  for (const urlString of unique(collectMarkdownImageUrls(content))) {
+    const result = toImageCandidate(ctx, urlString, sourcePath);
+    if (result.isOk()) {
+      candidates.push(result.value);
+    } else {
+      logIssue(ctx, result.error);
+    }
+  }
+  return candidates;
 }
 
 function collectMarkdownImageUrls(content: string): string[] {
@@ -75,33 +97,46 @@ function collectMarkdownImageUrls(content: string): string[] {
   return imageUrls;
 }
 
-function toImageCandidate(ctx: CliContext, urlString: string, sourcePath: string | undefined): ImageCandidate | null {
+function toImageCandidate(
+  ctx: CliContext,
+  urlString: string,
+  sourcePath: string | undefined,
+): Result<ImageCandidate, AssetExtractionIssue> {
   const { logger } = ctx;
 
   const scheme = detectScheme(urlString);
-  if (scheme && scheme !== 'file') return null;
+  if (scheme && scheme !== 'file') return err({ kind: 'unsupportedScheme', urlString });
 
-  const resolvedPath = resolveImageReadPath(urlString, sourcePath);
-  if (!resolvedPath) return null;
-  if (resolvedPath.resolvedAgainstCwd) {
+  const resolved = resolveImageReadPath(urlString, sourcePath);
+  if (!resolved) return err({ kind: 'unresolvablePath', urlString });
+  if (resolved.resolvedAgainstCwd) {
     logger.debug({ urlString, cwd: process.cwd() }, 'resolving relative image ref against cwd (no sourcePath)');
   }
 
-  const ext = extname(resolvedPath.readPath).toLowerCase();
-  if (!ALLOWED_EXTENSIONS.has(ext)) return null;
+  const readPath = normalize(resolved.readPath);
+  const candidate = { urlString, readPath };
 
-  const readPath = normalize(resolvedPath.readPath);
-  if (!isAbsolute(readPath)) return null;
-
-  return { urlString, readPath };
+  return validateExtension(candidate)
+    .andThen(() => validateAbsolute(candidate))
+    .map(() => candidate);
 }
+
+const validateExtension: AssetFilter<ImageCandidate> = ({ urlString, readPath }) => {
+  const ext = extname(readPath).toLowerCase();
+  if (ALLOWED_EXTENSIONS.has(ext)) return ok(undefined);
+  return err({ kind: 'unsupportedExtension', urlString, readPath });
+};
+
+const validateAbsolute: AssetFilter<ImageCandidate> = ({ urlString, readPath }) => {
+  if (isAbsolute(readPath)) return ok(undefined);
+  return err({ kind: 'nonAbsolutePath', urlString, readPath });
+};
 
 async function loadAssets(ctx: CliContext, candidates: readonly ImageCandidate[]): Promise<Asset[]> {
   const accumulator = await candidates.reduce<Promise<AssetAccumulator>>(
     async (pendingAccumulator, candidate) => appendCandidateAsset(ctx, await pendingAccumulator, candidate),
     Promise.resolve({ assets: [], totalAssetBytes: 0 }),
   );
-
   return accumulator.assets;
 }
 
@@ -110,96 +145,116 @@ async function appendCandidateAsset(
   accumulator: AssetAccumulator,
   candidate: ImageCandidate,
 ): Promise<AssetAccumulator> {
-  const loadedAsset = await readAsset(ctx, candidate, accumulator.totalAssetBytes);
-  if (!loadedAsset) return accumulator;
+  const result = await readAsset(candidate, accumulator.totalAssetBytes);
+  if (result.isErr()) {
+    logIssue(ctx, result.error);
+    return accumulator;
+  }
 
+  const { asset, byteLength } = result.value;
   return {
-    assets: [...accumulator.assets, loadedAsset.asset],
-    totalAssetBytes: accumulator.totalAssetBytes + loadedAsset.byteLength,
+    assets: [...accumulator.assets, asset],
+    totalAssetBytes: accumulator.totalAssetBytes + byteLength,
   };
 }
 
 async function readAsset(
-  ctx: CliContext,
   candidate: ImageCandidate,
   totalAssetBytes: number,
-): Promise<LoadedAsset | null> {
-  const { logger } = ctx;
+): Promise<Result<LoadedAsset, AssetExtractionIssue>> {
   const { urlString, readPath } = candidate;
 
-  const statResult = await ResultAsync.fromPromise(stat(readPath), (err) => err);
-  if (statResult.isErr()) {
-    logger.error({ err: statResult.error, urlString, readPath }, 'failed to read referenced image');
-    return null;
-  }
+  const statResult = await ResultAsync.fromPromise(stat(readPath), (cause) => cause);
+  if (statResult.isErr()) return err({ kind: 'statFailed', urlString, readPath, err: statResult.error });
 
-  if (!isReadableImageFile(ctx, candidate, statResult.value, totalAssetBytes)) return null;
+  const fileTypeCheck = validateIsFile({ ...candidate, info: statResult.value });
+  if (fileTypeCheck.isErr()) return err(fileTypeCheck.error);
+
+  const statSizeCheck = validateSizeLimits({ ...candidate, byteLength: statResult.value.size, totalAssetBytes });
+  if (statSizeCheck.isErr()) return err(statSizeCheck.error);
 
   const file = Bun.file(readPath);
   const mimeResult = AssetMimeTypeSchema.safeParse(file.type);
-  if (!mimeResult.success) {
-    logger.error({ urlString, readPath, mime: file.type }, 'image has unsupported mime type');
-    return null;
-  }
+  if (!mimeResult.success) return err({ kind: 'unsupportedMime', urlString, readPath, mime: file.type });
 
-  const bytesResult = await ResultAsync.fromPromise(file.bytes(), (err) => err);
-  if (bytesResult.isErr()) {
-    logger.error({ err: bytesResult.error, urlString, readPath }, 'failed to read referenced image');
-    return null;
-  }
+  const bytesResult = await ResultAsync.fromPromise(file.bytes(), (cause) => cause);
+  if (bytesResult.isErr()) return err({ kind: 'readFailed', urlString, readPath, err: bytesResult.error });
 
   const bytes = bytesResult.value;
-  if (!isWithinSizeLimits(ctx, candidate, bytes.byteLength, totalAssetBytes)) return null;
+  const bytesSizeCheck = validateSizeLimits({ ...candidate, byteLength: bytes.byteLength, totalAssetBytes });
+  if (bytesSizeCheck.isErr()) return err(bytesSizeCheck.error);
 
-  return {
+  return ok({
     asset: createAsset(candidate, bytes, mimeResult.data),
     byteLength: bytes.byteLength,
-  };
+  });
 }
 
-function isReadableImageFile(
-  ctx: CliContext,
-  candidate: ImageCandidate,
-  fileInfo: Stats,
-  totalAssetBytes: number,
-): boolean {
-  const { logger } = ctx;
-  const { urlString, readPath } = candidate;
+const validateIsFile: AssetFilter<ImageCandidate & { info: Stats }> = ({ urlString, readPath, info }) => {
+  if (info.isFile()) return ok(undefined);
+  return err({ kind: 'notAFile', urlString, readPath });
+};
 
-  if (!fileInfo.isFile()) {
-    logger.warn({ urlString, readPath }, 'referenced image is not a file');
-    return false;
-  }
-
-  return isWithinSizeLimits(ctx, candidate, fileInfo.size, totalAssetBytes);
-}
-
-function isWithinSizeLimits(
-  ctx: CliContext,
-  candidate: ImageCandidate,
-  byteLength: number,
-  totalAssetBytes: number,
-): boolean {
-  const { logger } = ctx;
-  const { urlString, readPath } = candidate;
-
-  if (byteLength === 0) {
-    logger.warn({ urlString, readPath }, 'referenced image is empty');
-    return false;
-  }
-  if (byteLength > MAX_ASSET_BYTES) {
-    logger.warn({ urlString, readPath, bytes: byteLength }, 'referenced image exceeds per-asset size limit');
-    return false;
-  }
+const validateSizeLimits: AssetFilter<ImageCandidate & { byteLength: number; totalAssetBytes: number }> = ({
+  urlString,
+  readPath,
+  byteLength,
+  totalAssetBytes,
+}) => {
+  if (byteLength === 0) return err({ kind: 'emptyFile', urlString, readPath });
+  if (byteLength > MAX_ASSET_BYTES)
+    return err({ kind: 'exceedsPerAssetLimit', urlString, readPath, bytes: byteLength });
   if (totalAssetBytes + byteLength > MAX_TOTAL_ASSET_BYTES) {
-    logger.warn(
-      { urlString, readPath, bytes: byteLength, totalAssetBytes },
-      'referenced images exceed total size limit',
-    );
-    return false;
+    return err({ kind: 'exceedsTotalLimit', urlString, readPath, bytes: byteLength, totalAssetBytes });
   }
+  return ok(undefined);
+};
 
-  return true;
+function logIssue(ctx: CliContext, issue: AssetExtractionIssue): void {
+  const { logger } = ctx;
+  switch (issue.kind) {
+    case 'unsupportedScheme':
+    case 'unresolvablePath':
+    case 'unsupportedExtension':
+    case 'nonAbsolutePath':
+      return;
+    case 'statFailed':
+    case 'readFailed':
+      logger.error(
+        { err: issue.err, urlString: issue.urlString, readPath: issue.readPath },
+        'failed to read referenced image',
+      );
+      return;
+    case 'notAFile':
+      logger.warn({ urlString: issue.urlString, readPath: issue.readPath }, 'referenced image is not a file');
+      return;
+    case 'unsupportedMime':
+      logger.error(
+        { urlString: issue.urlString, readPath: issue.readPath, mime: issue.mime },
+        'image has unsupported mime type',
+      );
+      return;
+    case 'emptyFile':
+      logger.warn({ urlString: issue.urlString, readPath: issue.readPath }, 'referenced image is empty');
+      return;
+    case 'exceedsPerAssetLimit':
+      logger.warn(
+        { urlString: issue.urlString, readPath: issue.readPath, bytes: issue.bytes },
+        'referenced image exceeds per-asset size limit',
+      );
+      return;
+    case 'exceedsTotalLimit':
+      logger.warn(
+        {
+          urlString: issue.urlString,
+          readPath: issue.readPath,
+          bytes: issue.bytes,
+          totalAssetBytes: issue.totalAssetBytes,
+        },
+        'referenced images exceed total size limit',
+      );
+      return;
+  }
 }
 
 function createAsset(candidate: ImageCandidate, bytes: Uint8Array, mimeType: Asset['mimeType']): Asset {
@@ -215,10 +270,6 @@ function createAsset(candidate: ImageCandidate, bytes: Uint8Array, mimeType: Ass
 
 function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)];
-}
-
-function isPresent<T>(value: T | null): value is T {
-  return value !== null;
 }
 
 function resolveImageReadPath(urlString: string, sourcePath: string | undefined): ResolvedImageReadPath | null {
