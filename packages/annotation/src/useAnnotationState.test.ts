@@ -1,8 +1,8 @@
-import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import type { AnnotationSubmission, CommentThread } from '@contextbridge/shared/annotationSchema';
 import { annotationAnchor, annotationThread } from '@contextbridge/shared/testFactories';
 import { act, cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderAnnotationHook } from './testHelpers/renderAnnotationHook.tsx';
+import { type RenderAnnotationHookResult, renderAnnotationHook } from './testHelpers/renderAnnotationHook.tsx';
 import { useAnnotationState } from './useAnnotationState.ts';
 
 afterEach(() => {
@@ -246,13 +246,14 @@ describe('useAnnotationState', () => {
 
     it('clears the active draft when the removed thread matches the open draft', () => {
       const thread = annotationThread.build({ id: 'thr_target' });
+      const originalBody = thread.messages[0]?.body ?? '';
       const { result } = renderAnnotationHook(() => useAnnotationState({ initialThreads: [thread] }));
 
       act(() => {
         result.current.draft.open({
           threadId: 'thr_target',
           anchor: annotationAnchor.build(),
-          body: 'body',
+          body: originalBody,
           getRect: () => null,
         });
         result.current.removal.request('thr_target');
@@ -265,4 +266,209 @@ describe('useAnnotationState', () => {
       expect(result.current.draft.active).toBeNull();
     });
   });
+
+  describe('draft.requestClose', () => {
+    it('closes immediately when the draft body is empty', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result);
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.active).toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('closes immediately when the draft body is only whitespace', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: '   ' });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.active).toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('opens the discard dialog when the new draft has content', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: 'Some unsaved text' });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.active).not.toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+    });
+
+    it('opens the discard dialog when an existing thread draft has been edited', () => {
+      const thread = annotationThread.build({ id: 'thr_edit' });
+      const originalBody = thread.messages[0]?.body ?? '';
+      const { result } = renderAnnotationHook(() => useAnnotationState({ initialThreads: [thread] }));
+
+      act(() => {
+        openExistingDraft(result, thread, { body: originalBody + ' with edits' });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.active).not.toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+    });
+
+    it('closes immediately when an existing thread draft has not been edited', () => {
+      const thread = annotationThread.build({ id: 'thr_same' });
+      const originalBody = thread.messages[0]?.body ?? '';
+      const { result } = renderAnnotationHook(() => useAnnotationState({ initialThreads: [thread] }));
+
+      act(() => {
+        openExistingDraft(result, thread, { body: originalBody });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.active).toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('discards the draft when close is called after the dialog is shown', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: 'Some text' });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+
+      act(() => {
+        result.current.draft.confirmDiscard();
+      });
+
+      expect(result.current.draft.active).toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('keeps the draft open when dismissDiscardDialog is called', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: 'Important feedback' });
+      });
+
+      act(() => {
+        result.current.draft.requestClose();
+      });
+
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+
+      act(() => {
+        result.current.draft.dismissDiscardDialog();
+      });
+
+      expect(result.current.draft.active).not.toBeNull();
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('keeps the current draft until a replacement is explicitly confirmed', () => {
+      const nextAnchor = annotationAnchor.build({
+        endpoints: {
+          start: { targetId: 'target_next', offset: 0 },
+          end: { targetId: 'target_next', offset: 12 },
+        },
+      });
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: 'Unsaved original' });
+      });
+
+      act(() => {
+        result.current.draft.open({
+          anchor: nextAnchor,
+          body: 'replacement',
+          getRect: () => null,
+        });
+      });
+
+      expect(result.current.draft.active?.body).toBe('Unsaved original');
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+
+      act(() => {
+        result.current.draft.confirmDiscard();
+      });
+
+      expect(result.current.draft.active?.body).toBe('replacement');
+      expect(result.current.draft.active?.anchor).toBe(nextAnchor);
+      expect(result.current.draft.discardDialogOpen).toBe(false);
+    });
+
+    it('keeps unsaved edits before opening removal confirmation for the same thread', () => {
+      const thread = annotationThread.build({ id: 'thr_remove_dirty' });
+      const originalBody = thread.messages[0]?.body ?? '';
+      const { result } = renderAnnotationHook(() => useAnnotationState({ initialThreads: [thread] }));
+
+      act(() => {
+        openExistingDraft(result, thread, { body: originalBody + ' edited' });
+      });
+
+      act(() => {
+        result.current.removal.request('thr_remove_dirty');
+      });
+
+      expect(result.current.removal.pendingId).toBeNull();
+      expect(result.current.draft.active?.body).toBe(originalBody + ' edited');
+      expect(result.current.draft.discardDialogOpen).toBe(true);
+
+      act(() => {
+        result.current.draft.confirmDiscard();
+      });
+
+      expect(result.current.draft.active).toBeNull();
+      expect(result.current.removal.pendingId).toBe('thr_remove_dirty');
+    });
+  });
 });
+
+type AnnotationHookResult = RenderAnnotationHookResult<ReturnType<typeof useAnnotationState>, unknown>['result'];
+
+function openDraft(result: AnnotationHookResult, { body = '' }: { body?: string } = {}): void {
+  result.current.draft.open({
+    anchor: annotationAnchor.build(),
+    body: '',
+    getRect: () => null,
+  });
+
+  if (body.length > 0) {
+    result.current.draft.setBody(body);
+  }
+}
+
+function openExistingDraft(result: AnnotationHookResult, thread: CommentThread, options: { body: string }): void {
+  result.current.draft.open({
+    threadId: thread.id,
+    anchor: annotationAnchor.build(),
+    body: thread.messages[0]?.body ?? '',
+    getRect: () => null,
+  });
+  result.current.draft.setBody(options.body);
+}
