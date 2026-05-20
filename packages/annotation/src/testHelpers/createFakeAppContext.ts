@@ -10,11 +10,9 @@ import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 import type { AnnotationAppContext } from '../useAppContext.ts';
 
-export type AutoCloseTimers = FakeFrontendBrowser;
-
 export interface FakeAppContextResult {
   context: AnnotationAppContext;
-  timers: AutoCloseTimers;
+  browser: FakeFrontendBrowser;
   submitAnnotation: Mock<(submission: AnnotationSubmission) => Promise<void>>;
   fetchPayload: Mock<() => Promise<AnnotationPayload>>;
   fetchUpdateNotice: Mock<() => Promise<UpdateNotice | null>>;
@@ -23,7 +21,7 @@ export interface FakeAppContextResult {
 }
 
 export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>): FakeAppContextResult {
-  const timers = new FakeFrontendBrowser();
+  const browser = new FakeFrontendBrowser();
   const submitAnnotation = vi.fn<(submission: AnnotationSubmission) => Promise<void>>().mockResolvedValue(undefined);
   const fetchPayload = vi
     .fn<() => Promise<AnnotationPayload>>()
@@ -31,7 +29,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
   const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(null);
   const context: AnnotationAppContext = {
     ...fakeFrontendContext({
-      browser: timers,
+      browser,
     }),
     fetchPayload,
     fetchUpdateNotice,
@@ -41,7 +39,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
   };
   return {
     context,
-    timers,
+    browser,
     submitAnnotation,
     fetchPayload,
     fetchUpdateNotice,

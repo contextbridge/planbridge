@@ -1,5 +1,4 @@
-import { FakeFrontendBrowser } from '@contextbridge/context/testHelpers';
-import { fakeFrontendContext } from '@contextbridge/context/testHelpers';
+import { FakeFrontendBrowser, fakeFrontendContext } from '@contextbridge/context/testHelpers';
 import type { ComponentType, ReactElement } from 'react';
 import type { AnnotationAppContext as AnnotationAppContextValue } from '../src/useAppContext.ts';
 import { AnnotationAppContext } from '../src/useAppContext.ts';
@@ -7,7 +6,7 @@ import { AnnotationAppContext } from '../src/useAppContext.ts';
 export function createStoryAppContext(overrides?: Partial<AnnotationAppContextValue>): AnnotationAppContextValue {
   return {
     ...fakeFrontendContext({
-      browser: createStoryBrowser(),
+      browser: new FakeFrontendBrowser({ timers: 'real' }),
     }),
     fetchPayload: () => Promise.resolve({ content: '', contentKind: 'plan' }),
     fetchUpdateNotice: () => Promise.resolve(null),
@@ -26,8 +25,4 @@ export function withAppContext(overrides?: Partial<AnnotationAppContextValue>) {
       </AnnotationAppContext.Provider>
     );
   };
-}
-
-function createStoryBrowser(): FakeFrontendBrowser {
-  return new FakeFrontendBrowser({ timers: 'real' });
 }
