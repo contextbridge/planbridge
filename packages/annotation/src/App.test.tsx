@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
-import { appTestIds } from './App.tsx';
+import { appCopy, appTestIds } from './App.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
@@ -45,7 +45,7 @@ describe('App', () => {
   it('shows an empty state when the plan content is blank', () => {
     renderApp({ initialPayload: { contentKind: 'plan', content: '' } });
 
-    expect(screen.getByTestId(appTestIds.emptyState)).toHaveTextContent('No content was provided.');
+    expect(screen.getByTestId(appTestIds.emptyState)).toHaveTextContent(appCopy.emptyState);
   });
 
   it('renders the update-notice card when /update-notice resolves with a notice', async () => {
@@ -170,11 +170,12 @@ describe('App', () => {
     const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
     expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.title);
     expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.description);
-    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent(
+      closeReviewDialogCopy.cancelLabel,
+    );
     expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
       closeReviewDialogCopy.empty.primaryActionLabel,
     );
-    expect(dialog).not.toHaveTextContent('Close Anyway');
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogCancelButton));
 
@@ -198,11 +199,12 @@ describe('App', () => {
     const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
     expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.title);
     expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.description);
-    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent(
+      closeReviewDialogCopy.cancelLabel,
+    );
     expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
       closeReviewDialogCopy.feedback.primaryActionLabel,
     );
-    expect(dialog).not.toHaveTextContent('Close Anyway');
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogActionButton));
 

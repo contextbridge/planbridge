@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createFakeAppContext } from './testHelpers/createFakeAppContext.ts';
-import { UpdateNoticeCard, updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
+import { UpdateNoticeCard, updateNoticeCardCopy, updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 import { AnnotationAppContext } from './useAppContext.ts';
 
 const NOTICE: UpdateNotice = {
@@ -31,10 +31,10 @@ describe('UpdateNoticeCard', () => {
     renderCard();
     const container = screen.getByTestId(updateNoticeCardTestIds.container);
     expect(container).toBeInTheDocument();
-    expect(container).toHaveTextContent('Update available: v0.2.0');
-    expect(container).toHaveTextContent("You're on v0.1.0");
-    expect(container).toHaveTextContent('Run to upgrade');
-    expect(container).toHaveTextContent('contextbridge update');
+    expect(container).toHaveTextContent(`${updateNoticeCardCopy.titlePrefix} v0.2.0`);
+    expect(container).toHaveTextContent(`${updateNoticeCardCopy.currentVersionPrefix}0.1.0`);
+    expect(container).toHaveTextContent(updateNoticeCardCopy.currentVersionSuffix);
+    expect(container).toHaveTextContent(updateNoticeCardCopy.updateCommand);
   });
 
   it('fires update_notice_viewed analytics on first render', () => {
