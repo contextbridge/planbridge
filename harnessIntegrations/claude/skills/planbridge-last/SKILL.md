@@ -20,11 +20,19 @@ Use this skill when the user wants to mark up something you just said. Typical t
 
 **Do not send any commentary or status message before running the command.** The command targets your most recent rendered message, so a preamble like "Sure, opening that now" can mistakenly become the thing being annotated. Run the command first; speak after.
 
-Pipe your prior message verbatim into `contextbridge open` via stdin. Preserve all markdown formatting and code blocks. Do not paraphrase, summarize, or rewrite. The user wants to annotate the exact text you produced, not a cleaned-up version.
+Copy the immediately previous assistant response from the conversation context and pipe it verbatim into `contextbridge open` via stdin. Preserve all markdown formatting and code blocks. Do not paraphrase, summarize, or rewrite. The user wants to annotate the exact text you produced, not a cleaned-up version.
 
-    printf %s "<your prior message, verbatim>" | contextbridge open
+```sh
+contextbridge open <<'PLANBRIDGE_LAST_MESSAGE'
+<your immediately previous assistant response, verbatim>
+PLANBRIDGE_LAST_MESSAGE
+```
 
 Run the command yourself rather than telling the user to invoke shell syntax manually.
+
+If the previous assistant response is no longer available in conversation context, say so and ask the user to provide the content or use `planbridge-open` for a file or specific document.
+
+If `contextbridge` is not available on PATH, report that the PlanBridge CLI is unavailable in the current user environment.
 
 ## What happens
 
@@ -41,6 +49,6 @@ Treat the comments the way you would treat a colleague's review notes: context f
 
 ## Limitations
 
-Only your most recent assistant message is opened. To annotate a file on disk, an earlier message, or a specific section that is not your prior message, use `planbridge-open` instead.
+Only your immediately previous assistant response is opened. To annotate a file on disk, an earlier message, or a specific section that is not your prior message, use `planbridge-open` instead.
 
 Very long messages, around 5k+ words, may drift or truncate during verbatim reproduction. For specs and other content of that size, save the content to a file first and use `planbridge-open` against the path.
