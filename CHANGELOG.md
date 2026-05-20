@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/contextbridge/planbridge/compare/v0.7.2...v0.8.0) (2026-05-20)
+
+
+### Features
+
+* add planbridge-last skill to open the last agent message ([#189](https://github.com/contextbridge/planbridge/issues/189)) ([dbfc615](https://github.com/contextbridge/planbridge/commit/dbfc61548387e18b48e8501f951c2b1ab39f4fb6))
+
+
+### Bug Fixes
+
+* prevent data loss with onbeforeunload warning ([#188](https://github.com/contextbridge/planbridge/issues/188)) ([ea1f5d5](https://github.com/contextbridge/planbridge/commit/ea1f5d55c0b705ebd7e1ddc59e1832b85d071415))
+* render images referenced from the local filesystem ([#165](https://github.com/contextbridge/planbridge/issues/165)) ([bdf98ff](https://github.com/contextbridge/planbridge/commit/bdf98ffdc6d4567630b19d05b9c630333ca45092))
+
 ## [0.7.2](https://github.com/contextbridge/planbridge/compare/v0.7.1...v0.7.2) (2026-05-19)
 
 
