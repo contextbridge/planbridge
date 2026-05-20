@@ -3,7 +3,7 @@ import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@c
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
@@ -155,6 +155,63 @@ describe('App', () => {
         },
       ],
     });
+  });
+
+  it('opens the approval close dialog after staying on an attempted close with no comments', async () => {
+    const user = userEvent.setup();
+    const { browser, submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+
+    await act(async () => {
+      browser.triggerBeforeUnload();
+      await Promise.resolve();
+    });
+
+    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
+    expect(dialog).toHaveTextContent('Approve plan before closing?');
+    expect(dialog).toHaveTextContent(
+      'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Keep Reviewing' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Approve Plan' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Close Anyway' })).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Keep Reviewing' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
+    });
+    expect(submitAnnotation).not.toHaveBeenCalled();
+  });
+
+  it('opens the submit-feedback close dialog after staying on an attempted close with feedback', async () => {
+    const user = userEvent.setup();
+    const { browser, submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+
+    await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs rollback details');
+
+    await act(async () => {
+      browser.triggerBeforeUnload();
+      await Promise.resolve();
+    });
+
+    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
+    expect(dialog).toHaveTextContent('Submit feedback before closing?');
+    expect(dialog).toHaveTextContent(
+      'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Keep Reviewing' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Submit Feedback' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Close Anyway' })).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Submit Feedback' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+    expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({ status: 'changes_requested' });
   });
 
   it('does not submit again from the global shortcut while submitting', async () => {

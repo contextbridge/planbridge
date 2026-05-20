@@ -1,4 +1,4 @@
-import type { FakeFrontendBrowser } from '@contextbridge/context/testHelpers';
+import type { FakeBeforeUnloadEvent, FakeFrontendBrowser } from '@contextbridge/context/testHelpers';
 import type { AnnotationSubmission, CommentThread } from '@contextbridge/shared/annotationSchema';
 import { annotationAnchor, annotationThread } from '@contextbridge/shared/testFactories';
 import { act, cleanup } from '@testing-library/react';
@@ -87,21 +87,35 @@ describe('useAnnotationState', () => {
   });
 
   describe('beforeunload guard', () => {
-    it('guards an empty unsubmitted review', () => {
-      const { browser } = renderAnnotationHook(() => useAnnotationState({}));
+    it('opens the approval close dialog for an empty unsubmitted review', () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
 
       expectBeforeUnloadGuard(browser);
+
+      expectCloseReviewDialog(result, {
+        title: 'Approve plan before closing?',
+        description:
+          'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
+        primaryActionLabel: 'Approve Plan',
+      });
     });
 
-    it('guards a review with saved annotation threads', () => {
-      const { browser } = renderAnnotationHook(() =>
+    it('opens the submit-feedback close dialog for saved annotation threads', () => {
+      const { result, browser } = renderAnnotationHook(() =>
         useAnnotationState({ initialThreads: [annotationThread.build({ id: 'thr_guarded' })] }),
       );
 
       expectBeforeUnloadGuard(browser);
+
+      expectCloseReviewDialog(result, {
+        title: 'Submit feedback before closing?',
+        description:
+          'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
+        primaryActionLabel: 'Submit Feedback',
+      });
     });
 
-    it('guards a review with a non-whitespace global comment', () => {
+    it('opens the submit-feedback close dialog for a non-whitespace global comment', () => {
       const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
 
       act(() => {
@@ -109,9 +123,16 @@ describe('useAnnotationState', () => {
       });
 
       expectBeforeUnloadGuard(browser);
+
+      expectCloseReviewDialog(result, {
+        title: 'Submit feedback before closing?',
+        description:
+          'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
+        primaryActionLabel: 'Submit Feedback',
+      });
     });
 
-    it('guards a review with a dirty active draft', () => {
+    it('opens the close dialog without discarding a dirty active draft', () => {
       const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
 
       act(() => {
@@ -119,6 +140,38 @@ describe('useAnnotationState', () => {
       });
 
       expectBeforeUnloadGuard(browser);
+
+      expect(result.current.closeReview.dialogOpen).toBe(true);
+      expect(result.current.draft.active?.body).toBe('Unsaved draft feedback');
+    });
+
+    it('keeps reviewing by closing only the custom dialog', () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      expectBeforeUnloadGuard(browser);
+
+      act(() => {
+        result.current.closeReview.dismissDialog();
+      });
+
+      expect(result.current.closeReview.dialogOpen).toBe(false);
+      expect(result.current.submission.submitted).toBe(false);
+      expect(browser.isBeforeUnloadGuarded()).toBe(true);
+    });
+
+    it('submits the recommended action from the custom dialog', async () => {
+      const { result, browser, submitAnnotation } = renderAnnotationHook(() => useAnnotationState({}));
+
+      expectBeforeUnloadGuard(browser);
+
+      await act(async () => {
+        await result.current.closeReview.confirmRecommendedAction();
+      });
+
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+      expect(submitAnnotation.mock.calls[0]?.[0]?.status).toBe('approved');
+      expect(result.current.closeReview.dialogOpen).toBe(false);
+      expect(result.current.submission.submitted).toBe(true);
     });
 
     it('removes the guard after a successful submission', async () => {
@@ -509,12 +562,35 @@ type AnnotationHookResult = RenderAnnotationHookResult<ReturnType<typeof useAnno
 
 function expectBeforeUnloadGuard(browser: FakeFrontendBrowser): void {
   expect(browser.isBeforeUnloadGuarded()).toBe(true);
-  expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: true, returnValue: '' });
+  expect(triggerBeforeUnload(browser)).toMatchObject({ defaultPrevented: true, returnValue: '' });
 }
 
 function expectNoBeforeUnloadGuard(browser: FakeFrontendBrowser): void {
   expect(browser.isBeforeUnloadGuarded()).toBe(false);
-  expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: false, returnValue: 'unset' });
+  expect(triggerBeforeUnload(browser)).toMatchObject({ defaultPrevented: false, returnValue: 'unset' });
+}
+
+function expectCloseReviewDialog(
+  result: AnnotationHookResult,
+  expected: { title: string; description: string; primaryActionLabel: string },
+): void {
+  expect(result.current.closeReview).toMatchObject({
+    dialogOpen: true,
+    ...expected,
+  });
+}
+
+function triggerBeforeUnload(browser: FakeFrontendBrowser): FakeBeforeUnloadEvent {
+  let event: FakeBeforeUnloadEvent | null = null;
+  act(() => {
+    event = browser.triggerBeforeUnload();
+  });
+
+  if (!event) {
+    throw new Error('expected beforeunload event to be returned');
+  }
+
+  return event;
 }
 
 function openDraft(result: AnnotationHookResult, { body = '' }: { body?: string } = {}): void {

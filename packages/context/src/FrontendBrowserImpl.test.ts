@@ -34,8 +34,13 @@ describe('FrontendBrowserImpl', () => {
   it('registers beforeunload guards through the injected window and returns a cleanup callback', () => {
     const browserWindow = createBrowserWindow();
     const browser = new FrontendBrowserImpl(browserWindow);
+    let attemptedUnloadCalls = 0;
 
-    const cleanup = browser.addBeforeUnloadGuard();
+    const cleanup = browser.addBeforeUnloadGuard({
+      onAttemptedUnload: () => {
+        attemptedUnloadCalls += 1;
+      },
+    });
 
     const handler = browserWindow.beforeUnloadHandlers[0];
     if (!handler) {
@@ -45,6 +50,7 @@ describe('FrontendBrowserImpl', () => {
     const event = createBeforeUnloadEvent();
     handler(event);
 
+    expect(attemptedUnloadCalls).toBe(1);
     expect(event.defaultPrevented).toBe(true);
     expect(event.returnValue).toBe('');
 

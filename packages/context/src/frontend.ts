@@ -17,6 +17,7 @@ export {
 export { type BaseContext, isTelemetryDisabled } from './base.ts';
 export { type BuildInfo, BUILD_INFO } from './buildInfo.ts';
 export {
+  type BeforeUnloadGuardOptions,
   type FrontendBrowser,
   FrontendBrowserImpl,
   type FrontendBrowserWindow,

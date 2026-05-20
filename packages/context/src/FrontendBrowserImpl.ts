@@ -4,10 +4,14 @@ export type TimeoutCancel = () => void;
 
 export type ScheduleTimeout = (handler: () => void, delayMs: number) => TimeoutCancel;
 
+export interface BeforeUnloadGuardOptions {
+  readonly onAttemptedUnload?: () => void;
+}
+
 export interface FrontendBrowser {
   closeWindow(): void;
   scheduleTimeout(handler: () => void, delayMs: number): TimeoutCancel;
-  addBeforeUnloadGuard(): () => void;
+  addBeforeUnloadGuard(options?: BeforeUnloadGuardOptions): () => void;
 }
 
 export interface FrontendBrowserWindow {
@@ -36,8 +40,10 @@ export class FrontendBrowserImpl implements FrontendBrowser {
     };
   }
 
-  addBeforeUnloadGuard(): () => void {
+  addBeforeUnloadGuard(options: BeforeUnloadGuardOptions = {}): () => void {
+    const { onAttemptedUnload } = options;
     const handler = (event: BeforeUnloadEvent) => {
+      onAttemptedUnload?.();
       event.preventDefault();
       event.returnValue = '';
     };
