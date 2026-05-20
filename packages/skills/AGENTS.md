@@ -47,7 +47,7 @@ Partials emit content directly. Wrap them in a `{{#if (eq harness.id "…")}}` b
 4. `bun run skills:check && bun run --cwd packages/cli test`.
 5. Commit `sources/`, every `harnessIntegrations/<id>/skills/...`, and the `codex.ts` change together.
 
-For the manual open skill, Claude may expose `/planbridge-open` or `/planbridge:planbridge-open`; Codex exposes `$planbridge-open`.
+For manual skills, Claude may expose `/planbridge-open` or `/planbridge:planbridge-open` (and similarly for `/planbridge-last`); Codex exposes `$planbridge-open` and `$planbridge-last`.
 
 ## Adding a new harness
 

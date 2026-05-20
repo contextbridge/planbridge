@@ -3,39 +3,75 @@ title: Open arbitrary content
 description: Ask your coding agent to open any markdown file in the PlanBridge browser UI for human annotation.
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 import { Code } from 'astro-expressive-code/components';
 
-<Code code="/planbridge-open docs/spec.md" lang="text" title="Claude Code" />
-
-<Code code="$planbridge-open docs/spec.md" lang="text" title="Codex CLI" />
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open docs/spec.md" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open docs/spec.md" lang="text" />
+  </TabItem>
+</Tabs>
 
 The file opens in your browser for inline annotation. Your comments come back to the agent on stdout.
 
-This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The `open` skill fires whenever you ask for it.
+This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The `open` and `last` skills fire whenever you ask for them.
 
 ## When to use it
 
 - You want inline comments on a design doc, RFC, or spec.
-- Your agent uses a workflow that bypasses plan mode. For example, the [obra/superpowers](https://github.com/obra/superpowers) plugin never enters Claude Code's plan mode. However, you can still use PlanBridge with it! See the [Superpowers recipe](/recipes/superpowers/) page for details.
+- You want to mark up the long answer your agent just wrote.
+- Your agent uses a workflow that bypasses plan mode. For example, the [obra/superpowers](https://github.com/obra/superpowers) plugin never enters Claude Code's plan mode. However, you can still use PlanBridge with it. See the [Superpowers recipe](/recipes/superpowers/) page for details.
 - You want to redirect the agent before it starts work, and the relevant context lives in a file rather than in plan mode.
 
-## Claude Code
+## Agent skills
 
-The `planbridge-open` skill ships with the `planbridge@contextbridge` Claude plugin. Invoke it inside Claude Code with:
+Use `planbridge-open` for files:
 
-<Code code="/planbridge-open path/to/file.md" lang="text" title="Claude Code" />
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open path/to/file.md" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open path/to/file.md" lang="text" />
+  </TabItem>
+</Tabs>
 
-Claude Code may display the same plugin skill as `/planbridge:planbridge-open`. Use that form if it appears in your slash-command picker.
+Use `planbridge-last` for the agent's previous message:
 
-You can also describe the file in plain language and Claude resolves it:
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-last" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-last" lang="text" />
+  </TabItem>
+</Tabs>
 
-<Code code="/planbridge-open the design doc we drafted yesterday" lang="text" title="Claude Code" />
+You can also describe the file in plain language and your agent resolves it:
 
-## Codex CLI
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open the design doc we drafted yesterday" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open the design doc we drafted yesterday" lang="text" />
+  </TabItem>
+</Tabs>
 
-`contextbridge install codex` writes the skill to `~/.agents/skills/planbridge-open/SKILL.md`. Invoke it inside Codex with:
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    The `planbridge-open` and `planbridge-last` skills ship with the `planbridge@contextbridge` Claude plugin.
 
-<Code code="$planbridge-open path/to/file.md" lang="text" title="Codex CLI" />
+    Claude Code may display plugin skills as `/planbridge:planbridge-open` and `/planbridge:planbridge-last`. Use those forms if they appear in your slash-command picker.
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    `contextbridge install codex` writes both skills to `~/.agents/skills/`.
+  </TabItem>
+</Tabs>
 
 ## What you see
 

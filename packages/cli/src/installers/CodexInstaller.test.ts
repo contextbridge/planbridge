@@ -11,7 +11,6 @@ import { createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { CodexInstaller } from './CodexInstaller.ts';
 
 const CODEX_BINARY = getHarness('codex').binaryName;
-const bundledOpenSkill = bundledSkills.find((skill) => skill.installId === 'planbridge-open')?.body ?? '';
 
 describe('CodexInstaller', () => {
   let tmp: string;
@@ -149,25 +148,21 @@ describe('CodexInstaller', () => {
       expect(installPromise).rejects.toThrow(/^nope$/);
     });
 
-    it('writes the skill to ~/.agents/skills/planbridge-open/SKILL.md on user-scope install', async () => {
+    it('writes bundled skills to ~/.agents/skills on user-scope install', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
 
       await installer.install(context, { yes: true });
 
-      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
-      expect(existsSync(skillPath)).toBe(true);
-      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+      expectBundledSkillsInstalled(tmp);
     });
 
-    it('writes the skill at user level even on project-scope install', async () => {
+    it('writes bundled skills at user level even on project-scope install', async () => {
       const project = join(tmp, 'project');
       const { installer, context } = createCodexInstallerContext(tmp, { projectRoot: project });
 
       await installer.install(context, { yes: true, scope: 'project' });
 
-      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
-      expect(existsSync(skillPath)).toBe(true);
-      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+      expectBundledSkillsInstalled(tmp);
     });
 
     it('skill install is idempotent', async () => {
@@ -176,8 +171,7 @@ describe('CodexInstaller', () => {
       await installer.install(context, { yes: true });
       await installer.install(context, { yes: true });
 
-      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
-      expect(readFileSync(skillPath, 'utf8')).toBe(bundledOpenSkill);
+      expectBundledSkillsInstalled(tmp);
     });
   });
 
@@ -219,7 +213,7 @@ describe('CodexInstaller', () => {
       expect(readFileSync(hooksPath, 'utf8')).toBe('{"hooks":[]}');
     });
 
-    it('user-scope uninstall removes planbridge-open/ but leaves sibling skill dirs intact', async () => {
+    it('user-scope uninstall removes bundled skills but leaves sibling skill dirs intact', async () => {
       const skillsDir = join(tmp, '.agents', 'skills');
       await mkdir(join(skillsDir, 'some-other-tool'), { recursive: true });
       await writeFile(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'other tool skill');
@@ -228,7 +222,7 @@ describe('CodexInstaller', () => {
 
       await installer.uninstall(context, { yes: true });
 
-      expect(existsSync(join(skillsDir, 'planbridge-open'))).toBe(false);
+      expectBundledSkillsAbsent(tmp);
       expect(readFileSync(join(skillsDir, 'some-other-tool', 'SKILL.md'), 'utf8')).toBe('other tool skill');
     });
 
@@ -239,8 +233,7 @@ describe('CodexInstaller', () => {
 
       await installer.uninstall(context, { yes: true, scope: 'project' });
 
-      const skillPath = join(tmp, '.agents', 'skills', 'planbridge-open', 'SKILL.md');
-      expect(existsSync(skillPath)).toBe(true);
+      expectBundledSkillsInstalled(tmp);
     });
 
     it('user-scope uninstall is idempotent when skill is already gone', async () => {
@@ -265,7 +258,7 @@ describe('CodexInstaller', () => {
       });
     });
 
-    it('reports an installed hook and skill when both are present', async () => {
+    it('reports an installed hook and bundled skills when both are present', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
       await installer.install(context, { yes: true });
 
@@ -274,11 +267,9 @@ describe('CodexInstaller', () => {
         descriptor: { id: 'codex' },
         detected: true,
         installed: true,
-        managed: [
-          { kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' },
-          { kind: 'skill', identifier: 'planbridge-open', scope: 'user' },
-        ],
       });
+      expect(status.managed).toContainEqual({ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' });
+      expectManagedBundledSkills(status.managed);
     });
 
     it('reports hook-only state as installed because install owns feature setup', async () => {
@@ -330,13 +321,13 @@ describe('CodexInstaller', () => {
       expect(installer.status(context)).rejects.toBeInstanceOf(CommanderError);
     });
 
-    it('reports the skill as a ManagedEntry when installed', async () => {
+    it('reports bundled skills as ManagedEntries when installed', async () => {
       const { installer, context } = createCodexInstallerContext(tmp);
       await installer.install(context, { yes: true });
 
       const status = await installer.status(context);
 
-      expect(status.managed).toContainEqual({ kind: 'skill', identifier: 'planbridge-open', scope: 'user' });
+      expectManagedBundledSkills(status.managed);
       expect(status.installed).toBe(true);
     });
 
@@ -394,6 +385,26 @@ function writePlanBridgeHooksJson(path: string): void {
 
 function writeHooksJson(path: string, value: unknown): void {
   writeFileSync(path, JSON.stringify(value));
+}
+
+function expectBundledSkillsInstalled(home: string): void {
+  for (const { installId, body } of bundledSkills) {
+    const skillPath = join(home, '.agents', 'skills', installId, 'SKILL.md');
+    expect(existsSync(skillPath)).toBe(true);
+    expect(readFileSync(skillPath, 'utf8')).toBe(body);
+  }
+}
+
+function expectBundledSkillsAbsent(home: string): void {
+  for (const { installId } of bundledSkills) {
+    expect(existsSync(join(home, '.agents', 'skills', installId))).toBe(false);
+  }
+}
+
+function expectManagedBundledSkills(managed: readonly unknown[]): void {
+  for (const { installId } of bundledSkills) {
+    expect(managed).toContainEqual({ kind: 'skill', identifier: installId, scope: 'user' });
+  }
 }
 
 function commandRunnerCalls(context: ReturnType<typeof createStubContext>['context'], args: readonly string[]) {

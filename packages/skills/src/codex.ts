@@ -1,3 +1,4 @@
+import planbridgeLastSkill from '../../../harnessIntegrations/codex/skills/planbridge-last/SKILL.md' with { type: 'text' };
 import planbridgeOpenSkill from '../../../harnessIntegrations/codex/skills/planbridge-open/SKILL.md' with { type: 'text' };
 import { parseSkill } from './skills.ts';
 
@@ -8,7 +9,7 @@ export interface BundledSkill {
   readonly body: string;
 }
 
-export const bundledSkills: readonly BundledSkill[] = [planbridgeOpenSkill].map((body) => ({
+export const bundledSkills: readonly BundledSkill[] = [planbridgeOpenSkill, planbridgeLastSkill].map((body) => ({
   installId: parseSkill(body).frontmatter.name,
   body,
 }));
