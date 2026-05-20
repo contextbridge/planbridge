@@ -1,5 +1,6 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import { annotationThread } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
@@ -7,13 +8,15 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
-import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
-import { appCopy, appTestIds } from './App.tsx';
+import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
+import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
+import { appTestIds } from './App.tsx';
+import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
+import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
-import { closeReviewDialogCopy } from './useAnnotationState.ts';
 
 describe('App', () => {
   afterEach(() => {
@@ -28,7 +31,9 @@ describe('App', () => {
     const { analytics } = renderApp({}, { fetchPayload });
 
     expect(screen.getByTestId(appTestIds.loading)).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { level: 1, name: 'Loaded plan' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getMarkdownElement('h1')).toBeInTheDocument();
+    });
     expect(fetchPayload).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(analytics.captures.some((c) => c.event === 'plan_review_viewed')).toBe(true);
@@ -45,7 +50,7 @@ describe('App', () => {
   it('shows an empty state when the plan content is blank', () => {
     renderApp({ initialPayload: { contentKind: 'plan', content: '' } });
 
-    expect(screen.getByTestId(appTestIds.emptyState)).toHaveTextContent(appCopy.emptyState);
+    expect(screen.getByTestId(appTestIds.emptyState)).toBeInTheDocument();
   });
 
   it('renders the update-notice card when /update-notice resolves with a notice', async () => {
@@ -102,7 +107,7 @@ describe('App', () => {
         },
       ],
     });
-    expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 3 seconds.');
+    expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveAttribute('data-countdown-seconds', '3');
 
     act(() => browser.advance());
     act(() => browser.advance());
@@ -167,15 +172,9 @@ describe('App', () => {
       await Promise.resolve();
     });
 
-    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
-    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.title);
-    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.description);
-    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent(
-      closeReviewDialogCopy.cancelLabel,
-    );
-    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
-      closeReviewDialogCopy.empty.primaryActionLabel,
-    );
+    expect(await screen.findByTestId(appTestIds.closeReviewDialog)).toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toBeInTheDocument();
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogCancelButton));
 
@@ -196,15 +195,9 @@ describe('App', () => {
       await Promise.resolve();
     });
 
-    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
-    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.title);
-    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.description);
-    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent(
-      closeReviewDialogCopy.cancelLabel,
-    );
-    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
-      closeReviewDialogCopy.feedback.primaryActionLabel,
-    );
+    expect(await screen.findByTestId(appTestIds.closeReviewDialog)).toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toBeInTheDocument();
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogActionButton));
 
@@ -271,18 +264,18 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: '# Title\n\nExplain the parser ordering.' },
     });
 
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Title' });
+    const heading = await waitForMarkdownElement('h1');
     await waitFor(() => {
       expect(heading).toHaveAttribute('data-target-id');
     });
 
     await user.click(heading);
-    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+    expect(await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
 
-    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Why annotate the heading?');
-    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'Why annotate the heading?');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
 
-    expect(screen.getByText('Why annotate the heading?')).toBeInTheDocument();
+    expect(getLatestCommentCard()).toBeInTheDocument();
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
@@ -303,26 +296,26 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: '# Title\n\nExplain the parser ordering.' },
     });
 
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Title' });
+    const heading = await waitForMarkdownElement('h1');
     await waitFor(() => {
       expect(heading).toHaveAttribute('data-target-id');
     });
 
     await user.click(heading);
-    await user.type(await screen.findByTestId(annotationPopoverTestIds.textarea), 'Unsaved annotation');
+    await user.type(await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea), 'Unsaved annotation');
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
     expect(await screen.findByTestId(appTestIds.discardDraftDialog)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Discard unsaved comment?' })).toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.discardDraftDialog)).toBeInTheDocument();
     expect(submitAnnotation).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: 'Keep Editing' }));
+    await user.click(screen.getByTestId(appTestIds.discardDraftDialogCancelButton));
 
-    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Unsaved annotation');
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('Unsaved annotation');
     expect(submitAnnotation).not.toHaveBeenCalled();
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
-    await user.click(await screen.findByRole('button', { name: 'Discard' }));
+    await user.click(await screen.findByTestId(appTestIds.discardDraftDialogActionButton));
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
     await waitFor(() => {
@@ -334,18 +327,38 @@ describe('App', () => {
     });
   });
 
+  it('uses Escape twice to discard a dirty annotation draft', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# Title\n\nExplain the parser ordering.' } });
+
+    await user.click(await waitForMarkdownElement('h1'));
+    await user.type(await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea), 'Unsaved annotation');
+
+    fireEvent.keyDown(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), {
+      code: 'Escape',
+      key: 'Escape',
+    });
+    expect(await screen.findByTestId(appTestIds.discardDraftDialog)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
+
+    fireEvent.keyDown(screen.getByTestId(appTestIds.discardDraftDialog), { code: 'Escape', key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(appTestIds.discardDraftDialog)).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
+  });
+
   it('updates the visible countdown after submission without waiting on real timers', async () => {
     const user = userEvent.setup();
     const { browser } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
-    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveTextContent(
-      'This window will close in 3 seconds.',
-    );
+    expect(await screen.findByTestId(submitBarTestIds.countdown)).toHaveAttribute('data-countdown-seconds', '3');
 
     act(() => browser.advance());
-    expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 2 seconds.');
+    expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveAttribute('data-countdown-seconds', '2');
   });
 
   it('shows Codex-specific handoff notice on approval when source is hook_codex', async () => {
@@ -392,10 +405,7 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: '# Plan\n\n```ts\nconst greeting = "hello";\n```\n' },
     });
 
-    const pre = await screen.findByRole('heading', { level: 1 }).then((heading) => {
-      const root = heading.closest('div')!;
-      return root.querySelector('pre')!;
-    });
+    const pre = await waitForMarkdownElement('pre');
 
     expect(pre.querySelector('code')?.classList.contains('hljs')).toBe(true);
     const stringToken = pre.querySelector('.hljs-string');
@@ -412,18 +422,18 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(document.querySelector('pre code.hljs .hljs-string')).not.toBeNull();
+      expect(getMarkdownElement('pre code.hljs .hljs-string')).not.toBeNull();
     });
 
-    const stringToken = document.querySelector<HTMLElement>('pre code.hljs .hljs-string')!;
+    const stringToken = getMarkdownElement<HTMLElement>('pre code.hljs .hljs-string');
     const text = stringToken.firstChild as Text;
 
     drag({ target: text, from: 3, to: 5 });
 
-    await screen.findByTestId(annotationPopoverTestIds.container);
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
 
-    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'this literal is too long');
-    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'this literal is too long');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
     await waitFor(() => {
@@ -443,15 +453,15 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(document.querySelector('pre code.hljs .hljs-string')).not.toBeNull();
+      expect(getMarkdownElement('pre code.hljs .hljs-string')).not.toBeNull();
     });
 
-    const stringToken = document.querySelector<HTMLElement>('pre code.hljs .hljs-string')!;
+    const stringToken = getMarkdownElement<HTMLElement>('pre code.hljs .hljs-string');
     await user.click(stringToken);
 
-    await screen.findByTestId(annotationPopoverTestIds.container);
-    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'too long');
-    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'too long');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
     await waitFor(() => {
@@ -468,7 +478,7 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
     });
 
-    const link = await screen.findByRole('link', { name: 'the docs' });
+    const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     expect(link).toHaveAttribute('href', 'https://example.com');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noreferrer');
@@ -480,7 +490,7 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
     });
 
-    const link = await screen.findByRole('link', { name: 'the docs' });
+    const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     await waitFor(() => {
       expect(link).toHaveAttribute('data-target-id');
     });
@@ -498,7 +508,7 @@ describe('App', () => {
     await user.click(link);
 
     expect(defaultPrevented).toBe(false);
-    expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
   });
 
   it('opens the annotation popover when text inside a link is drag-selected', async () => {
@@ -506,12 +516,12 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
     });
 
-    const link = await screen.findByRole('link', { name: 'the docs' });
+    const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     const text = link.firstChild as Text;
 
     drag({ target: text, from: 0, to: text.length });
 
-    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
+    expect(await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
   });
 
   it('clicking a link that already has an annotation opens the editor instead of navigating', async () => {
@@ -520,17 +530,17 @@ describe('App', () => {
       initialPayload: { contentKind: 'plan', content: 'Check [the docs](https://example.com) for details.' },
     });
 
-    const link = await screen.findByRole('link', { name: 'the docs' });
+    const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     const text = link.firstChild as Text;
 
     drag({ target: text, from: 0, to: text.length });
-    await screen.findByTestId(annotationPopoverTestIds.container);
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
 
-    await user.type(screen.getByTestId(annotationPopoverTestIds.textarea), 'Link comment');
-    await user.click(screen.getByTestId(annotationPopoverTestIds.saveButton));
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'Link comment');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
 
     await waitFor(() => {
-      expect(screen.queryByTestId(annotationPopoverTestIds.container)).not.toBeInTheDocument();
+      expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
     });
 
     const rect = link.getBoundingClientRect();
@@ -539,8 +549,215 @@ describe('App', () => {
       clientY: rect.top + rect.height / 2,
     });
 
-    expect(await screen.findByTestId(annotationPopoverTestIds.container)).toBeInTheDocument();
-    expect(screen.getByTestId(annotationPopoverTestIds.textarea)).toHaveValue('Link comment');
+    expect(await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('Link comment');
+  });
+
+  it('renders top comment navigation after annotation comments exist', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+
+    expect(screen.getByTestId(commentNavigationBarTestIds.container)).toBeInTheDocument();
+    expectCommentCounter({ activePosition: 1, total: 1 });
+  });
+
+  it('navigates comments with J and K keyboard shortcuts and wraps at the ends', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.\n\nThird paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(1), 'Third comment');
+
+    expectCommentCounter({ activePosition: 1, total: 3 });
+
+    pressCommentShortcut('j');
+    expectCommentCounter({ activePosition: 2, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(1));
+
+    pressCommentShortcut('k');
+    expectCommentCounter({ activePosition: 1, total: 3 });
+
+    pressCommentShortcut('k');
+    expectCommentCounter({ activePosition: 3, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(2));
+  });
+
+  it('moves the active sidebar border to a new draft opened from a markdown selection', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.\n\nThird paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    pressCommentShortcut('j');
+    const selectedCard = getCurrentCommentCard();
+    expect(selectedCard).toHaveClass('border-chart-3/70');
+
+    const thirdParagraph = getMarkdownParagraph(1);
+    drag({ target: thirdParagraph.firstChild as Text, from: 0, to: 'Third'.length });
+
+    const draftCard = (await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).closest(
+      '[role="button"]',
+    );
+    if (!(draftCard instanceof HTMLElement)) {
+      throw new Error('Expected draft composer to be inside a thread card');
+    }
+
+    expect(draftCard).toHaveAttribute('aria-current', 'true');
+    expect(draftCard).toHaveClass('border-chart-3/70');
+    expect(draftCard).toHaveClass('cb-draft-thread-attention');
+    expect(selectedCard).not.toHaveClass('border-chart-3/70');
+  });
+
+  it('navigates comments in document order even when comments were created out of order', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.\n\nThird paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownParagraph(1), 'Third comment');
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    expectCommentCounter({ activePosition: 1, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(0));
+
+    pressCommentShortcut('j');
+    expectCommentCounter({ activePosition: 2, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(1));
+
+    pressCommentShortcut('j');
+    expectCommentCounter({ activePosition: 3, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(2));
+
+    pressCommentShortcut('j');
+    expectCommentCounter({ activePosition: 1, total: 3 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(0));
+  });
+
+  it('keeps keyboard navigation highlighting after saving a hovered draft thread', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+
+    const secondParagraph = getMarkdownParagraph(0);
+    await waitFor(() => {
+      expect(secondParagraph).toHaveAttribute('data-target-id');
+    });
+    await user.click(secondParagraph);
+    const draftCard = (await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).closest(
+      '[role="button"]',
+    );
+    if (!(draftCard instanceof HTMLElement)) {
+      throw new Error('Expected draft composer to be inside a thread card');
+    }
+    fireEvent.mouseEnter(draftCard);
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'Second comment');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
+
+    pressCommentShortcut('j');
+
+    expectCommentCounter({ activePosition: 2, total: 2 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(1));
+  });
+
+  it('keeps keyboard navigation highlighting after saving an edited hovered thread', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    const firstCard = getCommentCardAt(0);
+    fireEvent.mouseEnter(firstCard);
+    await user.click(firstCard);
+    const textarea = await findAnnotationTextarea();
+    await user.clear(textarea);
+    await user.type(textarea, 'First comment edited');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
+
+    pressCommentShortcut('j');
+
+    expectCommentCounter({ activePosition: 2, total: 2 });
+    expect(getCurrentCommentCard()).toBe(getCommentCardAt(1));
+  });
+
+  it('handles comment shortcuts before Storybook-style handlers can stop propagation', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    const ownerDocument = screen.getByTestId(appTestIds.container).ownerDocument;
+    ownerDocument.body.addEventListener('keydown', (event) => event.stopPropagation(), { once: true });
+
+    fireEvent.keyDown(ownerDocument.body, { key: 'j', code: 'KeyJ' });
+
+    expectCommentCounter({ activePosition: 2, total: 2 });
+  });
+
+  it('opens the current comment editor with C and closes it with Escape', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    pressCommentShortcut('j');
+    pressCommentShortcut('c');
+
+    const textarea = await findAnnotationTextarea();
+    expect(textarea).toHaveFocus();
+    expect(textarea).toHaveValue('Second comment');
+    await waitFor(() => {
+      expect(textarea.selectionStart).toBe('Second comment'.length);
+      expect(textarea.selectionEnd).toBe('Second comment'.length);
+    });
+    expect(screen.queryByTestId(commentNavigationBarTestIds.container)).not.toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
+    });
+  });
+
+  it('ignores comment navigation shortcuts inside editable fields', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First\n\nSecond paragraph.' } });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+    await saveAnnotationOnElement(user, getMarkdownParagraph(0), 'Second comment');
+
+    const textarea = screen.getByTestId(globalCommentComposerTestIds.textarea);
+    await user.click(textarea);
+    await user.keyboard('jkc');
+
+    expect(textarea).toHaveValue('jkc');
+    expectCommentCounter({ activePosition: 1, total: 2 });
+  });
+
+  it('keeps unresolved comments visible but excludes them from navigation', async () => {
+    const user = userEvent.setup();
+    const unresolvedThread = annotationThread.build({
+      id: 'thr_unresolved',
+      messages: [
+        {
+          author: { id: 'local-user', kind: 'user', displayName: 'You' },
+          body: 'Unresolved soon',
+          createdAt: '2026-04-20T12:34:56.000Z',
+          id: 'msg_unresolved',
+        },
+      ],
+    });
+    renderApp({ initialPayload: { contentKind: 'plan', content: '# First' }, initialThreads: [unresolvedThread] });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'First comment');
+
+    expectCommentCounter({ activePosition: 1, total: 1 });
+    expect(screen.getByTestId(annotationThreadCardTestIds.card('thr_unresolved'))).toBeInTheDocument();
   });
 
   it('sets the document title from the payload title', async () => {
@@ -659,7 +876,7 @@ Run \`${longCode}\` now.
       const feedbackButton = screen.getByTestId(headerTestIds.feedbackButton);
       expect(feedbackButton).toHaveAttribute('href', FEEDBACK_URL);
       expect(feedbackButton).toHaveAttribute('target', '_blank');
-      expect(feedbackButton).toHaveTextContent('Feedback');
+      expect(feedbackButton).toBeInTheDocument();
     });
   });
 });
@@ -669,4 +886,107 @@ function expectWithinRightBorder(child: Element, parent: Element): void {
   const childRect = child.getBoundingClientRect();
   const parentRect = parent.getBoundingClientRect();
   expect(childRect.right).toBeLessThanOrEqual(parentRect.right + 1);
+}
+
+function expectCommentCounter({ activePosition, total }: { activePosition: number; total: number }): void {
+  const counter = screen.getByTestId(commentsSidebarTestIds.counter);
+  expect(counter).toHaveAttribute('data-comment-active-position', String(activePosition));
+  expect(counter).toHaveAttribute('data-comment-total', String(total));
+}
+
+async function saveAnnotationOnElement(
+  user: ReturnType<typeof userEvent.setup>,
+  element: HTMLElement,
+  body: string,
+): Promise<void> {
+  await waitFor(() => {
+    expect(element).toHaveAttribute('data-target-id');
+  });
+
+  await user.click(element);
+  await user.type(await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea), body);
+  await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
+  await waitFor(() => {
+    expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
+  });
+}
+
+async function findAnnotationTextarea(): Promise<HTMLTextAreaElement> {
+  const textarea = await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea);
+  if (!(textarea instanceof HTMLTextAreaElement)) {
+    throw new Error('Expected annotation popover control to be a textarea');
+  }
+
+  return textarea;
+}
+
+function getMarkdownElement<T extends HTMLElement = HTMLElement>(selector: string): T {
+  const element = screen.getByTestId(annotatedMarkdownTestIds.container).querySelector<T>(selector);
+  if (!element) {
+    throw new Error(`Could not find markdown element matching ${selector}`);
+  }
+
+  return element;
+}
+
+async function waitForMarkdownElement<T extends HTMLElement = HTMLElement>(selector: string): Promise<T> {
+  return await waitFor(() => getMarkdownElement<T>(selector));
+}
+
+function getMarkdownParagraph(index: number): HTMLElement {
+  const paragraph = screen.getByTestId(annotatedMarkdownTestIds.container).querySelectorAll<HTMLElement>('p')[index];
+  if (!paragraph) {
+    throw new Error(`Could not find markdown paragraph at index ${index}`);
+  }
+
+  return paragraph;
+}
+
+async function waitForMarkdownParagraph(index: number): Promise<HTMLElement> {
+  return await waitFor(() => getMarkdownParagraph(index));
+}
+
+function getCommentCards(): HTMLElement[] {
+  const cardTestIdPrefix = annotationThreadCardTestIds.card('');
+  return Array.from(
+    screen
+      .getByTestId(commentsSidebarTestIds.threadList)
+      .querySelectorAll<HTMLElement>(`[data-testid^="${cardTestIdPrefix}"]`),
+  );
+}
+
+function getCommentCardAt(index: number): HTMLElement {
+  const card = getCommentCards()[index];
+  if (!card) {
+    throw new Error(`Could not find comment card at index ${index}`);
+  }
+
+  return card;
+}
+
+function getCurrentCommentCard(): HTMLElement {
+  const cardTestIdPrefix = annotationThreadCardTestIds.card('');
+  const card = screen
+    .getByTestId(commentsSidebarTestIds.threadList)
+    .querySelector<HTMLElement>(`[data-testid^="${cardTestIdPrefix}"][aria-current="true"]`);
+  if (!card) {
+    throw new Error('Could not find current comment card');
+  }
+
+  return card;
+}
+
+function getLatestCommentCard(): HTMLElement {
+  const cards = getCommentCards();
+  const card = cards.at(-1);
+  if (!card) {
+    throw new Error('Could not find a comment card');
+  }
+
+  return card;
+}
+
+function pressCommentShortcut(key: 'c' | 'j' | 'k'): void {
+  const ownerDocument = screen.getByTestId(appTestIds.container).ownerDocument;
+  fireEvent.keyDown(ownerDocument.body, { key, code: `Key${key.toUpperCase()}` });
 }

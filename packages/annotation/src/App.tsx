@@ -18,7 +18,6 @@ import './annotationStyles.css';
 import './codeHighlightStyles.css';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
-import { AnnotationPopover } from './AnnotationPopover.tsx';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
@@ -32,6 +31,8 @@ export const appTestIds = {
   emptyState: 'plan-review-empty-state',
   removeDialog: 'plan-review-remove-dialog',
   discardDraftDialog: 'plan-review-discard-draft-dialog',
+  discardDraftDialogCancelButton: 'plan-review-discard-draft-dialog-cancel',
+  discardDraftDialogActionButton: 'plan-review-discard-draft-dialog-action',
   closeReviewDialog: 'plan-review-close-review-dialog',
   closeReviewDialogCancelButton: 'plan-review-close-review-dialog-cancel',
   closeReviewDialogActionButton: 'plan-review-close-review-dialog-action',
@@ -58,8 +59,11 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     submitted: reviewState.submission.submitted,
     activeDraft: reviewState.draft.active,
     onOpenAnnotationCommentDraft: reviewState.draft.open,
+    onRequestCloseAnnotationCommentDraft: reviewState.draft.requestClose,
   });
   const highlightWarning = getAnnotationHighlightWarning();
+  const showCommentNavigation = annotationInteractions.navigation.total > 0;
+  const commentNavigationDisabled = reviewState.draft.active !== null;
 
   useEffect(() => {
     if (initialPayload) {
@@ -87,20 +91,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     <>
       <title>{documentTitle}</title>
       {!payload ? (
-        <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
-          <Header
-            docsHref={DOCS_URL}
-            feedbackHref={FEEDBACK_URL}
-            githubRepoHref={GITHUB_REPO_URL}
-            slackHelpHref={SLACK_COMMUNITY_URL}
-            version={buildInfo.version}
-          />
-          <div className="mx-auto max-w-4xl px-6 py-16">
-            <p className="text-sm text-muted-foreground" data-testid={appTestIds.loading}>
-              Loading…
-            </p>
-          </div>
-        </main>
+        <Loading buildInfo={buildInfo} />
       ) : (
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
           <Header
@@ -110,18 +101,18 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
             slackHelpHref={SLACK_COMMUNITY_URL}
             version={buildInfo.version}
           />
-          <div className="mx-auto max-w-[88rem] px-4 py-4 sm:px-6 sm:py-6">
-            {highlightWarning ? (
-              <div
-                className="mb-5 border-l-2 border-chart-1 px-3 py-2 text-sm leading-6 text-muted-foreground"
-                data-testid={appTestIds.highlightWarning}
-              >
-                {highlightWarning}
-              </div>
-            ) : null}
+          <div className="w-full px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,52rem)_minmax(0,1fr)_minmax(15rem,28rem)]">
+              {highlightWarning ? (
+                <div
+                  className="border-l-2 border-chart-1 px-3 py-2 text-sm leading-6 text-muted-foreground xl:col-start-2"
+                  data-testid={appTestIds.highlightWarning}
+                >
+                  {highlightWarning}
+                </div>
+              ) : null}
 
-            <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(15rem,23rem)] gap-6">
-              <section className="min-w-0">
+              <section className="min-w-0 xl:col-start-2">
                 {payload.content.length > 0 ? (
                   <AnnotatedMarkdown
                     key={payload.content}
@@ -140,101 +131,66 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                 )}
               </section>
 
-              <CommentsSidebar
-                activeAnnotationId={annotationInteractions.activeAnnotationId}
-                annotations={annotationInteractions.resolvedAnnotations}
-                globalComment={reviewState.globalComment}
-                onAnnotationClick={annotationInteractions.focusAnnotationComment}
-                onAnnotationHoverChange={annotationInteractions.setAnnotationHover}
-                onRequestRemove={reviewState.removal.request}
-                source={payload.metadata?.entrypoint}
-                submission={reviewState.submission}
-              />
+              <div className="min-w-0 xl:col-start-4 xl:row-span-2 xl:row-start-1">
+                <CommentsSidebar
+                  threads={annotationInteractions.resolvedThreads}
+                  currentThreadId={annotationInteractions.currentSidebarThreadId}
+                  globalComment={reviewState.globalComment}
+                  highlightedAnnotationId={annotationInteractions.highlightedAnnotationId}
+                  navigation={
+                    showCommentNavigation
+                      ? {
+                          activePosition: annotationInteractions.navigation.activePosition,
+                          disabled: commentNavigationDisabled,
+                          total: annotationInteractions.navigation.total,
+                        }
+                      : null
+                  }
+                  onDraftBodyChange={reviewState.draft.setBody}
+                  onDraftCancel={reviewState.draft.requestClose}
+                  onDraftSave={reviewState.draft.save}
+                  onThreadClick={annotationInteractions.focusAnnotationThread}
+                  onAnnotationHoverChange={annotationInteractions.setAnnotationHover}
+                  onRequestRemove={reviewState.removal.request}
+                  source={payload.metadata?.entrypoint}
+                  submission={reviewState.submission}
+                />
+              </div>
             </div>
 
-            <AnnotationPopover
-              body={reviewState.draft.active?.body ?? ''}
-              getRect={reviewState.draft.active?.getRect ?? null}
-              onBodyChange={reviewState.draft.setBody}
-              onCancel={reviewState.draft.requestClose}
-              onSave={reviewState.draft.save}
-              open={reviewState.draft.active !== null}
-            />
-
-            <AlertDialog
+            <RemoveCommentDialog
+              onConfirm={reviewState.removal.confirm}
               onOpenChange={(open) => {
                 if (!open) {
                   reviewState.removal.request(null);
                 }
               }}
               open={reviewState.removal.pendingId !== null}
-            >
-              <AlertDialogContent data-testid={appTestIds.removeDialog} size="sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Remove comment?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will discard the entire thread. You can always add it back with a new selection.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={reviewState.removal.confirm} variant="destructive">
-                    Remove
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            />
 
-            <AlertDialog
+            <DiscardDraftDialog
+              onConfirm={reviewState.draft.confirmDiscard}
               onOpenChange={(open) => {
                 if (!open) {
                   reviewState.draft.dismissDiscardDialog();
                 }
               }}
               open={reviewState.draft.discardDialogOpen}
-            >
-              <AlertDialogContent data-testid={appTestIds.discardDraftDialog} size="sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Discard unsaved comment?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Your comment has not been saved. If you leave now your text will be lost.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Editing</AlertDialogCancel>
-                  <AlertDialogAction onClick={reviewState.draft.confirmDiscard} variant="destructive">
-                    Discard
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            />
 
-            <AlertDialog
+            <CloseReviewDialog
+              cancelLabel={reviewState.closeReview.cancelLabel}
+              description={reviewState.closeReview.description}
+              onConfirm={() => void reviewState.closeReview.confirmRecommendedAction()}
               onOpenChange={(open) => {
                 if (!open) {
                   reviewState.closeReview.dismissDialog();
                 }
               }}
               open={reviewState.closeReview.dialogOpen}
-            >
-              <AlertDialogContent data-testid={appTestIds.closeReviewDialog} size="sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{reviewState.closeReview.title}</AlertDialogTitle>
-                  <AlertDialogDescription>{reviewState.closeReview.description}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid={appTestIds.closeReviewDialogCancelButton}>
-                    {reviewState.closeReview.cancelLabel}
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    data-testid={appTestIds.closeReviewDialogActionButton}
-                    onClick={() => void reviewState.closeReview.confirmRecommendedAction()}
-                  >
-                    {reviewState.closeReview.primaryActionLabel}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              primaryActionLabel={reviewState.closeReview.primaryActionLabel}
+              title={reviewState.closeReview.title}
+            />
           </div>
 
           {updateNotice && !updateNoticeDismissed ? (
@@ -253,4 +209,129 @@ function resolveDocumentTitle(payload: AnnotationPayload | null): string {
   const sourcePath = payload.metadata?.sourcePath;
   const stem = sourcePath ? sourcePath.split('/').pop() || sourcePath : payload.title;
   return stem ? `${stem} — PlanBridge` : DEFAULT_DOCUMENT_TITLE;
+}
+
+interface LoadingProps {
+  buildInfo: { readonly version: string };
+}
+
+function Loading({ buildInfo }: LoadingProps) {
+  return (
+    <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
+      <Header
+        docsHref={DOCS_URL}
+        feedbackHref={FEEDBACK_URL}
+        githubRepoHref={GITHUB_REPO_URL}
+        slackHelpHref={SLACK_COMMUNITY_URL}
+        version={buildInfo.version}
+      />
+      <div className="mx-auto max-w-4xl px-6 py-16">
+        <p className="text-sm text-muted-foreground" data-testid={appTestIds.loading}>
+          Loading…
+        </p>
+      </div>
+    </main>
+  );
+}
+
+interface RemoveCommentDialogProps {
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}
+
+function RemoveCommentDialog({ onConfirm, onOpenChange, open }: RemoveCommentDialogProps) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent data-testid={appTestIds.removeDialog} size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove comment?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will discard the entire thread. You can always add it back with a new selection.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} variant="destructive">
+            Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+interface DiscardDraftDialogProps {
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}
+
+function DiscardDraftDialog({ onConfirm, onOpenChange, open }: DiscardDraftDialogProps) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent
+        data-testid={appTestIds.discardDraftDialog}
+        onEscapeKeyDown={(event) => {
+          event.preventDefault();
+          onConfirm();
+        }}
+        size="sm"
+      >
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard unsaved comment?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Your comment has not been saved. If you leave now your text will be lost.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel data-testid={appTestIds.discardDraftDialogCancelButton}>Keep Editing</AlertDialogCancel>
+          <AlertDialogAction
+            data-testid={appTestIds.discardDraftDialogActionButton}
+            onClick={onConfirm}
+            variant="destructive"
+          >
+            Discard
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+interface CloseReviewDialogProps {
+  cancelLabel: string;
+  description: string;
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  primaryActionLabel: string;
+  title: string;
+}
+
+function CloseReviewDialog({
+  cancelLabel,
+  description,
+  onConfirm,
+  onOpenChange,
+  open,
+  primaryActionLabel,
+  title,
+}: CloseReviewDialogProps) {
+  return (
+    <AlertDialog onOpenChange={onOpenChange} open={open}>
+      <AlertDialogContent data-testid={appTestIds.closeReviewDialog} size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel data-testid={appTestIds.closeReviewDialogCancelButton}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction data-testid={appTestIds.closeReviewDialogActionButton} onClick={onConfirm}>
+            {primaryActionLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
