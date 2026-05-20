@@ -33,6 +33,8 @@ export const appTestIds = {
   removeDialog: 'plan-review-remove-dialog',
   discardDraftDialog: 'plan-review-discard-draft-dialog',
   closeReviewDialog: 'plan-review-close-review-dialog',
+  closeReviewDialogCancelButton: 'plan-review-close-review-dialog-cancel',
+  closeReviewDialogActionButton: 'plan-review-close-review-dialog-action',
 };
 
 export interface AppProps {
@@ -217,8 +219,13 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                   <AlertDialogDescription>{reviewState.closeReview.description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Reviewing</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => void reviewState.closeReview.confirmRecommendedAction()}>
+                  <AlertDialogCancel data-testid={appTestIds.closeReviewDialogCancelButton}>
+                    Keep Reviewing
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    data-testid={appTestIds.closeReviewDialogActionButton}
+                    onClick={() => void reviewState.closeReview.confirmRecommendedAction()}
+                  >
                     {reviewState.closeReview.primaryActionLabel}
                   </AlertDialogAction>
                 </AlertDialogFooter>

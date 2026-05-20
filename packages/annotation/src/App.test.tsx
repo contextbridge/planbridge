@@ -3,7 +3,7 @@ import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@c
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
@@ -171,11 +171,11 @@ describe('App', () => {
     expect(dialog).toHaveTextContent(
       'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
     );
-    expect(within(dialog).getByRole('button', { name: 'Keep Reviewing' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Approve Plan' })).toBeInTheDocument();
-    expect(within(dialog).queryByRole('button', { name: 'Close Anyway' })).not.toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent('Approve Plan');
+    expect(dialog).not.toHaveTextContent('Close Anyway');
 
-    await user.click(within(dialog).getByRole('button', { name: 'Keep Reviewing' }));
+    await user.click(screen.getByTestId(appTestIds.closeReviewDialogCancelButton));
 
     await waitFor(() => {
       expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
@@ -199,11 +199,11 @@ describe('App', () => {
     expect(dialog).toHaveTextContent(
       'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
     );
-    expect(within(dialog).getByRole('button', { name: 'Keep Reviewing' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Submit Feedback' })).toBeInTheDocument();
-    expect(within(dialog).queryByRole('button', { name: 'Close Anyway' })).not.toBeInTheDocument();
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent('Submit Feedback');
+    expect(dialog).not.toHaveTextContent('Close Anyway');
 
-    await user.click(within(dialog).getByRole('button', { name: 'Submit Feedback' }));
+    await user.click(screen.getByTestId(appTestIds.closeReviewDialogActionButton));
 
     await waitFor(() => {
       expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
