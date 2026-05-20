@@ -13,6 +13,7 @@ import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
+import { closeReviewDialogCopy } from './useAnnotationState.ts';
 
 describe('App', () => {
   afterEach(() => {
@@ -155,6 +156,63 @@ describe('App', () => {
         },
       ],
     });
+  });
+
+  it('opens the approval close dialog after staying on an attempted close with no comments', async () => {
+    const user = userEvent.setup();
+    const { browser, submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+
+    await act(async () => {
+      browser.triggerBeforeUnload();
+      await Promise.resolve();
+    });
+
+    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.title);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.description);
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+      closeReviewDialogCopy.empty.primaryActionLabel,
+    );
+    expect(dialog).not.toHaveTextContent('Close Anyway');
+
+    await user.click(screen.getByTestId(appTestIds.closeReviewDialogCancelButton));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
+    });
+    expect(submitAnnotation).not.toHaveBeenCalled();
+  });
+
+  it('opens the submit-feedback close dialog after staying on an attempted close with feedback', async () => {
+    const user = userEvent.setup();
+    const { browser, submitAnnotation } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+
+    await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs rollback details');
+
+    await act(async () => {
+      browser.triggerBeforeUnload();
+      await Promise.resolve();
+    });
+
+    const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.title);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.description);
+    expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+      closeReviewDialogCopy.feedback.primaryActionLabel,
+    );
+    expect(dialog).not.toHaveTextContent('Close Anyway');
+
+    await user.click(screen.getByTestId(appTestIds.closeReviewDialogActionButton));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(appTestIds.closeReviewDialog)).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+    expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({ status: 'changes_requested' });
   });
 
   it('does not submit again from the global shortcut while submitting', async () => {

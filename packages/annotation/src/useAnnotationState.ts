@@ -34,6 +34,12 @@ type PendingDraftAction =
   | { kind: 'replace'; draft: OpenAnnotationCommentDraftArgs }
   | { kind: 'remove'; threadId: string };
 
+interface CloseReviewDialogContent {
+  readonly title: string;
+  readonly description: string;
+  readonly primaryActionLabel: string;
+}
+
 export function useAnnotationState({ initialThreads, initialGlobalComment }: UseAnnotationStateArgs = {}) {
   const { submitAnnotation, browser, autoCloseDelaySeconds } = useAnnotationAppContext();
 
@@ -47,9 +53,11 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   const [globalCommentBody, setGlobalCommentBody] = useState(initialGlobalComment ?? '');
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   const [closeCountdownSeconds, setCloseCountdownSeconds] = useState<number | null>(null);
+  const [closeReviewDialogOpen, setCloseReviewDialogOpen] = useState(false);
 
   const trimmedGlobal = globalCommentBody.trim();
   const feedbackCount = getFeedbackCount(threads, trimmedGlobal);
+  const closeReviewDialogContent = getCloseReviewDialogContent(feedbackCount);
   const submitLabel = submitted ? 'Submitted' : feedbackCount === 0 ? 'Approve Plan' : 'Submit Feedback';
 
   const [pendingDraftAction, setPendingDraftAction] = useState<PendingDraftAction | null>(null);
@@ -166,6 +174,15 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     await submitThreads(threads);
   };
 
+  const dismissCloseReviewDialog = () => {
+    setCloseReviewDialogOpen(false);
+  };
+
+  const confirmCloseReviewRecommendedAction = async () => {
+    setCloseReviewDialogOpen(false);
+    await submit();
+  };
+
   const confirmDiscardDraft = () => {
     if (!pendingDraftAction) {
       return;
@@ -190,6 +207,16 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
         return;
     }
   }
+
+  useEffect(() => {
+    if (submitted) {
+      return;
+    }
+
+    return browser.addBeforeUnloadGuard({
+      onAttemptedUnload: () => setCloseReviewDialogOpen(true),
+    });
+  }, [browser, submitted]);
 
   useEffect(() => {
     if (!submitted) {
@@ -239,6 +266,12 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
       label: submitLabel,
       feedbackCount,
     },
+    closeReview: {
+      dialogOpen: closeReviewDialogOpen,
+      dismissDialog: dismissCloseReviewDialog,
+      confirmRecommendedAction: confirmCloseReviewRecommendedAction,
+      ...closeReviewDialogContent,
+    },
     removal: {
       pendingId: pendingRemoveId,
       request: requestRemove,
@@ -259,6 +292,25 @@ function getDraftDirty(draft: ActiveCommentDraft, threads: CommentThread[]): boo
 
 function getFeedbackCount(threads: CommentThread[], trimmedGlobal: string): number {
   return threads.length + (trimmedGlobal.length > 0 ? 1 : 0);
+}
+
+export const closeReviewDialogCopy = {
+  empty: {
+    title: 'Approve plan before closing?',
+    description:
+      'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
+    primaryActionLabel: 'Approve Plan',
+  },
+  feedback: {
+    title: 'Submit feedback before closing?',
+    description:
+      'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
+    primaryActionLabel: 'Submit Feedback',
+  },
+} as const;
+
+function getCloseReviewDialogContent(feedbackCount: number): CloseReviewDialogContent {
+  return feedbackCount === 0 ? closeReviewDialogCopy.empty : closeReviewDialogCopy.feedback;
 }
 
 function getSubmitStatus(threads: CommentThread[], trimmedGlobal: string): AnnotationStatus {

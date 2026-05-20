@@ -42,4 +42,27 @@ describe('FakeFrontendBrowser', () => {
     expect(browser.clearedTimeoutIds).toEqual([1]);
     expect(fired).toBe(false);
   });
+
+  it('records beforeunload guards and triggers fake prevented unload events', () => {
+    const browser = new FakeFrontendBrowser();
+    let attemptedUnloadCalls = 0;
+
+    const cleanup = browser.addBeforeUnloadGuard({
+      onAttemptedUnload: () => {
+        attemptedUnloadCalls += 1;
+      },
+    });
+
+    expect(browser.activeBeforeUnloadGuardIds).toEqual([1]);
+    expect(browser.isBeforeUnloadGuarded()).toBe(true);
+    expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: true, returnValue: '' });
+    expect(attemptedUnloadCalls).toBe(1);
+
+    cleanup();
+
+    expect(browser.removedBeforeUnloadGuardIds).toEqual([1]);
+    expect(browser.isBeforeUnloadGuarded()).toBe(false);
+    expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: false, returnValue: 'unset' });
+    expect(attemptedUnloadCalls).toBe(1);
+  });
 });

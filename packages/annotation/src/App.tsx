@@ -32,6 +32,9 @@ export const appTestIds = {
   emptyState: 'plan-review-empty-state',
   removeDialog: 'plan-review-remove-dialog',
   discardDraftDialog: 'plan-review-discard-draft-dialog',
+  closeReviewDialog: 'plan-review-close-review-dialog',
+  closeReviewDialogCancelButton: 'plan-review-close-review-dialog-cancel',
+  closeReviewDialogActionButton: 'plan-review-close-review-dialog-action',
 };
 
 export interface AppProps {
@@ -197,6 +200,33 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                   <AlertDialogCancel>Keep Editing</AlertDialogCancel>
                   <AlertDialogAction onClick={reviewState.draft.confirmDiscard} variant="destructive">
                     Discard
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) {
+                  reviewState.closeReview.dismissDialog();
+                }
+              }}
+              open={reviewState.closeReview.dialogOpen}
+            >
+              <AlertDialogContent data-testid={appTestIds.closeReviewDialog} size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{reviewState.closeReview.title}</AlertDialogTitle>
+                  <AlertDialogDescription>{reviewState.closeReview.description}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid={appTestIds.closeReviewDialogCancelButton}>
+                    Keep Reviewing
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    data-testid={appTestIds.closeReviewDialogActionButton}
+                    onClick={() => void reviewState.closeReview.confirmRecommendedAction()}
+                  >
+                    {reviewState.closeReview.primaryActionLabel}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

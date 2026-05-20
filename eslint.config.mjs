@@ -74,6 +74,19 @@ const annotationBrowserWindowRestrictedProperties = [
     property: 'clearTimeout',
     message: 'Use the cancel callback returned by browser.scheduleTimeout() instead of window.clearTimeout().',
   },
+  {
+    object: 'window',
+    property: 'onbeforeunload',
+    message: 'Use browser.addBeforeUnloadGuard() from AnnotationAppContext instead of window.onbeforeunload.',
+  },
+];
+
+const annotationBrowserWindowRestrictedSelectors = [
+  {
+    selector:
+      "CallExpression[callee.object.name='window'][callee.property.name=/^(addEventListener|removeEventListener)$/][arguments.0.value='beforeunload']",
+    message: 'Use browser.addBeforeUnloadGuard() from AnnotationAppContext instead of direct beforeunload listeners.',
+  },
 ];
 
 const rawImgRestrictedSelector = {
@@ -128,7 +141,12 @@ export default defineConfig(
   {
     files: ['packages/annotation/src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': ['error', ...dateRestrictedSelectors, consoleRestrictedSelector],
+      'no-restricted-syntax': [
+        'error',
+        ...dateRestrictedSelectors,
+        consoleRestrictedSelector,
+        ...annotationBrowserWindowRestrictedSelectors,
+      ],
       'no-restricted-properties': [
         'error',
         ...processRestrictedProperties,

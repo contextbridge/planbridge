@@ -30,6 +30,35 @@ describe('FrontendBrowserImpl', () => {
     cancel();
     expect(browserWindow.clearedTimeoutIds).toEqual([1]);
   });
+
+  it('registers beforeunload guards through the injected window and returns a cleanup callback', () => {
+    const browserWindow = createBrowserWindow();
+    const browser = new FrontendBrowserImpl(browserWindow);
+    let attemptedUnloadCalls = 0;
+
+    const cleanup = browser.addBeforeUnloadGuard({
+      onAttemptedUnload: () => {
+        attemptedUnloadCalls += 1;
+      },
+    });
+
+    const handler = browserWindow.beforeUnloadHandlers[0];
+    if (!handler) {
+      throw new Error('expected beforeunload handler to be registered');
+    }
+
+    const event = createBeforeUnloadEvent();
+    handler(event);
+
+    expect(attemptedUnloadCalls).toBe(1);
+    expect(event.defaultPrevented).toBe(true);
+    expect(event.returnValue).toBe('');
+
+    cleanup();
+
+    expect(browserWindow.beforeUnloadHandlers).toEqual([]);
+    expect(browserWindow.removedBeforeUnloadHandlers).toEqual([handler]);
+  });
 });
 
 interface RecordedTimeout {
@@ -41,6 +70,8 @@ interface RecordedTimeout {
 interface FakeBrowserWindow extends FrontendBrowserWindow {
   readonly scheduledTimeouts: RecordedTimeout[];
   readonly clearedTimeoutIds: number[];
+  readonly beforeUnloadHandlers: Array<(event: BeforeUnloadEvent) => void>;
+  readonly removedBeforeUnloadHandlers: Array<(event: BeforeUnloadEvent) => void>;
   readonly closeCalls: number;
 }
 
@@ -49,6 +80,8 @@ function createBrowserWindow(): FakeBrowserWindow {
   let nextTimeoutId = 1;
   const scheduledTimeouts: RecordedTimeout[] = [];
   const clearedTimeoutIds: number[] = [];
+  const beforeUnloadHandlers: Array<(event: BeforeUnloadEvent) => void> = [];
+  const removedBeforeUnloadHandlers: Array<(event: BeforeUnloadEvent) => void> = [];
 
   return {
     get closeCalls() {
@@ -56,6 +89,8 @@ function createBrowserWindow(): FakeBrowserWindow {
     },
     scheduledTimeouts,
     clearedTimeoutIds,
+    beforeUnloadHandlers,
+    removedBeforeUnloadHandlers,
     close: () => {
       closeCalls += 1;
     },
@@ -68,5 +103,28 @@ function createBrowserWindow(): FakeBrowserWindow {
     clearTimeout: (timeoutId) => {
       clearedTimeoutIds.push(timeoutId);
     },
+    addEventListener: (_type, handler) => {
+      beforeUnloadHandlers.push(handler);
+    },
+    removeEventListener: (_type, handler) => {
+      removedBeforeUnloadHandlers.push(handler);
+      const index = beforeUnloadHandlers.indexOf(handler);
+      if (index !== -1) {
+        beforeUnloadHandlers.splice(index, 1);
+      }
+    },
   };
+}
+
+function createBeforeUnloadEvent(): BeforeUnloadEvent {
+  let defaultPrevented = false;
+  return {
+    get defaultPrevented() {
+      return defaultPrevented;
+    },
+    returnValue: 'unset',
+    preventDefault: () => {
+      defaultPrevented = true;
+    },
+  } as BeforeUnloadEvent;
 }

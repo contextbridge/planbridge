@@ -4,15 +4,22 @@ export type TimeoutCancel = () => void;
 
 export type ScheduleTimeout = (handler: () => void, delayMs: number) => TimeoutCancel;
 
+export interface BeforeUnloadGuardOptions {
+  readonly onAttemptedUnload?: () => void;
+}
+
 export interface FrontendBrowser {
   closeWindow(): void;
   scheduleTimeout(handler: () => void, delayMs: number): TimeoutCancel;
+  addBeforeUnloadGuard(options?: BeforeUnloadGuardOptions): () => void;
 }
 
 export interface FrontendBrowserWindow {
   readonly close: () => void;
   readonly setTimeout: (handler: () => void, delayMs: number) => number;
   readonly clearTimeout: (timeoutId: number) => void;
+  addEventListener(type: 'beforeunload', handler: (event: BeforeUnloadEvent) => void): void;
+  removeEventListener(type: 'beforeunload', handler: (event: BeforeUnloadEvent) => void): void;
 }
 
 export class FrontendBrowserImpl implements FrontendBrowser {
@@ -30,6 +37,20 @@ export class FrontendBrowserImpl implements FrontendBrowser {
     const timeoutId = this.#window.setTimeout(handler, delayMs);
     return () => {
       this.#window.clearTimeout(timeoutId);
+    };
+  }
+
+  addBeforeUnloadGuard(options: BeforeUnloadGuardOptions = {}): () => void {
+    const { onAttemptedUnload } = options;
+    const handler = (event: BeforeUnloadEvent) => {
+      onAttemptedUnload?.();
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    this.#window.addEventListener('beforeunload', handler);
+    return () => {
+      this.#window.removeEventListener('beforeunload', handler);
     };
   }
 }
