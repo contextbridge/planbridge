@@ -12,3 +12,25 @@
   background-color: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
   color: var(--color-neutral-950);
 }
+
+.cb-draft-thread-attention {
+  animation: cb-draft-thread-attention 420ms ease-out 1;
+}
+
+@keyframes cb-draft-thread-attention {
+  0% {
+    opacity: 0.65;
+    transform: translateY(0.5rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cb-draft-thread-attention {
+    animation: none;
+  }
+}
