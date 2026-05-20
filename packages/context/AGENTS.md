@@ -12,7 +12,7 @@ Shared root of the DI context inheritance chain. Every surface (CLI, server, fro
   - `analytics` — `Analytics` interface (PostHog wrapper or noop)
   - `telemetry` — `Telemetry` interface (Sentry wrapper or noop)
 - **`isTelemetryDisabled({ buildInfo, env? })`** — the single canonical rule. Returns `true` if a known opt-out env var is set (`DO_NOT_TRACK`, `CONTEXTBRIDGE_TELEMETRY_DISABLED`) or the build isn't production. The CLI calls this once with `{ buildInfo, env }`, stores the answer on BaseContext, and ships it over the wire to the annotation UI via `FrontendConfig.telemetryDisabled` — the browser trusts that boolean rather than re-deriving.
-- **`FrontendContext extends BaseContext`** (exported from `@contextbridge/context/frontend`) — narrows `telemetry` to `FrontendTelemetry` (adds `ErrorBoundary`), adds browser primitives (`closeWindow`, `scheduleTimeout`). Package-specific frontend contexts extend this (e.g. `AnnotationAppContext`).
+- **`FrontendContext extends BaseContext`** (exported from `@contextbridge/context/frontend`) — the shared context for browser-rendered surfaces. Keep browser-wide injectable dependencies here, type context fields as narrow public interfaces, and use the package's lint rules plus code exploration to discover which concrete browser APIs are intentionally wrapped. Package-specific frontend contexts extend this (e.g. `AnnotationAppContext`) rather than forking it.
 
 ## Factory pattern
 

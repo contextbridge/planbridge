@@ -162,25 +162,25 @@ describe('useAnnotationState', () => {
     });
 
     it('steps the countdown down and closes the window after the final tick', async () => {
-      const { result, timers } = renderAnnotationHook(() => useAnnotationState({}));
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
 
       await act(async () => {
         await result.current.submission.submit();
       });
       expect(result.current.submission.closeCountdownSeconds).toBe(3);
 
-      act(() => timers.advance());
+      act(() => browser.advance());
       expect(result.current.submission.closeCountdownSeconds).toBe(2);
 
-      act(() => timers.advance());
+      act(() => browser.advance());
       expect(result.current.submission.closeCountdownSeconds).toBe(1);
 
-      act(() => timers.advance());
-      expect(timers.closeWindow).toHaveBeenCalledTimes(1);
+      act(() => browser.advance());
+      expect(browser.closeWindowCallCount).toBe(1);
     });
 
     it('cancels the pending auto-close when the hook unmounts', async () => {
-      const { result, unmount, timers } = renderAnnotationHook(() => useAnnotationState({}));
+      const { result, unmount, browser } = renderAnnotationHook(() => useAnnotationState({}));
 
       await act(async () => {
         await result.current.submission.submit();
@@ -188,8 +188,8 @@ describe('useAnnotationState', () => {
 
       unmount();
 
-      expect(timers.lastCancel()).toHaveBeenCalledTimes(1);
-      expect(timers.closeWindow).not.toHaveBeenCalled();
+      expect(browser.clearedTimeoutIds).toEqual([1]);
+      expect(browser.closeWindowCallCount).toBe(0);
     });
   });
 

@@ -81,7 +81,7 @@ describe('App', () => {
 
   it('submits a global comment typed into the composer as a global thread', async () => {
     const user = userEvent.setup();
-    const { submitAnnotation, timers } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const { submitAnnotation, browser } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
 
     await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Please spell out rollback steps');
 
@@ -103,10 +103,10 @@ describe('App', () => {
     });
     expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 3 seconds.');
 
-    act(() => timers.advance());
-    act(() => timers.advance());
-    act(() => timers.advance());
-    expect(timers.closeWindow).toHaveBeenCalledTimes(1);
+    act(() => browser.advance());
+    act(() => browser.advance());
+    act(() => browser.advance());
+    expect(browser.closeWindowCallCount).toBe(1);
   });
 
   it('submits the review with Cmd+Enter from the global comment textarea', async () => {
@@ -276,7 +276,7 @@ describe('App', () => {
 
   it('updates the visible countdown after submission without waiting on real timers', async () => {
     const user = userEvent.setup();
-    const { timers } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
+    const { browser } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ship it' } });
 
     await user.click(screen.getByTestId(submitBarTestIds.button));
 
@@ -284,7 +284,7 @@ describe('App', () => {
       'This window will close in 3 seconds.',
     );
 
-    act(() => timers.advance());
+    act(() => browser.advance());
     expect(screen.getByTestId(submitBarTestIds.countdown)).toHaveTextContent('This window will close in 2 seconds.');
   });
 

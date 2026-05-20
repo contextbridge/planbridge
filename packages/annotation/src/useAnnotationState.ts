@@ -35,7 +35,7 @@ type PendingDraftAction =
   | { kind: 'remove'; threadId: string };
 
 export function useAnnotationState({ initialThreads, initialGlobalComment }: UseAnnotationStateArgs = {}) {
-  const { submitAnnotation, scheduleTimeout, closeWindow, autoCloseDelaySeconds } = useAnnotationAppContext();
+  const { submitAnnotation, browser, autoCloseDelaySeconds } = useAnnotationAppContext();
 
   const [threads, setThreads] = useState<CommentThread[]>(() =>
     (initialThreads ?? []).filter(isAnnotationCommentThread),
@@ -200,19 +200,19 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     let cancel: () => void = () => {};
     const tick = () => {
       if (remaining <= 1) {
-        closeWindow();
+        browser.closeWindow();
         return;
       }
       remaining -= 1;
       setCloseCountdownSeconds(remaining);
-      cancel = scheduleTimeout(tick, 1000);
+      cancel = browser.scheduleTimeout(tick, 1000);
     };
-    cancel = scheduleTimeout(tick, 1000);
+    cancel = browser.scheduleTimeout(tick, 1000);
 
     return () => {
       cancel();
     };
-  }, [autoCloseDelaySeconds, scheduleTimeout, closeWindow, submitted]);
+  }, [autoCloseDelaySeconds, browser, submitted]);
 
   return {
     threads,
