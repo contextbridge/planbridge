@@ -1,4 +1,18 @@
 #!/usr/bin/env bun
+/**
+ * Bridges Changesets versioning into ContextBridge's existing GitHub release
+ * contract.
+ *
+ * Changesets owns package version bumps and changelog generation, but its
+ * built-in git tags are not configurable: single-package repos get `vX.Y.Z`,
+ * while workspace repos get `<package>@X.Y.Z`. This repo is a Bun workspace and
+ * the release pipeline, installer docs, update notices, GoReleaser workflow, and
+ * download aliases all key off the historical `vX.Y.Z` tag shape.
+ *
+ * Keep Changesets' private package tagging disabled and use this script as the
+ * narrow compatibility bridge that creates the `vX.Y.Z` GitHub release/tag from
+ * the root package version and root changelog entry.
+ */
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -7,9 +21,8 @@ import semver from 'semver';
 
 const ROOT_PACKAGE_PATH = 'package.json';
 const CHANGELOG_PATH = 'CHANGELOG.md';
+const NOT_FOUND_PATTERN = /\b(?:HTTP 404|not found)\b/i;
 
-// Changesets owns the version and changelog. This publish command preserves the
-// repo's existing v* release tags, which trigger the GoReleaser workflow.
 function main(): void {
   const args = new Set(process.argv.slice(2));
   const dryRun = args.has('--dry-run');
@@ -22,20 +35,22 @@ function main(): void {
 
   const body = extractChangelogEntry(version);
 
-  if (releaseExists(tag)) {
+  if (getReleaseState(tag) === 'exists') {
     log(`GitHub release ${tag} already exists; skipping.`);
     return;
   }
 
+  const target = resolveReleaseTarget();
+
   if (dryRun) {
-    log(`Would create GitHub release ${tag}.`);
+    log(`Would create GitHub release ${tag} at ${target}.`);
     log(body);
     return;
   }
 
   const { dir, notesPath } = writeTemporaryReleaseNotes(body);
   try {
-    run('gh', ['release', 'create', tag, '--title', tag, '--notes-file', notesPath]);
+    run('gh', ['release', 'create', tag, '--target', target, '--title', tag, '--notes-file', notesPath]);
     log(`New tag: ${tag}`);
   } finally {
     rmSync(dir, { force: true, recursive: true });
@@ -70,9 +85,36 @@ function extractChangelogEntry(version: string): string {
   return body;
 }
 
-function releaseExists(tag: string): boolean {
-  const result = spawnSync('gh', ['release', 'view', tag], { stdio: 'ignore' });
-  return result.status === 0;
+function resolveReleaseTarget(): string {
+  const githubSha = process.env['GITHUB_SHA']?.trim();
+  if (githubSha) return githubSha;
+
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
+  if (result.status !== 0) {
+    error(`could not resolve release target: ${result.stderr.trim() || 'git rev-parse HEAD failed'}`);
+  }
+
+  const target = result.stdout.trim();
+  if (target === '') {
+    error('could not resolve release target: git rev-parse HEAD returned no output');
+  }
+  return target;
+}
+
+function getReleaseState(tag: string): 'exists' | 'missing' {
+  const result = spawnSync('gh', ['release', 'view', tag, '--json', 'tagName'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  if (result.status === 0) return 'exists';
+
+  const diagnostics = [result.stderr, result.stdout, result.error?.message].filter(Boolean).join('\n').trim();
+  if (NOT_FOUND_PATTERN.test(diagnostics)) return 'missing';
+
+  error(
+    `could not check GitHub release ${tag}: ${diagnostics || `gh exited with status ${result.status ?? 'unknown'}`}`,
+  );
 }
 
 function writeTemporaryReleaseNotes(body: string): { readonly dir: string; readonly notesPath: string } {
