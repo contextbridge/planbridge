@@ -7,12 +7,15 @@ export type ScheduleTimeout = (handler: () => void, delayMs: number) => TimeoutC
 export interface FrontendBrowser {
   closeWindow(): void;
   scheduleTimeout(handler: () => void, delayMs: number): TimeoutCancel;
+  addBeforeUnloadGuard(): () => void;
 }
 
 export interface FrontendBrowserWindow {
   readonly close: () => void;
   readonly setTimeout: (handler: () => void, delayMs: number) => number;
   readonly clearTimeout: (timeoutId: number) => void;
+  addEventListener(type: 'beforeunload', handler: (event: BeforeUnloadEvent) => void): void;
+  removeEventListener(type: 'beforeunload', handler: (event: BeforeUnloadEvent) => void): void;
 }
 
 export class FrontendBrowserImpl implements FrontendBrowser {
@@ -30,6 +33,18 @@ export class FrontendBrowserImpl implements FrontendBrowser {
     const timeoutId = this.#window.setTimeout(handler, delayMs);
     return () => {
       this.#window.clearTimeout(timeoutId);
+    };
+  }
+
+  addBeforeUnloadGuard(): () => void {
+    const handler = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    this.#window.addEventListener('beforeunload', handler);
+    return () => {
+      this.#window.removeEventListener('beforeunload', handler);
     };
   }
 }

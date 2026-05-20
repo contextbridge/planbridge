@@ -192,6 +192,14 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   }
 
   useEffect(() => {
+    if (submitted) {
+      return;
+    }
+
+    return browser.addBeforeUnloadGuard();
+  }, [browser, submitted]);
+
+  useEffect(() => {
     if (!submitted) {
       return;
     }

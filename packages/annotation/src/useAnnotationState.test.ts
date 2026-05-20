@@ -1,3 +1,4 @@
+import type { FakeFrontendBrowser } from '@contextbridge/context/testHelpers';
 import type { AnnotationSubmission, CommentThread } from '@contextbridge/shared/annotationSchema';
 import { annotationAnchor, annotationThread } from '@contextbridge/shared/testFactories';
 import { act, cleanup } from '@testing-library/react';
@@ -85,6 +86,60 @@ describe('useAnnotationState', () => {
     });
   });
 
+  describe('beforeunload guard', () => {
+    it('guards an empty unsubmitted review', () => {
+      const { browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      expectBeforeUnloadGuard(browser);
+    });
+
+    it('guards a review with saved annotation threads', () => {
+      const { browser } = renderAnnotationHook(() =>
+        useAnnotationState({ initialThreads: [annotationThread.build({ id: 'thr_guarded' })] }),
+      );
+
+      expectBeforeUnloadGuard(browser);
+    });
+
+    it('guards a review with a non-whitespace global comment', () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        result.current.globalComment.setBody('Include rollback steps.');
+      });
+
+      expectBeforeUnloadGuard(browser);
+    });
+
+    it('guards a review with a dirty active draft', () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        openDraft(result, { body: 'Unsaved draft feedback' });
+      });
+
+      expectBeforeUnloadGuard(browser);
+    });
+
+    it('removes the guard after a successful submission', async () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      await act(async () => {
+        await result.current.submission.submit();
+      });
+
+      expectNoBeforeUnloadGuard(browser);
+    });
+
+    it('removes the guard on unmount', () => {
+      const { unmount, browser } = renderAnnotationHook(() => useAnnotationState({}));
+
+      unmount();
+
+      expectNoBeforeUnloadGuard(browser);
+    });
+  });
+
   describe('submission.submit', () => {
     it('emits status "approved" when there are no threads and no global comment', async () => {
       const { result, submitAnnotation } = renderAnnotationHook(() => useAnnotationState({}));
@@ -144,8 +199,8 @@ describe('useAnnotationState', () => {
       expect(submitAnnotation.mock.calls[0]?.[0]?.threads).toEqual([]);
     });
 
-    it('captures the error message and leaves submitted=false on failure', async () => {
-      const { result } = renderAnnotationHook(() => useAnnotationState({}), {
+    it('captures the error message, leaves submitted=false, and keeps the unload guard on failure', async () => {
+      const { result, browser } = renderAnnotationHook(() => useAnnotationState({}), {
         contextOverrides: {
           submitAnnotation: vi
             .fn<(submission: AnnotationSubmission) => Promise<void>>()
@@ -159,6 +214,7 @@ describe('useAnnotationState', () => {
 
       expect(result.current.submission.submitted).toBe(false);
       expect(result.current.submission.error).toBe('network down');
+      expectBeforeUnloadGuard(browser);
     });
 
     it('steps the countdown down and closes the window after the final tick', async () => {
@@ -450,6 +506,16 @@ describe('useAnnotationState', () => {
 });
 
 type AnnotationHookResult = RenderAnnotationHookResult<ReturnType<typeof useAnnotationState>, unknown>['result'];
+
+function expectBeforeUnloadGuard(browser: FakeFrontendBrowser): void {
+  expect(browser.isBeforeUnloadGuarded()).toBe(true);
+  expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: true, returnValue: '' });
+}
+
+function expectNoBeforeUnloadGuard(browser: FakeFrontendBrowser): void {
+  expect(browser.isBeforeUnloadGuarded()).toBe(false);
+  expect(browser.triggerBeforeUnload()).toMatchObject({ defaultPrevented: false, returnValue: 'unset' });
+}
 
 function openDraft(result: AnnotationHookResult, { body = '' }: { body?: string } = {}): void {
   result.current.draft.open({
