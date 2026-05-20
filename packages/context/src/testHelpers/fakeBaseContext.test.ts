@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { buildInfo } from '../testFactories.ts';
 import { fakeBaseContext } from './fakeBaseContext.ts';
+import { FakeFrontendBrowser } from './FakeFrontendBrowser.ts';
 import { fakeFrontendContext } from './fakeFrontendContext.ts';
 
 describe('fakeBaseContext', () => {
@@ -23,18 +24,18 @@ describe('fakeBaseContext', () => {
 });
 
 describe('fakeFrontendContext', () => {
-  it('returns a FrontendContext with no-op browser hooks and a passthrough ErrorBoundary', () => {
+  it('returns a FrontendContext with a browser abstraction and a passthrough ErrorBoundary', () => {
     const ctx = fakeFrontendContext();
     expect(ctx.buildInfo.version).toBe('test');
-    expect(typeof ctx.closeWindow).toBe('function');
-    expect(typeof ctx.scheduleTimeout).toBe('function');
+    expect(ctx.browser).toBeInstanceOf(FakeFrontendBrowser);
     expect(typeof ctx.telemetry.ErrorBoundary).toBe('function');
   });
 
   it('applies overrides', () => {
     let closed = false;
-    const ctx = fakeFrontendContext({ closeWindow: () => (closed = true) });
-    ctx.closeWindow();
+    const browser = new FakeFrontendBrowser({ closeWindow: () => (closed = true) });
+    const ctx = fakeFrontendContext({ browser });
+    ctx.browser.closeWindow();
     expect(closed).toBe(true);
   });
 });

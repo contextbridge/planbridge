@@ -2,6 +2,11 @@ export { fakeBaseContext } from './fakeBaseContext.ts';
 export { fakeFrontendContext } from './fakeFrontendContext.ts';
 export { type FakeFetchCall, FakeFetcher } from './FakeFetcher.ts';
 export {
+  FakeFrontendBrowser,
+  type FakeFrontendBrowserOptions,
+  type ScheduledFakeTimeout,
+} from './FakeFrontendBrowser.ts';
+export {
   type FakeAnalytics,
   type FakeTelemetry,
   type RecordedCapture,

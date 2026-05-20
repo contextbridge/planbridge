@@ -1,3 +1,4 @@
+import { FakeFrontendBrowser } from '@contextbridge/context/testHelpers';
 import { buildInfo as buildInfoFactory } from '@contextbridge/context/testFactories';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import userEvent from '@testing-library/user-event';
@@ -217,9 +218,12 @@ export const FullDemo: Story = {
     withAppContext({
       submitAnnotation: () => new Promise((resolve) => setTimeout(resolve, 350)),
       autoCloseDelaySeconds: AUTO_CLOSE_SECONDS,
-      closeWindow: () => {
-        window.__demoCloseBrowser?.();
-      },
+      browser: new FakeFrontendBrowser({
+        timers: 'real',
+        closeWindow: () => {
+          window.__demoCloseBrowser?.();
+        },
+      }),
       buildInfo: buildInfoFactory.build({ version: '0.2.0' }),
     }),
   ],

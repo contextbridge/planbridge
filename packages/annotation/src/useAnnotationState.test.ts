@@ -176,7 +176,7 @@ describe('useAnnotationState', () => {
       expect(result.current.submission.closeCountdownSeconds).toBe(1);
 
       act(() => timers.advance());
-      expect(timers.closeWindow).toHaveBeenCalledTimes(1);
+      expect(timers.closeWindowCallCount).toBe(1);
     });
 
     it('cancels the pending auto-close when the hook unmounts', async () => {
@@ -188,8 +188,8 @@ describe('useAnnotationState', () => {
 
       unmount();
 
-      expect(timers.lastCancel()).toHaveBeenCalledTimes(1);
-      expect(timers.closeWindow).not.toHaveBeenCalled();
+      expect(timers.clearedTimeoutIds).toEqual([1]);
+      expect(timers.closeWindowCallCount).toBe(0);
     });
   });
 

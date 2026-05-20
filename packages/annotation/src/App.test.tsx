@@ -106,7 +106,7 @@ describe('App', () => {
     act(() => timers.advance());
     act(() => timers.advance());
     act(() => timers.advance());
-    expect(timers.closeWindow).toHaveBeenCalledTimes(1);
+    expect(timers.closeWindowCallCount).toBe(1);
   });
 
   it('submits the review with Cmd+Enter from the global comment textarea', async () => {
