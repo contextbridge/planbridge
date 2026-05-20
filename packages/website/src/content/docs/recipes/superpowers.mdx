@@ -12,7 +12,7 @@ There are two pause points in the Superpowers workflow where PlanBridge fits wel
 
 ## Manual
 
-Trigger PlanBridge yourself with the `planbridge-open` slash command. This allows you to respond to some superpowers sections (like short brainstorming sections) in the terminal UI, while opening larger sections in PlanBridge to provide more precise feedback.
+Trigger PlanBridge yourself with the `planbridge-last` or `planbridge-open` slash command. Use `planbridge-last` for the section the agent just wrote, and `planbridge-open` for saved spec files.
 
 ### During brainstorming
 
@@ -22,10 +22,10 @@ Pull the most recent section into PlanBridge:
 
 <Tabs syncKey="harness">
   <TabItem label="Claude Code">
-    <Code code="/planbridge-open the section you just wrote" lang="text" />
+    <Code code="/planbridge-last" lang="text" />
   </TabItem>
   <TabItem label="Codex CLI">
-    <Code code="$planbridge-open the section you just wrote" lang="text" />
+    <Code code="$planbridge-last" lang="text" />
   </TabItem>
 </Tabs>
 
@@ -57,9 +57,9 @@ If you want PlanBridge to fire at both pause points without you asking, append a
       code={`echo '
 ## Superpowers + PlanBridge
 
-When using the Superpowers \`brainstorming\` skill, use the \`/planbridge-open\` slash command at these pause points:
+When using the Superpowers \`brainstorming\` skill, use PlanBridge at these pause points:
 
-- When presenting design sections for approval (the "Present design" step, covering architecture, components, data flow, error handling, testing), run \`/planbridge-open the section you just wrote\` instead of asking for text approval.
+- When presenting design sections for approval (the "Present design" step, covering architecture, components, data flow, error handling, testing), run \`/planbridge-last\` instead of asking for text approval.
 - When writing a spec file under \`docs/superpowers/specs/\`, run \`/planbridge-open the spec you just wrote\` instead of asking me to review it as text.
 
 Treat the returned annotations as my review feedback. Clarifying questions and approach proposals stay in the terminal.
@@ -73,9 +73,9 @@ Treat the returned annotations as my review feedback. Clarifying questions and a
       code={`echo '
 ## Superpowers + PlanBridge
 
-When using the Superpowers \`brainstorming\` skill, use the \`$planbridge-open\` slash command at these pause points:
+When using the Superpowers \`brainstorming\` skill, use PlanBridge at these pause points:
 
-- When presenting design sections for approval (the "Present design" step, covering architecture, components, data flow, error handling, testing), run \`$planbridge-open the section you just wrote\` instead of asking for text approval.
+- When presenting design sections for approval (the "Present design" step, covering architecture, components, data flow, error handling, testing), run \`$planbridge-last\` instead of asking for text approval.
 - When writing a spec file under \`docs/superpowers/specs/\`, run \`$planbridge-open the spec you just wrote\` instead of asking me to review it as text.
 
 Treat the returned annotations as my review feedback. Clarifying questions and approach proposals stay in the terminal.

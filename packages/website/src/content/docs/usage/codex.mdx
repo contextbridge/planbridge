@@ -132,11 +132,29 @@ You should see Codex CLI listed as installed.
 
 Or `contextbridge uninstall` to remove PlanBridge plugin and hook entries from every harness it was installed into.
 
-## Open a file manually
+## Open content manually
 
-The `Stop` hook fires automatically. To pull an arbitrary markdown file into the PlanBridge UI on demand, use the `$planbridge-open` skill that `contextbridge install codex` writes to `~/.agents/skills/planbridge-open/`. See [Open arbitrary content](/usage/open/).
+The `Stop` hook fires automatically and opens plans for review (if you're in Codex's plan mode).
+
+- To pull an arbitrary markdown file into the PlanBridge UI on demand, use `$planbridge-open`.
+- To annotate the agent's previous message, use `$planbridge-last`.
+
+`contextbridge install codex` writes both skills to `~/.agents/skills/`. See [Open arbitrary content](/usage/open/).
 
 ## Troubleshooting
+
+### PlanBridge not opening plans automatically
+
+Our hook fires automatically when Codex stops and presents a plan from _within their native Plan mode_. You can enter Plan mode via "Shift + Tab".
+It'll look like this when you're in Plan Mode:
+
+```shell
+›
+
+  gpt-5.5 xhigh · ~/code/my-repo                    Plan mode (shift+tab to cycle)
+```
+
+If you don't like Codex's Plan mode, you can use `$planbridge-open` or `$planbridge-last` to open arbitrary content.
 
 ### `[features].codex_hooks` deprecation warning
 
