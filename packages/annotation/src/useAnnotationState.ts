@@ -294,22 +294,23 @@ function getFeedbackCount(threads: CommentThread[], trimmedGlobal: string): numb
   return threads.length + (trimmedGlobal.length > 0 ? 1 : 0);
 }
 
-function getCloseReviewDialogContent(feedbackCount: number): CloseReviewDialogContent {
-  if (feedbackCount === 0) {
-    return {
-      title: 'Approve plan before closing?',
-      description:
-        'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
-      primaryActionLabel: 'Approve Plan',
-    };
-  }
-
-  return {
+export const closeReviewDialogCopy = {
+  empty: {
+    title: 'Approve plan before closing?',
+    description:
+      'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
+    primaryActionLabel: 'Approve Plan',
+  },
+  feedback: {
     title: 'Submit feedback before closing?',
     description:
       'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
     primaryActionLabel: 'Submit Feedback',
-  };
+  },
+} as const;
+
+function getCloseReviewDialogContent(feedbackCount: number): CloseReviewDialogContent {
+  return feedbackCount === 0 ? closeReviewDialogCopy.empty : closeReviewDialogCopy.feedback;
 }
 
 function getSubmitStatus(threads: CommentThread[], trimmedGlobal: string): AnnotationStatus {

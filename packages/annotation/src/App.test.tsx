@@ -13,6 +13,7 @@ import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
+import { closeReviewDialogCopy } from './useAnnotationState.ts';
 
 describe('App', () => {
   afterEach(() => {
@@ -167,12 +168,12 @@ describe('App', () => {
     });
 
     const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
-    expect(dialog).toHaveTextContent('Approve plan before closing?');
-    expect(dialog).toHaveTextContent(
-      'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
-    );
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.title);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.empty.description);
     expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
-    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent('Approve Plan');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+      closeReviewDialogCopy.empty.primaryActionLabel,
+    );
     expect(dialog).not.toHaveTextContent('Close Anyway');
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogCancelButton));
@@ -195,12 +196,12 @@ describe('App', () => {
     });
 
     const dialog = await screen.findByTestId(appTestIds.closeReviewDialog);
-    expect(dialog).toHaveTextContent('Submit feedback before closing?');
-    expect(dialog).toHaveTextContent(
-      'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
-    );
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.title);
+    expect(dialog).toHaveTextContent(closeReviewDialogCopy.feedback.description);
     expect(screen.getByTestId(appTestIds.closeReviewDialogCancelButton)).toHaveTextContent('Keep Reviewing');
-    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent('Submit Feedback');
+    expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+      closeReviewDialogCopy.feedback.primaryActionLabel,
+    );
     expect(dialog).not.toHaveTextContent('Close Anyway');
 
     await user.click(screen.getByTestId(appTestIds.closeReviewDialogActionButton));
