@@ -34,6 +34,48 @@ const dateRestrictedSelectors = [
   },
 ];
 
+const consoleRestrictedSelector = {
+  selector: "CallExpression[callee.object.name='console']",
+  message:
+    'Do not use console.* — use ctx.logger for diagnostics (writes to stderr) and ctx.io.stdout for business output.',
+};
+
+const processRestrictedProperties = [
+  {
+    object: 'process',
+    property: 'stdout',
+    message: 'Use ctx.io.stdout (see AGENTS.md DI conventions).',
+  },
+  {
+    object: 'process',
+    property: 'stderr',
+    message: 'Use ctx.io.stderr / ctx.logger (see AGENTS.md DI conventions).',
+  },
+  {
+    object: 'process',
+    property: 'stdin',
+    message: 'Use ctx.io.stdin (see AGENTS.md DI conventions).',
+  },
+];
+
+const annotationBrowserWindowRestrictedProperties = [
+  {
+    object: 'window',
+    property: 'close',
+    message: 'Use browser.closeWindow() from AnnotationAppContext instead of window.close().',
+  },
+  {
+    object: 'window',
+    property: 'setTimeout',
+    message: 'Use browser.scheduleTimeout() from AnnotationAppContext instead of window.setTimeout().',
+  },
+  {
+    object: 'window',
+    property: 'clearTimeout',
+    message: 'Use the cancel callback returned by browser.scheduleTimeout() instead of window.clearTimeout().',
+  },
+];
+
 const rawImgRestrictedSelector = {
   selector: "JSXOpeningElement[name.name='img']",
   message:
@@ -79,32 +121,18 @@ export default defineConfig(
   {
     files: ['packages/*/src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...dateRestrictedSelectors,
-        {
-          selector: "CallExpression[callee.object.name='console']",
-          message:
-            'Do not use console.* — use ctx.logger for diagnostics (writes to stderr) and ctx.io.stdout for business output.',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...dateRestrictedSelectors, consoleRestrictedSelector],
+      'no-restricted-properties': ['error', ...processRestrictedProperties],
+    },
+  },
+  {
+    files: ['packages/annotation/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', ...dateRestrictedSelectors, consoleRestrictedSelector],
       'no-restricted-properties': [
         'error',
-        {
-          object: 'process',
-          property: 'stdout',
-          message: 'Use ctx.io.stdout (see AGENTS.md DI conventions).',
-        },
-        {
-          object: 'process',
-          property: 'stderr',
-          message: 'Use ctx.io.stderr / ctx.logger (see AGENTS.md DI conventions).',
-        },
-        {
-          object: 'process',
-          property: 'stdin',
-          message: 'Use ctx.io.stdin (see AGENTS.md DI conventions).',
-        },
+        ...processRestrictedProperties,
+        ...annotationBrowserWindowRestrictedProperties,
       ],
     },
   },
