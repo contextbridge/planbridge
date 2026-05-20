@@ -12,7 +12,7 @@ before:
       __CB_POSTHOG_HOST__='{{ .Env.__CB_POSTHOG_HOST__ }}'
       __CB_SENTRY_CLI_DSN__='{{ .Env.__CB_SENTRY_CLI_DSN__ }}'
       __CB_SENTRY_FRONTEND_DSN__='{{ .Env.__CB_SENTRY_FRONTEND_DSN__ }}'
-      bun run --bun --filter '*' build"
+      bun run --bun --filter '@contextbridge/*' build"
 
 builds:
   - id: contextbridge
@@ -122,7 +122,7 @@ homebrew_casks:
 
       Docs: https://plan.contextbridge.ai
 
-# release-please owns the release body; goreleaser only attaches artifacts.
+# Changesets owns the release body; goreleaser only attaches artifacts.
 changelog:
   disable: true
 

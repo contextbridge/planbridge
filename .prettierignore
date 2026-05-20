@@ -13,7 +13,7 @@ packages/storage/generated/
 # Prettier treats .hbs as HTML and collapses the markdown these templates emit.
 *.hbs
 
-# release-please owns formatting of files it writes; don't fight it.
+# Changesets owns formatting of files it writes; don't fight it.
 CHANGELOG.md
 harnessIntegrations/claude/.claude-plugin/plugin.json
 

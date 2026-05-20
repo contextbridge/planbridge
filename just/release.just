@@ -3,10 +3,6 @@
 
 set working-directory := '..'
 
-# Cut a stable release (creates and pushes a vX.Y.Z tag)
-stable increment:
-    bun run scripts/releaseStable.ts {{increment}}
-
 # Cut an alpha prerelease (creates and pushes a vX.Y.Z-alpha.N tag)
 alpha increment:
     bun run scripts/releaseAlpha.ts {{increment}}

@@ -29,7 +29,7 @@ planbridge/
 │   ├── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
 │   └── website/               # @contextbridge/website — Astro + Starlight marketing/docs site
 ├── tsconfig.base.json         # shared TS compiler options
-├── package.json               # root workspace ("workspaces": ["packages/*"])
+├── package.json               # root release package ("workspaces": [".", "packages/*"])
 └── justfile                   # root-level recipes
 ```
 
@@ -44,7 +44,7 @@ Each package has its own `AGENTS.md` with package-specific guidance (plus a one-
 Before marking a task complete, run `just verify` and fix anything that fails. It runs four steps in order:
 
 - `bun run format:check` — Prettier
-- `bun run typecheck` — strict TypeScript check (`bun run --filter '*' typecheck`)
+- `bun run typecheck` — strict TypeScript check for root scripts plus workspaces (`tsc --noEmit && bun run --filter '@contextbridge/*' typecheck`)
 - `bun run lint` — ESLint (`--max-warnings 0`)
 - `bun run test` — dispatches per-package `test` scripts. Most packages use Bun's test runner; `@contextbridge/annotation` uses **vitest** (browser mode via Playwright/Chromium) because the annotation UI tests depend on real DOM, CSS Custom Highlights, and selection APIs that Bun's runner can't provide. `@contextbridge/website` runs Astro checks and build through its package test script.
 

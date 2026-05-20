@@ -1,11 +1,8 @@
 <!--
 PR title: conventional commit style (e.g., "feat: add webhook retry logic", "fix: handle null repo owner"). Do NOT include the ticket/issue ID in the title.
 
-Choose the prefix deliberately based on whether this change should appear in the user-facing changelog. See `release-please-config.json`:
-  - Visible (appear in CHANGELOG.md): feat, fix, perf, deps, revert
-  - Hidden (excluded from CHANGELOG.md): docs, chore, style, refactor, test, build, ci
-
-If the change is internal-only — e.g., an agent prompt tweak, a CI fix, a refactor with no user-visible behavior — use a hidden prefix (typically `chore:`) so it does not pollute the release notes. `fix:` is for bugs users could have hit; an internal-only fix is a `chore:`.
+PR titles do not drive the changelog. For user-visible changes, add a real `.changeset/*.md` file with narrative release-note prose.
+For internal-only changes — e.g., an agent prompt tweak, a CI fix, a refactor with no user-visible behavior, docs, tests, or website-only copy — no changeset is required. If a reviewer asks for an explicit marker, `bun run changeset -- --empty` is fine.
 -->
 
 ## Summary

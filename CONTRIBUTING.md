@@ -58,14 +58,20 @@ See [`AGENTS.md`](./AGENTS.md)
 ## Pull requests
 
 1. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.) for PR titles. The `Lint PR title` check enforces this.
-2. Adhere to the PR template [`.github/pull_request_template.md`](./.github/pull_request_template.md).
-3. Before opening a PR ensure `just verify` runs without errors.
+2. Add a changeset for user-visible changes:
+   - Run `bun run changeset` and write the release note in full sentences for ContextBridge users.
+   - Use `patch`, `minor`, or `major` to declare the semver bump.
+   - For changes that should not produce release notes — docs, tests, CI, refactors, website-only copy — omit the changeset. If a reviewer asks for an explicit marker, run `bun run changeset -- --empty`.
+3. Adhere to the PR template [`.github/pull_request_template.md`](./.github/pull_request_template.md).
+4. Before opening a PR ensure `just verify` runs without errors.
 
 ## Releases
 
-Releases are cut by the ContextBridge team. Stable releases are automated by [release-please](https://github.com/googleapis/release-please) feeding into [goreleaser](https://goreleaser.com/):
+Releases are cut by the ContextBridge team. Stable releases are automated by [Changesets](https://changesets.dev/) feeding into [goreleaser](https://goreleaser.com/):
 
-- On every push to `main`, release-please opens (or updates) a release PR that bumps `CHANGELOG.md` based on conventional-commit titles since the last release. A maintainer merges it to publish — release-please creates the tag and goreleaser ships the binaries. Don't edit `CHANGELOG.md` by hand.
+- PR authors commit `.changeset/*.md` files with the release-note prose and semver bump.
+- On pushes to `main`, Changesets opens or updates a `Version Packages` PR that consumes pending changesets, bumps the root package version, syncs the Claude plugin version, and prepends `CHANGELOG.md`.
+- A maintainer chooses when to publish by merging the `Version Packages` PR. That creates the GitHub release and `vX.Y.Z` tag; goreleaser ships the binaries from the tag. Don't edit `CHANGELOG.md` by hand.
 - Alpha releases are still manual: a maintainer pushes a `v{x.y.z}-alpha.N` tag and goreleaser handles the rest.
 
 ## Code of conduct
