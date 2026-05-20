@@ -39,19 +39,19 @@ export function getPrimaryMessage(thread: CommentThread): CommentMessage {
   return message;
 }
 
-export function updateAnnotationThreadBody(threads: CommentThread[], threadId: string, body: string): CommentThread[] {
-  return threads.map((thread) => (thread.id === threadId ? replaceThreadBody(thread, body) : thread));
+export function updateThreadMessageBody(
+  threads: CommentThread[],
+  threadId: string,
+  messageId: string,
+  body: string,
+): CommentThread[] {
+  return threads.map((thread) => (thread.id === threadId ? replaceMessageBody(thread, messageId, body) : thread));
 }
 
-function replaceThreadBody(thread: CommentThread, body: string): CommentThread {
-  const [primaryMessage, ...rest] = thread.messages;
-  if (!primaryMessage) {
-    return thread;
-  }
-
+function replaceMessageBody(thread: CommentThread, messageId: string, body: string): CommentThread {
   return {
     ...thread,
-    messages: [{ ...primaryMessage, body }, ...rest],
+    messages: thread.messages.map((message) => (message.id === messageId ? { ...message, body } : message)),
   };
 }
 

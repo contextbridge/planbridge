@@ -1,4 +1,4 @@
-import type { ResolvedAnnotation } from './annotationTypes.ts';
+import type { ResolvedAnnotationThread } from './annotationTypes.ts';
 
 const BASE_HIGHLIGHT = 'cb-plan-annotations';
 const ACTIVE_HIGHLIGHT = 'cb-plan-annotation-active';
@@ -6,7 +6,7 @@ const DRAFT_HIGHLIGHT = 'cb-plan-annotation-draft';
 const ALL_HIGHLIGHTS = [BASE_HIGHLIGHT, ACTIVE_HIGHLIGHT, DRAFT_HIGHLIGHT] as const;
 
 export function syncAnnotationHighlights(args: {
-  annotations: ResolvedAnnotation[];
+  threads: ResolvedAnnotationThread[];
   activeAnnotationId: string | null;
   draftRange: Range | null;
 }): void {
@@ -19,11 +19,11 @@ export function syncAnnotationHighlights(args: {
   const baseRanges: Range[] = [];
   const activeRanges: Range[] = [];
 
-  for (const item of args.annotations) {
+  for (const item of args.threads) {
     if (!item.range) {
       continue;
     }
-    (item.thread.id === args.activeAnnotationId ? activeRanges : baseRanges).push(item.range);
+    (item.id === args.activeAnnotationId ? activeRanges : baseRanges).push(item.range);
   }
 
   if (baseRanges.length > 0) {
