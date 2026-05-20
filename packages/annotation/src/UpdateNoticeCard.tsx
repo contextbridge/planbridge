@@ -6,7 +6,14 @@ import { Sparkles, X } from 'lucide-react';
 import { useEffect } from 'react';
 import { useAnnotationAppContext } from './useAppContext.ts';
 
-const UPDATE_COMMAND = 'contextbridge update';
+export const updateNoticeCardCopy = {
+  titlePrefix: 'Update available:',
+  currentVersionPrefix: "You're on v",
+  currentVersionSuffix: '. Run to upgrade:',
+  updateCommand: 'contextbridge update',
+  copyButtonLabel: 'Copy command',
+  dismissAriaLabel: 'Dismiss update notice',
+} as const;
 
 export const updateNoticeCardTestIds = {
   container: 'update-notice-card',
@@ -29,7 +36,7 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
 
   const handleCopy = () => {
     analytics.capture('update_command_copied', { latest_version: notice.latestVersion });
-    void navigator.clipboard.writeText(UPDATE_COMMAND).catch(() => {});
+    void navigator.clipboard.writeText(updateNoticeCardCopy.updateCommand).catch(() => {});
   };
 
   const handleDismiss = () => {
@@ -46,7 +53,7 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
       <Alert data-testid={updateNoticeCardTestIds.container} className="relative py-2.5 pr-8 shadow-lg">
         <Sparkles className="size-3.5" />
         <AlertTitle className="text-xs font-medium">
-          Update available:{' '}
+          {updateNoticeCardCopy.titlePrefix}{' '}
           <a
             href={`${GITHUB_REPO_URL}/releases/tag/v${notice.latestVersion}`}
             target="_blank"
@@ -59,17 +66,21 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
           </a>
         </AlertTitle>
         <AlertDescription className="text-muted-foreground text-xs">
-          You&apos;re on v{notice.currentVersion}. Run to upgrade:
+          {updateNoticeCardCopy.currentVersionPrefix}
+          {notice.currentVersion}
+          {updateNoticeCardCopy.currentVersionSuffix}
         </AlertDescription>
         <div className="col-start-2 mt-1.5 flex items-center gap-1.5">
-          <code className="bg-muted flex-1 truncate rounded px-1.5 py-0.5 font-mono text-xs">{UPDATE_COMMAND}</code>
+          <code className="bg-muted flex-1 truncate rounded px-1.5 py-0.5 font-mono text-xs">
+            {updateNoticeCardCopy.updateCommand}
+          </code>
           <Button
             size="sm"
             className="h-6 px-2 text-xs"
             onClick={handleCopy}
             data-testid={updateNoticeCardTestIds.copyButton}
           >
-            Copy command
+            {updateNoticeCardCopy.copyButtonLabel}
           </Button>
         </div>
         <Button
@@ -78,7 +89,7 @@ export function UpdateNoticeCard({ notice, onDismiss }: UpdateNoticeCardProps) {
           className="text-muted-foreground hover:text-foreground absolute top-1 right-1 size-5"
           onClick={handleDismiss}
           data-testid={updateNoticeCardTestIds.dismissButton}
-          aria-label="Dismiss update notice"
+          aria-label={updateNoticeCardCopy.dismissAriaLabel}
         >
           <X className="size-3" />
         </Button>

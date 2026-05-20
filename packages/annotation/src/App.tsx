@@ -37,6 +37,10 @@ export const appTestIds = {
   closeReviewDialogActionButton: 'plan-review-close-review-dialog-action',
 };
 
+export const appCopy = {
+  emptyState: 'No content was provided.',
+} as const;
+
 export interface AppProps {
   initialPayload?: AnnotationPayload;
   initialThreads?: CommentThread[];
@@ -131,7 +135,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                     className="rounded-md border border-dashed border-border px-4 py-8 text-sm text-muted-foreground"
                     data-testid={appTestIds.emptyState}
                   >
-                    No content was provided.
+                    {appCopy.emptyState}
                   </div>
                 )}
               </section>
@@ -220,7 +224,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel data-testid={appTestIds.closeReviewDialogCancelButton}>
-                    Keep Reviewing
+                    {reviewState.closeReview.cancelLabel}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     data-testid={appTestIds.closeReviewDialogActionButton}

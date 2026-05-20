@@ -270,6 +270,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
       dialogOpen: closeReviewDialogOpen,
       dismissDialog: dismissCloseReviewDialog,
       confirmRecommendedAction: confirmCloseReviewRecommendedAction,
+      cancelLabel: closeReviewDialogCopy.cancelLabel,
       ...closeReviewDialogContent,
     },
     removal: {
@@ -295,6 +296,7 @@ function getFeedbackCount(threads: CommentThread[], trimmedGlobal: string): numb
 }
 
 export const closeReviewDialogCopy = {
+  cancelLabel: 'Keep Reviewing',
   empty: {
     title: 'Approve plan before closing?',
     description:
