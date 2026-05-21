@@ -35,8 +35,8 @@
         "highlight.js": "^11.11.1",
         "lucide-react": "^0.542.0",
         "neverthrow": "^8.2.0",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
         "react-markdown": "^10.1.0",
         "rehype-highlight": "^7.0.2",
         "remark-gfm": "^4.0.1",
@@ -130,6 +130,31 @@
         "react": "^19.2.3",
       },
     },
+    "packages/review": {
+      "name": "@contextbridge/review",
+      "version": "0.0.0-development",
+      "dependencies": {
+        "@contextbridge/context": "workspace:*",
+        "@contextbridge/ui": "workspace:*",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
+      },
+      "devDependencies": {
+        "@tailwindcss/vite": "^4.1.12",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@types/react": "^19.2.0",
+        "@types/react-dom": "^19.2.0",
+        "@vitejs/plugin-react": "^5.0.0",
+        "@vitest/browser-playwright": "^4.0.18",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "playwright": "^1.58.2",
+        "tailwindcss": "^4.1.12",
+        "vite": "^6.2.0",
+        "vite-plugin-singlefile": "^2.0.3",
+        "vitest": "^4.0.18",
+      },
+    },
     "packages/server": {
       "name": "@contextbridge/server",
       "version": "0.0.0-development",
@@ -211,8 +236,8 @@
         "clsx": "^2.1.1",
         "lucide-react": "^0.542.0",
         "radix-ui": "^1.4.3",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
         "tailwind-merge": "^3.3.1",
         "tailwindcss": "^4.1.12",
         "tw-animate-css": "^1.3.8",
@@ -364,6 +389,8 @@
     "@contextbridge/harness": ["@contextbridge/harness@workspace:packages/harness"],
 
     "@contextbridge/instrumentation": ["@contextbridge/instrumentation@workspace:packages/instrumentation"],
+
+    "@contextbridge/review": ["@contextbridge/review@workspace:packages/review"],
 
     "@contextbridge/server": ["@contextbridge/server@workspace:packages/server"],
 

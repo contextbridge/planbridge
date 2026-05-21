@@ -1,5 +1,5 @@
 {
-  "name": "@contextbridge/annotation",
+  "name": "@contextbridge/review",
   "version": "0.0.0-development",
   "private": true,
   "type": "module",
@@ -7,35 +7,22 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "record-demo": "bun scripts/recordDemo.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@contextbridge/context": "workspace:*",
-    "@contextbridge/instrumentation": "workspace:*",
-    "@contextbridge/shared": "workspace:*",
     "@contextbridge/ui": "workspace:*",
-    "@floating-ui/react": "^0.27.16",
-    "highlight.js": "^11.11.1",
-    "lucide-react": "^0.542.0",
-    "neverthrow": "^8.2.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
-    "@storybook/react-vite": "^10.2.14",
     "@tailwindcss/vite": "^4.1.12",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/browser-playwright": "^4.0.18",
-    "@xterm/xterm": "^6.0.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "playwright": "^1.58.2",
     "tailwindcss": "^4.1.12",
