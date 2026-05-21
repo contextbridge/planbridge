@@ -27,6 +27,7 @@ planbridge/
 │   ├── storage/               # @contextbridge/storage — local SQLite + Drizzle schema
 │   ├── ui/                    # @contextbridge/ui — shared CSS, fonts, cn(), shadcn components
 │   ├── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
+│   ├── storybook/             # @contextbridge/storybook — shared Storybook host + Chromatic publish for browser-UI packages
 │   └── website/               # @contextbridge/website — Astro + Starlight marketing/docs site
 ├── tsconfig.base.json         # shared TS compiler options
 ├── package.json               # root workspace ("workspaces": ["packages/*"])
@@ -35,7 +36,7 @@ planbridge/
 
 `planbridge-private` is a separate private repository for employee-only infrastructure and release plumbing. It is not part of this public checkout.
 
-Package naming: every workspace is `@contextbridge/<short-name>`. Browser UIs are named by capability — `annotation` for the kind-agnostic markdown annotation engine, later `review` for file-change review — never a generic `-ui` suffix. Future review surfaces (`packages/review` for file-change review, etc.) land as siblings. Libraries that multiple experiences share (shared contracts, context, server) are their own packages.
+Package naming: every workspace is `@contextbridge/<short-name>`. Browser UIs are named by capability — `annotation` for the kind-agnostic markdown annotation engine, later `review` for file-change review — never a generic `-ui` suffix. Future review surfaces (`packages/review` for file-change review, etc.) land as siblings. Libraries that multiple experiences share (shared contracts, context, server) are their own packages. The shared Storybook host (`packages/storybook`) aggregates stories from every browser-UI package and owns the Chromatic publish.
 
 Each package has its own `AGENTS.md` with package-specific guidance (plus a one-line `CLAUDE.md` stub that imports it via `@AGENTS.md` so Claude Code auto-loads it when editing files in that directory). **The stub is load-bearing** — Claude Code discovers ancestor `CLAUDE.md` on file edits but not standalone `AGENTS.md`; don't drop it. `packages/shared` and `packages/server` don't have their own files — they have no package-specific guidance beyond root conventions.
 

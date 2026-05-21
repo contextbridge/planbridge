@@ -5,7 +5,6 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
-const isStorybook = process.env.STORYBOOK === 'true';
 const {
   __CB_VERSION__: version = '0.0.0-development',
   __CB_ENVIRONMENT__: rawEnvironment = 'local',
@@ -26,7 +25,7 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
-    ...(isStorybook ? [] : [viteSingleFile()]),
+    viteSingleFile(),
   ],
   define: cbBuildDefines({ version, environment, channel, postHogKey, postHogHost, sentryCliDsn, sentryFrontendDsn }),
   build: {

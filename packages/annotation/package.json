@@ -8,9 +8,6 @@
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "storybook": "STORYBOOK=true storybook dev -p 6006",
-    "build-storybook": "STORYBOOK=true storybook build --stats-json",
-    "chromatic": "chromatic",
     "record-demo": "bun scripts/recordDemo.ts"
   },
   "dependencies": {
@@ -29,7 +26,6 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@storybook/react-vite": "^10.2.14",
     "@tailwindcss/vite": "^4.1.12",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -40,9 +36,7 @@
     "@vitest/browser-playwright": "^4.0.18",
     "@xterm/xterm": "^6.0.0",
     "babel-plugin-react-compiler": "^1.0.0",
-    "chromatic": "^15.1.1",
     "playwright": "^1.58.2",
-    "storybook": "^10.2.14",
     "tailwindcss": "^4.1.12",
     "vite": "^6.2.0",
     "vite-plugin-singlefile": "^2.0.3",

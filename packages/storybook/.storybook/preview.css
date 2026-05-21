@@ -1,0 +1,12 @@
+/* Single Tailwind processing entry for the shared Storybook. The UI package's
+   styles.css owns `@import "tailwindcss"`, the design tokens, fonts, and its
+   own @source directive for shadcn primitives; we re-import it here so we can
+   add @source directives for the consuming packages whose stories this
+   Storybook hosts in the same compilation unit.
+
+   Tailwind v4 auto-detection skips workspace packages reached via node_modules.
+   Each browser-UI package must be listed explicitly. */
+
+@import '@contextbridge/ui/styles.css';
+
+@source "../../annotation/src/**/*.{ts,tsx}";

@@ -29,9 +29,9 @@ bootstrap:
     prek install
     just install
 
-# Run Storybook for the plan review UI
+# Run Storybook for the monorepo's browser-UI packages
 storybook:
-    bun run --cwd packages/annotation storybook
+    bun run --cwd packages/storybook storybook
 
 # Run the marketing website dev server (http://localhost:4321)
 website:
