@@ -6,7 +6,11 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const reactFiles = ['packages/annotation/src/**/*.{ts,tsx}', 'packages/ui/src/**/*.{ts,tsx}'];
+const reactFiles = [
+  'packages/annotation/src/**/*.{ts,tsx}',
+  'packages/review/src/**/*.{ts,tsx}',
+  'packages/ui/src/**/*.{ts,tsx}',
+];
 
 // Flat-config array-valued rules (like no-restricted-syntax) are REPLACED, not
 // merged, when a later matching block sets the same rule. Keep the shared

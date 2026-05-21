@@ -11,7 +11,8 @@ ARG AGENT_UID=1000
 ARG AGENT_GID=1000
 ARG ASDF_VERSION=0.18.0
 
-# Chromium runtime libs drive @contextbridge/annotation's vitest --browser tests.
+# Chromium runtime libs drive the browser-UI packages' vitest --browser tests
+# (@contextbridge/annotation, @contextbridge/review).
 # libdbus-1-3 is required by aether's native ACP subprocess.
 # xz-utils unpacks tool archives for asdf plugins; unzip is needed by the asdf bun plugin.
 RUN apt-get update \

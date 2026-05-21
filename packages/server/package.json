@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./context": "./src/context.ts",
-    "./annotation": "./src/annotation.ts"
+    "./annotation": "./src/annotation.ts",
+    "./review": "./src/review.ts"
   },
   "imports": {
     "#src/*": "./src/*"

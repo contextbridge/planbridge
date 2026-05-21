@@ -1,6 +1,6 @@
 # AGENTS.md — @contextbridge/storybook
 
-Shared Storybook host for the monorepo's browser-UI packages. Owns `.storybook/` config, the Storybook + Chromatic devDeps, and the Chromatic workflow's build/publish working directory. Stories themselves stay co-located with their components in the consuming packages — today that's `@contextbridge/annotation`; new browser-UI packages plug in by widening the `stories` glob in `.storybook/main.ts`.
+Shared Storybook host for the monorepo's browser-UI packages. Owns `.storybook/` config, the Storybook + Chromatic devDeps, and the Chromatic workflow's build/publish working directory. Stories themselves stay co-located with their components in the consuming packages — today that's `@contextbridge/annotation` and `@contextbridge/review`. New browser-UI packages plug in by widening the `stories` glob in `.storybook/main.ts`.
 
 ## Running it
 

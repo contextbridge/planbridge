@@ -47,8 +47,14 @@ jobs:
       - uses: ./.github/actions/bootstrap
       - name: Get Playwright version
         id: playwright-version
-        working-directory: packages/annotation
-        run: echo "version=$(jq -r '.devDependencies.playwright' package.json)" >> $GITHUB_OUTPUT
+        run: |
+          annotation=$(jq -r '.devDependencies.playwright' packages/annotation/package.json)
+          review=$(jq -r '.devDependencies.playwright' packages/review/package.json)
+          if [ "$annotation" != "$review" ]; then
+            echo "::error::Playwright pins differ — annotation=$annotation review=$review. Keep them in sync; both packages share the hoisted browser binary."
+            exit 1
+          fi
+          echo "version=$annotation" >> "$GITHUB_OUTPUT"
       - name: Get Ubuntu version
         id: ubuntu-version
         run: echo "version=$(lsb_release -rs)" >> $GITHUB_OUTPUT

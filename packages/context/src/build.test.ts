@@ -8,6 +8,8 @@ import {
   CB_DEFINE_SENTRY_FRONTEND_DSN,
   CB_DEFINE_VERSION,
   cbBuildDefines,
+  cbBuildDefinesFromEnv,
+  parseBuildEnv,
 } from './build.ts';
 
 describe('cbBuildDefines', () => {
@@ -57,5 +59,111 @@ describe('cbBuildDefines', () => {
     expect(JSON.parse(defines[CB_DEFINE_ENVIRONMENT]!)).toBe('local');
     expect(JSON.parse(defines[CB_DEFINE_CHANNEL]!)).toBe('alpha');
     expect(JSON.parse(defines[CB_DEFINE_POSTHOG_KEY]!)).toBe('');
+  });
+});
+
+describe('parseBuildEnv', () => {
+  it('applies defaults when env is empty', () => {
+    expect(parseBuildEnv({})).toMatchObject({
+      version: '0.0.0-development',
+      environment: 'local',
+      channel: 'stable',
+      postHogKey: '',
+      postHogHost: '',
+      sentryCliDsn: '',
+      sentryFrontendDsn: '',
+    });
+  });
+
+  it('reads injected build values from env', () => {
+    expect(
+      parseBuildEnv({
+        __CB_VERSION__: '1.2.3',
+        __CB_ENVIRONMENT__: 'production',
+        __CB_CHANNEL__: 'alpha',
+        __CB_POSTHOG_KEY__: 'phc_xyz',
+        __CB_POSTHOG_HOST__: 'https://posthog.example.test',
+        __CB_SENTRY_CLI_DSN__: 'https://cli@example.test/1',
+        __CB_SENTRY_FRONTEND_DSN__: 'https://frontend@example.test/1',
+      }),
+    ).toMatchObject({
+      version: '1.2.3',
+      environment: 'production',
+      channel: 'alpha',
+      postHogKey: 'phc_xyz',
+      postHogHost: 'https://posthog.example.test',
+      sentryCliDsn: 'https://cli@example.test/1',
+      sentryFrontendDsn: 'https://frontend@example.test/1',
+    });
+  });
+
+  it('rejects invalid environment values', () => {
+    expect(() => parseBuildEnv({ __CB_ENVIRONMENT__: 'staging' })).toThrow(/__CB_ENVIRONMENT__/);
+  });
+
+  it('rejects invalid channel values', () => {
+    expect(() => parseBuildEnv({ __CB_CHANNEL__: 'beta' })).toThrow(/__CB_CHANNEL__/);
+  });
+
+  it('rejects empty version strings', () => {
+    expect(() => parseBuildEnv({ __CB_VERSION__: '' })).toThrow(/__CB_VERSION__/);
+  });
+
+  it('allows missing telemetry keys for local builds', () => {
+    expect(() => parseBuildEnv({ __CB_ENVIRONMENT__: 'local' })).not.toThrow();
+  });
+
+  it('rejects production builds missing telemetry keys', () => {
+    const attempt = () =>
+      parseBuildEnv({
+        __CB_VERSION__: '1.2.3',
+        __CB_ENVIRONMENT__: 'production',
+      });
+
+    expect(attempt).toThrow(/__CB_POSTHOG_KEY__/);
+    expect(attempt).toThrow(/__CB_POSTHOG_HOST__/);
+    expect(attempt).toThrow(/__CB_SENTRY_CLI_DSN__/);
+    expect(attempt).toThrow(/__CB_SENTRY_FRONTEND_DSN__/);
+  });
+
+  it('rejects production builds left at the development version sentinel', () => {
+    expect(() =>
+      parseBuildEnv({
+        __CB_ENVIRONMENT__: 'production',
+        __CB_POSTHOG_KEY__: 'phc_xyz',
+        __CB_POSTHOG_HOST__: 'https://posthog.example.test',
+        __CB_SENTRY_CLI_DSN__: 'https://cli@example.test/1',
+        __CB_SENTRY_FRONTEND_DSN__: 'https://frontend@example.test/1',
+      }),
+    ).toThrow(/__CB_VERSION__/);
+  });
+
+  it('accepts production builds with all required values set', () => {
+    expect(() =>
+      parseBuildEnv({
+        __CB_VERSION__: '1.2.3',
+        __CB_ENVIRONMENT__: 'production',
+        __CB_POSTHOG_KEY__: 'phc_xyz',
+        __CB_POSTHOG_HOST__: 'https://posthog.example.test',
+        __CB_SENTRY_CLI_DSN__: 'https://cli@example.test/1',
+        __CB_SENTRY_FRONTEND_DSN__: 'https://frontend@example.test/1',
+      }),
+    ).not.toThrow();
+  });
+});
+
+describe('cbBuildDefinesFromEnv', () => {
+  it('reads env vars and produces JSON-stringified define values', () => {
+    expect(
+      cbBuildDefinesFromEnv({
+        __CB_VERSION__: '4.5.6',
+        __CB_ENVIRONMENT__: 'local',
+        __CB_CHANNEL__: 'stable',
+      }),
+    ).toMatchObject({
+      [CB_DEFINE_VERSION]: '"4.5.6"',
+      [CB_DEFINE_ENVIRONMENT]: '"local"',
+      [CB_DEFINE_CHANNEL]: '"stable"',
+    });
   });
 });

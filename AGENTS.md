@@ -27,6 +27,7 @@ planbridge/
 │   ├── storage/               # @contextbridge/storage — local SQLite + Drizzle schema
 │   ├── ui/                    # @contextbridge/ui — shared CSS, fonts, cn(), shadcn components
 │   ├── annotation/            # @contextbridge/annotation — Vite+React browser UI for annotating markdown documents
+│   ├── review/                # @contextbridge/review — Vite+React browser UI for code review (scaffold; functionality WIP)
 │   ├── storybook/             # @contextbridge/storybook — shared Storybook host + Chromatic publish for browser-UI packages
 │   └── website/               # @contextbridge/website — Astro + Starlight marketing/docs site
 ├── tsconfig.base.json         # shared TS compiler options
@@ -36,7 +37,7 @@ planbridge/
 
 `planbridge-private` is a separate private repository for employee-only infrastructure and release plumbing. It is not part of this public checkout.
 
-Package naming: every workspace is `@contextbridge/<short-name>`. Browser UIs are named by capability — `annotation` for the kind-agnostic markdown annotation engine, later `review` for file-change review — never a generic `-ui` suffix. Future review surfaces (`packages/review` for file-change review, etc.) land as siblings. Libraries that multiple experiences share (shared contracts, context, server) are their own packages. The shared Storybook host (`packages/storybook`) aggregates stories from every browser-UI package and owns the Chromatic publish.
+Package naming: every workspace is `@contextbridge/<short-name>`. Browser UIs are named by capability — `annotation` for the kind-agnostic markdown annotation engine, `review` for file-change review — never a generic `-ui` suffix. Libraries that multiple experiences share (shared contracts, context, server) are their own packages. The shared Storybook host (`packages/storybook`) aggregates stories from every browser-UI package and owns the Chromatic publish.
 
 Each package has its own `AGENTS.md` with package-specific guidance (plus a one-line `CLAUDE.md` stub that imports it via `@AGENTS.md` so Claude Code auto-loads it when editing files in that directory). **The stub is load-bearing** — Claude Code discovers ancestor `CLAUDE.md` on file edits but not standalone `AGENTS.md`; don't drop it. `packages/shared` and `packages/server` don't have their own files — they have no package-specific guidance beyond root conventions.
 
@@ -47,9 +48,9 @@ Before marking a task complete, run `just verify` and fix anything that fails. I
 - `bun run format:check` — Prettier
 - `bun run typecheck` — strict TypeScript check (`bun run --filter '*' typecheck`)
 - `bun run lint` — ESLint (`--max-warnings 0`)
-- `bun run test` — dispatches per-package `test` scripts. Most packages use Bun's test runner; `@contextbridge/annotation` uses **vitest** (browser mode via Playwright/Chromium) because the annotation UI tests depend on real DOM, CSS Custom Highlights, and selection APIs that Bun's runner can't provide. `@contextbridge/website` runs Astro checks and build through its package test script.
+- `bun run test` — dispatches per-package `test` scripts. Most packages use Bun's test runner; the browser-UI packages (`@contextbridge/annotation`, `@contextbridge/review`) use **vitest** (browser mode via Playwright/Chromium) because their tests depend on real DOM, CSS Custom Highlights, and selection APIs that Bun's runner can't provide. `@contextbridge/website` runs Astro checks and build through its package test script.
 
-Do **not** run `bun test` at the repo root — it walks every `*.test.ts` file with Bun's runner, which blows up on the annotation package's vitest/browser tests. Use `bun run test` (the dispatch script) or a targeted `bun run --cwd packages/<pkg> test` during iteration.
+Do **not** run `bun test` at the repo root — it walks every `*.test.ts` file with Bun's runner, which blows up on the browser-UI packages' vitest/browser tests. Use `bun run test` (the dispatch script) or a targeted `bun run --cwd packages/<pkg> test` during iteration.
 
 ## Pull requests
 
@@ -58,7 +59,7 @@ Before opening a PR, read `.github/pull_request_template.md` and follow it exact
 ## Conventions
 
 - **Dependency injection is non-negotiable.** Prefer explicit context-object wiring over module-level singletons or global mocking.
-- **Tests with Bun's test runner** (except `@contextbridge/annotation`; see above), co-located inline next to the implementation file (e.g. `planHandler.ts` → `planHandler.test.ts` in the same directory). Do **not** use `__tests__/` directories or a top-level `tests/` tree. A round-trip test for any new subcommand (input → UI submit → stdout payload) is expected.
+- **Tests with Bun's test runner** (except the browser-UI packages `@contextbridge/annotation` and `@contextbridge/review`; see above), co-located inline next to the implementation file (e.g. `planHandler.ts` → `planHandler.test.ts` in the same directory). Do **not** use `__tests__/` directories or a top-level `tests/` tree. A round-trip test for any new subcommand (input → UI submit → stdout payload) is expected.
 - **Helpers at the bottom of files.** Primary exports come first; module-local helpers, factories, and private utilities sit below them. In test files, helpers and local factories live **after** all `describe()` blocks — never interleaved or at the top.
 - **In Zod string schemas, prefer `.nonempty()` over `.min(1)`.** Use `.trim().nonempty()` when surrounding whitespace should not count.
 - **Destructured defaults over `??` fallbacks.** When applying defaults to an options bag or similar object, use a single destructuring assignment with defaults instead of per-field `??`. Write `const { version = '0.0.0-development' } = input;`, not `const version = input.version ?? '0.0.0-development';`. Keeps all the defaults for a function's input surface in one readable place.
