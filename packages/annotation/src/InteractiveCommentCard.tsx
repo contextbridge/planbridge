@@ -5,6 +5,7 @@ import { type ReactNode, useRef } from 'react';
 export interface InteractiveCommentCardProps {
   heading?: string;
   disabled: boolean;
+  current?: boolean;
   className?: string;
   testId?: string;
   removeButtonTestId?: string;
@@ -17,6 +18,7 @@ export interface InteractiveCommentCardProps {
 export function InteractiveCommentCard({
   heading,
   disabled,
+  current = false,
   className,
   testId,
   removeButtonTestId,
@@ -29,6 +31,7 @@ export function InteractiveCommentCard({
 
   return (
     <div
+      aria-current={current ? 'true' : undefined}
       ref={cardRef}
       className={cn(
         'relative rounded-md border px-3 py-3 transition',

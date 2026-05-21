@@ -17,9 +17,9 @@ describe('useAnnotationState', () => {
 
       act(() => {
         result.current.draft.open({
+          kind: 'new-thread',
           anchor: annotationAnchor.build(),
           body: '',
-          getRect: () => null,
         });
       });
 
@@ -42,10 +42,11 @@ describe('useAnnotationState', () => {
 
       act(() => {
         result.current.draft.open({
+          kind: 'edit-comment',
           threadId: 'thr_existing_01',
+          messageId: existing.messages[0]?.id ?? 'missing-message',
           anchor: annotationAnchor.build(),
           body: 'original body',
-          getRect: () => null,
         });
       });
 
@@ -67,9 +68,9 @@ describe('useAnnotationState', () => {
 
       act(() => {
         result.current.draft.open({
+          kind: 'new-thread',
           anchor: annotationAnchor.build(),
           body: '',
-          getRect: () => null,
         });
       });
 
@@ -360,10 +361,11 @@ describe('useAnnotationState', () => {
 
       act(() => {
         result.current.draft.open({
+          kind: 'edit-comment',
           threadId: 'thr_target',
+          messageId: thread.messages[0]?.id ?? 'missing-message',
           anchor: annotationAnchor.build(),
           body: originalBody,
-          getRect: () => null,
         });
         result.current.removal.request('thr_target');
       });
@@ -513,9 +515,9 @@ describe('useAnnotationState', () => {
 
       act(() => {
         result.current.draft.open({
+          kind: 'new-thread',
           anchor: nextAnchor,
           body: 'replacement',
-          getRect: () => null,
         });
       });
 
@@ -595,9 +597,9 @@ function triggerBeforeUnload(browser: FakeFrontendBrowser): FakeBeforeUnloadEven
 
 function openDraft(result: AnnotationHookResult, { body = '' }: { body?: string } = {}): void {
   result.current.draft.open({
+    kind: 'new-thread',
     anchor: annotationAnchor.build(),
     body: '',
-    getRect: () => null,
   });
 
   if (body.length > 0) {
@@ -607,10 +609,11 @@ function openDraft(result: AnnotationHookResult, { body = '' }: { body?: string 
 
 function openExistingDraft(result: AnnotationHookResult, thread: CommentThread, options: { body: string }): void {
   result.current.draft.open({
+    kind: 'edit-comment',
     threadId: thread.id,
+    messageId: thread.messages[0]?.id ?? 'missing-message',
     anchor: annotationAnchor.build(),
     body: thread.messages[0]?.body ?? '',
-    getRect: () => null,
   });
   result.current.draft.setBody(options.body);
 }

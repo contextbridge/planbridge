@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { screen, within } from '@testing-library/react';
 import { withAppContext } from './testHelpers/appContextDecorator.tsx';
 import { App } from './App.tsx';
-import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
+import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { DemoStage } from './demo/DemoStage.tsx';
@@ -147,14 +147,14 @@ export const DemoFlow: Story = {
     await sleep(600);
     await user.click(boldTarget);
 
-    const popover = await screen.findByTestId(annotationPopoverTestIds.container);
-    const textarea = within(popover).getByTestId(annotationPopoverTestIds.textarea);
+    const popover = await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    const textarea = within(popover).getByTestId(annotationDraftCommentComposerTestIds.textarea);
     await cursor.moveOver(textarea);
     await user.click(textarea);
     await cursor.hide();
     await user.type(textarea, 'We need to verify the signature before any database write.');
     await sleep(450);
-    const saveButton = within(popover).getByTestId(annotationPopoverTestIds.saveButton);
+    const saveButton = within(popover).getByTestId(annotationDraftCommentComposerTestIds.saveButton);
     await cursor.show();
     await cursor.moveOver(saveButton);
     await user.click(saveButton);
@@ -168,14 +168,14 @@ export const DemoFlow: Story = {
     await sleep(350);
     fireMouseUpOnPlan();
 
-    const popover2 = await screen.findByTestId(annotationPopoverTestIds.container);
-    const textarea2 = within(popover2).getByTestId(annotationPopoverTestIds.textarea);
+    const popover2 = await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    const textarea2 = within(popover2).getByTestId(annotationDraftCommentComposerTestIds.textarea);
     await cursor.moveOver(textarea2);
     await user.click(textarea2);
     await cursor.hide();
     await user.type(textarea2, 'constructEvent throws on bad sigs. Wrap this and return 400.');
     await sleep(450);
-    const saveButton2 = within(popover2).getByTestId(annotationPopoverTestIds.saveButton);
+    const saveButton2 = within(popover2).getByTestId(annotationDraftCommentComposerTestIds.saveButton);
     await cursor.show();
     await cursor.moveOver(saveButton2);
     await user.click(saveButton2);
@@ -285,14 +285,14 @@ export const FullDemo: Story = {
     await sleep(500);
     await user.click(boldTarget);
 
-    const popover = await screen.findByTestId(annotationPopoverTestIds.container);
-    const textarea = within(popover).getByTestId(annotationPopoverTestIds.textarea);
+    const popover = await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    const textarea = within(popover).getByTestId(annotationDraftCommentComposerTestIds.textarea);
     await cursor.moveOver(textarea);
     await user.click(textarea);
     await cursor.hide();
     await user.type(textarea, 'We need to verify the signature before any database write.');
     await sleep(400);
-    const saveButton = within(popover).getByTestId(annotationPopoverTestIds.saveButton);
+    const saveButton = within(popover).getByTestId(annotationDraftCommentComposerTestIds.saveButton);
     await cursor.show();
     await cursor.moveOver(saveButton);
     await user.click(saveButton);
@@ -310,14 +310,14 @@ export const FullDemo: Story = {
     await sleep(300);
     fireMouseUpOnPlan();
 
-    const popover2 = await screen.findByTestId(annotationPopoverTestIds.container);
-    const textarea2 = within(popover2).getByTestId(annotationPopoverTestIds.textarea);
+    const popover2 = await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    const textarea2 = within(popover2).getByTestId(annotationDraftCommentComposerTestIds.textarea);
     await cursor.moveOver(textarea2);
     await user.click(textarea2);
     await cursor.hide();
     await user.type(textarea2, 'constructEvent throws on bad sigs. Wrap this and return 400.');
     await sleep(400);
-    const saveButton2 = within(popover2).getByTestId(annotationPopoverTestIds.saveButton);
+    const saveButton2 = within(popover2).getByTestId(annotationDraftCommentComposerTestIds.saveButton);
     await cursor.show();
     await cursor.moveOver(saveButton2);
     await user.click(saveButton2);

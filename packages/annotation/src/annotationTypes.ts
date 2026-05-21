@@ -1,5 +1,6 @@
 import type {
   AnnotationTargetKind,
+  CommentMessage,
   CommentThread,
   StoredAnnotationAnchor,
 } from '@contextbridge/shared/annotationSchema';
@@ -38,16 +39,39 @@ export interface SelectableTextIndex {
   resolveTarget(targetId: string): AnnotatableTarget | null;
 }
 
-export interface DraftAnnotation {
-  threadId?: string;
-  anchor: StoredAnnotationAnchor;
-  body: string;
-  getRect: () => DOMRect | null;
-}
+export type ActiveCommentDraft =
+  | {
+      kind: 'new-thread';
+      anchor: StoredAnnotationAnchor;
+      body: string;
+    }
+  | {
+      kind: 'edit-comment';
+      threadId: string;
+      messageId: string;
+      anchor: StoredAnnotationAnchor;
+      body: string;
+    };
 
-export interface ResolvedAnnotation {
-  thread: AnnotationCommentThread;
+export type AnnotationThreadComment =
+  | {
+      kind: 'saved';
+      threadId: string;
+      message: CommentMessage;
+      isPrimary: true;
+    }
+  | {
+      kind: 'draft';
+      draft: ActiveCommentDraft;
+      mode: 'new-thread' | 'edit-comment';
+    };
+
+export interface ResolvedAnnotationThread {
+  id: string;
+  anchor: StoredAnnotationAnchor;
   range: Range | null;
   target: AnnotatableTarget | null;
   unresolved: boolean;
+  quote: string;
+  comments: AnnotationThreadComment[];
 }

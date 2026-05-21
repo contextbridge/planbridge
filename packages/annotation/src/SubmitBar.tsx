@@ -31,6 +31,7 @@ export function SubmitBar({ submission, source }: SubmitBarProps) {
       {submission.submitted && submission.closeCountdownSeconds !== null ? (
         <div
           className="rounded-md border border-border px-3 py-2 text-sm leading-6 text-muted-foreground"
+          data-countdown-seconds={submission.closeCountdownSeconds}
           data-testid={submitBarTestIds.countdown}
         >
           {isCodexApproval ? (
