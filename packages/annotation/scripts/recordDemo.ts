@@ -30,7 +30,7 @@ async function waitForStorybook(timeoutMs = 60_000): Promise<void> {
 
 function spawnStorybook(): ChildProcess {
   const child = spawn('bun', ['run', 'storybook'], {
-    cwd: resolve(REPO_ROOT, 'packages/annotation'),
+    cwd: resolve(REPO_ROOT, 'packages/storybook'),
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, BROWSER: 'none' },
   });

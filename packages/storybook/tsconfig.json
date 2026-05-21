@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun", "vite/client"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": [".storybook/**/*", "vite.config.ts"]
+}

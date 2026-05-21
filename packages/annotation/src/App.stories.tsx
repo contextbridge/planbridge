@@ -1,6 +1,6 @@
 import type { AnnotationEntrypoint } from '@contextbridge/shared/annotationSchema';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { withAppContext } from '../.storybook/appContextDecorator.tsx';
+import { withAppContext } from './testHelpers/appContextDecorator.tsx';
 import { App } from './App.tsx';
 import type { AppProps } from './App.tsx';
 import { samplePlan } from './demo/samplePlans.ts';
@@ -14,6 +14,7 @@ const meta: Meta<StoryArgs> = {
     layout: 'fullscreen',
   },
   tags: ['autodocs'],
+  decorators: [withAppContext()],
   argTypes: {
     source: {
       control: 'select',
