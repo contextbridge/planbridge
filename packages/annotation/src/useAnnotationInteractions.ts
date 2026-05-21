@@ -1,12 +1,13 @@
-import type { CommentThread, StoredAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
+import type { CommentThread } from '@contextbridge/shared/annotationSchema';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { clearAnnotationHighlights, syncAnnotationHighlights } from './annotationHighlights.ts';
-import type { ResolvedAnnotation, SelectableTextIndex } from './annotationTypes.ts';
-import { isAnnotationCommentThread } from './annotationTypes.ts';
+import { getDraftThreadId, getNewThreadDraftId, resolveAnnotationThreads } from './annotationResolvers.ts';
+import type { ActiveCommentDraft, ResolvedAnnotationThread, SelectableTextIndex } from './annotationTypes.ts';
 import { snapRangeToTokenBoundaries } from './codeTokenSnap.ts';
-import { getPrimaryMessage } from './commentModel.ts';
 import { buildSelectableTextIndex } from './selectableTextIndex.ts';
-import type { ActiveCommentDraft, OpenAnnotationCommentDraftArgs } from './useAnnotationState.ts';
+import type { OpenAnnotationCommentDraftArgs } from './useAnnotationState.ts';
+import { useCommentNavigation } from './useCommentNavigation.ts';
 import { useTargetActivation } from './useTargetActivation.ts';
 
 export interface UseAnnotationInteractionsArgs {
@@ -14,6 +15,7 @@ export interface UseAnnotationInteractionsArgs {
   submitted: boolean;
   activeDraft: ActiveCommentDraft | null;
   onOpenAnnotationCommentDraft: (args: OpenAnnotationCommentDraftArgs) => void;
+  onRequestCloseAnnotationCommentDraft: () => void;
 }
 
 export function useAnnotationInteractions({
@@ -21,19 +23,22 @@ export function useAnnotationInteractions({
   submitted,
   activeDraft,
   onOpenAnnotationCommentDraft,
+  onRequestCloseAnnotationCommentDraft,
 }: UseAnnotationInteractionsArgs) {
   const [planContainer, setPlanContainer] = useState<HTMLDivElement | null>(null);
   const [textIndex, setTextIndex] = useState<SelectableTextIndex | null>(null);
-  const [activeAnnotationIdState, setActiveAnnotationId] = useState<string | null>(null);
+  const [selectedAnnotationIdState, setSelectedAnnotationId] = useState<string | null>(null);
+  const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(null);
   const suppressNextTargetActivationRef = useRef(false);
 
-  const activeAnnotationId =
-    activeAnnotationIdState && threads.some((thread) => thread.id === activeAnnotationIdState)
-      ? activeAnnotationIdState
-      : null;
-
   const setAnnotationHover = (annotationId: string, hovered: boolean) => {
-    setActiveAnnotationId(hovered ? annotationId : null);
+    setHoveredAnnotationId((current) => {
+      if (hovered) {
+        return annotationId;
+      }
+
+      return current === annotationId ? null : current;
+    });
   };
 
   const handlePlanContainer = (node: HTMLDivElement | null) => {
@@ -41,12 +46,14 @@ export function useAnnotationInteractions({
     setTextIndex(node ? buildSelectableTextIndex(node) : null);
   };
 
-  const resolvedAnnotations = computeResolvedAnnotations(textIndex, threads);
+  const resolvedThreads = resolveAnnotationThreads(textIndex, threads, activeDraft);
+  const hotkeyDocument = planContainer?.ownerDocument;
+  const activeDraftThreadId = activeDraft ? getDraftThreadId(activeDraft) : null;
 
-  const resolvedAnnotationsRef = useRef<ResolvedAnnotation[]>(resolvedAnnotations);
+  const resolvedThreadsRef = useRef<ResolvedAnnotationThread[]>(resolvedThreads);
   useEffect(() => {
-    resolvedAnnotationsRef.current = resolvedAnnotations;
-  }, [resolvedAnnotations]);
+    resolvedThreadsRef.current = resolvedThreads;
+  }, [resolvedThreads]);
 
   const draftAnchor = activeDraft?.anchor ?? null;
   const draftRange = draftAnchor && textIndex ? textIndex.restoreAnchor(draftAnchor) : null;
@@ -62,26 +69,31 @@ export function useAnnotationInteractions({
 
     const anchor = textIndex.rangeToAnchor(range, createdFrom, targetElement);
     onOpenAnnotationCommentDraft({
+      kind: 'new-thread',
       anchor,
-      body: '',
-      getRect: makeAnchorRectGetter(textIndex, anchor),
     });
+    setSelectedAnnotationId(getNewThreadDraftId(anchor));
   };
 
   const editAnnotationComment = useCallback(
-    (annotation: ResolvedAnnotation) => {
-      if (submitted || !annotation.range || !textIndex) {
+    (thread: ResolvedAnnotationThread) => {
+      if (submitted || !thread.range || !textIndex) {
         return;
       }
 
-      const anchor = annotation.thread.subject.anchor;
+      const savedComment = thread.comments.find((comment) => comment.kind === 'saved');
+      if (!savedComment) {
+        return;
+      }
+
       onOpenAnnotationCommentDraft({
-        threadId: annotation.thread.id,
-        anchor,
-        body: getPrimaryMessage(annotation.thread).body,
-        getRect: makeAnchorRectGetter(textIndex, anchor),
+        kind: 'edit-comment',
+        threadId: thread.id,
+        messageId: savedComment.message.id,
+        anchor: thread.anchor,
+        body: savedComment.message.body,
       });
-      setActiveAnnotationId(annotation.thread.id);
+      setSelectedAnnotationId(thread.id);
     },
     [onOpenAnnotationCommentDraft, submitted, textIndex],
   );
@@ -97,17 +109,50 @@ export function useAnnotationInteractions({
     },
   });
 
+  const activateThread = (thread: ResolvedAnnotationThread) => {
+    setHoveredAnnotationId(null);
+    setSelectedAnnotationId(thread.id);
+    scrollThreadIntoView(thread);
+  };
+
+  const openThreadComment = (thread: ResolvedAnnotationThread) => {
+    scrollThreadIntoView(thread);
+    editAnnotationComment(thread);
+  };
+
+  const {
+    activePosition,
+    currentAnnotationId,
+    navigateThread,
+    openCurrentThreadComment,
+    total: navigableAnnotationCount,
+  } = useCommentNavigation({
+    activeDraft,
+    threads: resolvedThreads,
+    enabled: true,
+    onActivateThread: activateThread,
+    onOpenThreadComment: openThreadComment,
+    selectedAnnotationId: selectedAnnotationIdState,
+    submitted,
+    targetDocument: hotkeyDocument,
+  });
+
+  const validHoveredAnnotationId = resolvedThreads.some((thread) => thread.id === hoveredAnnotationId)
+    ? hoveredAnnotationId
+    : null;
+  const highlightedAnnotationId = activeDraftThreadId ?? validHoveredAnnotationId ?? currentAnnotationId;
+
   useEffect(() => {
     syncAnnotationHighlights({
-      annotations: resolvedAnnotations,
-      activeAnnotationId,
+      threads: resolvedThreads,
+      activeAnnotationId: highlightedAnnotationId,
       draftRange,
     });
 
     return () => {
       clearAnnotationHighlights();
     };
-  }, [activeAnnotationId, draftRange, resolvedAnnotations]);
+  }, [draftRange, highlightedAnnotationId, resolvedThreads]);
 
   useEffect(() => {
     if (!planContainer || submitted || activeDraft !== null) {
@@ -120,8 +165,8 @@ export function useAnnotationInteractions({
         return;
       }
 
-      const hit = resolvedAnnotationsRef.current.find((annotation) =>
-        rangeContainsPoint(annotation.range, caret.node, caret.offset),
+      const hit = resolvedThreadsRef.current.find((thread) =>
+        rangeContainsPoint(thread.range, caret.node, caret.offset),
       );
       if (!hit) {
         return;
@@ -131,6 +176,7 @@ export function useAnnotationInteractions({
       event.stopPropagation();
       event.stopImmediatePropagation();
       suppressNextTargetActivationRef.current = true;
+      setSelectedAnnotationId(hit.id);
       editAnnotationComment(hit);
     };
 
@@ -139,6 +185,22 @@ export function useAnnotationInteractions({
       planContainer.removeEventListener('click', handleClickCapture, true);
     };
   }, [activeDraft, editAnnotationComment, planContainer, submitted]);
+
+  useHotkeys(
+    'escape',
+    (event) => {
+      event.stopPropagation();
+      onRequestCloseAnnotationCommentDraft();
+    },
+    {
+      document: hotkeyDocument,
+      enabled: (event) => !event.defaultPrevented && activeDraft !== null,
+      enableOnContentEditable: true,
+      enableOnFormTags: true,
+      preventDefault: true,
+    },
+    [activeDraft, hotkeyDocument, onRequestCloseAnnotationCommentDraft],
+  );
 
   const handleSelectionCapture = () => {
     if (submitted || !textIndex || !planContainer) {
@@ -160,78 +222,41 @@ export function useAnnotationInteractions({
     clearSelection();
   };
 
-  const focusAnnotationComment = (annotation: ResolvedAnnotation) => {
-    if (submitted || annotation.unresolved) {
+  const focusAnnotationThread = (thread: ResolvedAnnotationThread) => {
+    if (submitted || thread.unresolved) {
       return;
     }
 
-    scrollAnnotationIntoView(annotation);
-    editAnnotationComment(annotation);
+    setSelectedAnnotationId(thread.id);
+    scrollThreadIntoView(thread);
+    editAnnotationComment(thread);
   };
 
   return {
-    activeAnnotationId,
-    focusAnnotationComment,
+    currentAnnotationId,
+    currentSidebarThreadId: activeDraftThreadId ?? currentAnnotationId,
+    highlightedAnnotationId,
+    focusAnnotationThread,
     handlePlanContainer,
     handleSelectionCapture,
-    resolvedAnnotations,
-    setActiveAnnotationId,
+    navigation: {
+      activePosition,
+      next: () => navigateThread('next'),
+      openCurrent: openCurrentThreadComment,
+      previous: () => navigateThread('previous'),
+      total: navigableAnnotationCount,
+    },
+    resolvedThreads,
     setAnnotationHover,
   };
 }
 
-function computeResolvedAnnotations(
-  textIndex: SelectableTextIndex | null,
-  threads: CommentThread[],
-): ResolvedAnnotation[] {
-  if (!textIndex) {
-    return [];
-  }
-
-  const items: ResolvedAnnotation[] = [];
-  for (const thread of threads) {
-    if (!isAnnotationCommentThread(thread)) {
-      continue;
-    }
-
-    const range = textIndex.restoreAnchor(thread.subject.anchor);
-    const targetId = thread.subject.anchor.target?.id ?? thread.subject.anchor.endpoints.start.targetId;
-    const target = textIndex.resolveTarget(targetId);
-
-    items.push({
-      thread,
-      range,
-      target,
-      unresolved: range === null,
-    });
-  }
-
-  return items;
-}
-
-function makeAnchorRectGetter(index: SelectableTextIndex, anchor: StoredAnnotationAnchor): () => DOMRect | null {
-  return () => {
-    const liveRange = index.restoreAnchor(anchor);
-    return liveRange ? getRangeRect(liveRange) : null;
-  };
-}
-
-function scrollAnnotationIntoView(annotation: ResolvedAnnotation): void {
+function scrollThreadIntoView(thread: ResolvedAnnotationThread): void {
   const focusElement =
-    annotation.range?.startContainer instanceof Element
-      ? annotation.range.startContainer
-      : annotation.range?.startContainer.parentElement;
+    thread.range?.startContainer instanceof Element
+      ? thread.range.startContainer
+      : thread.range?.startContainer.parentElement;
   focusElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function getRangeRect(range: Range): DOMRect {
-  const rect = range.getBoundingClientRect();
-  if (rect.width > 0 || rect.height > 0) {
-    return rect;
-  }
-
-  const fallback = range.getClientRects()[0];
-  return fallback ?? new DOMRect(window.innerWidth / 2, window.innerHeight / 2, 0, 0);
 }
 
 function clearSelection(): void {

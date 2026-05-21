@@ -183,6 +183,27 @@ export const OverflowingComments: Story = {
   },
 };
 
+export const KeyboardNavigation: Story = {
+  args: {
+    initialPayload: {
+      contentKind: 'plan',
+      content: samplePlan,
+      title: 'Refactor auth middleware',
+      metadata: { entrypoint: 'plan_command' },
+    },
+    initialThreads: overflowingThreads.slice(0, 4),
+  },
+  decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Seeded with multiple annotation comments for manually verifying J/K/C keyboard navigation and the sticky top bar.',
+      },
+    },
+  },
+};
+
 export const Loading: Story = {
   decorators: [withAppContext({ fetchPayload: () => new Promise<never>(() => {}) })],
 };
