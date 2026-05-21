@@ -50,6 +50,6 @@ stdin / [path]  ─▶  contextbridge plan
 
 The loop is kind-agnostic: it serves a markdown document into the annotation UI and emits a structured result on stdout. Sibling entrypoints on this same loop today: `plan` (plan-mode handoffs from Claude Code and Codex hooks) and `open` (manual annotation of a markdown file or piped content, surfaced through `planbridge-open` and `planbridge-last` skills in Claude and Codex). The CLI process owns the server and the browser lifecycle. When the user submits in the browser, the server shuts down and the CLI emits its structured result to stdout. That stdout contract is what harness hooks (Claude `exitPlanMode`, Codex Stop hook, etc.) consume.
 
-## Build: embedded annotation UI
+## Build: embedded browser-UI bundles
 
-At build time, the `@contextbridge/annotation` UI is bundled into a single HTML file via `vite-plugin-singlefile` and embedded into the compiled CLI binary as a string literal — see `scripts/build.ts`. The binary is fully self-contained: no external assets at runtime.
+At build time, each browser-UI package is built into a single HTML file via `vite-plugin-singlefile` and embedded into the compiled CLI binary as a string literal — see `scripts/build.ts` plus the per-command shim modules `src/annotation/bundledAnnotationHtml.ts` and `src/review/bundledReviewHtml.ts`. The binary is fully self-contained: no external assets at runtime. New browser UIs follow the same shape: build the package in `just build` before the CLI compile step, then text-import its `dist/index.html` from a sibling shim.

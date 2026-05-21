@@ -13,7 +13,7 @@ paths:
 
 This monorepo runs on Bun. In code that's only ever executed by Bun — the `contextbridge` binary, the local HTTP server, codegen and build scripts, the SQLite layer — reach for `Bun.*` globals before the Node equivalent. Training-data bias makes the Node API the default suggestion; this rule lists the cases where the Bun shape is materially shorter or more idiomatic and should win.
 
-The trigger globs above already exclude browser packages (`annotation`, `website`, `ui`) and isomorphic ones (`context`, `shared`, `instrumentation/browser|shared`). If you find yourself in one of those, treat `Bun.*` as off-limits.
+The trigger globs above already exclude browser packages (`annotation`, `review`, `website`, `ui`) and isomorphic ones (`context`, `shared`, `instrumentation/browser|shared`). If you find yourself in one of those, treat `Bun.*` as off-limits.
 
 For anything not covered below, the canonical reference is <https://bun.sh/llms-full.txt> — it concatenates Bun's full docs into a single markdown file.
 

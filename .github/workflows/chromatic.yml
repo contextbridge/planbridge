@@ -6,6 +6,8 @@ on:
     paths:
       - 'packages/annotation/**/*.tsx'
       - 'packages/annotation/**/*.css'
+      - 'packages/review/**/*.tsx'
+      - 'packages/review/**/*.css'
       - 'packages/storybook/**'
       - 'packages/ui/**/*.tsx'
       - 'packages/ui/**/*.css'

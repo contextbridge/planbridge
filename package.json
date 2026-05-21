@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "bun run --cwd packages/cli dev",
     "build": "just build",
-    "test": "bun run --cwd packages/shared test && bun run --cwd packages/context test && bun run --cwd packages/server test && bun run --cwd packages/storage test && bun run --cwd packages/ui test && bun run --cwd packages/harness test && bun run --cwd packages/skills test && bun run --cwd packages/cli test && bun run --cwd packages/annotation test && bun run --cwd packages/website test",
+    "test": "bun run --cwd packages/shared test && bun run --cwd packages/context test && bun run --cwd packages/server test && bun run --cwd packages/storage test && bun run --cwd packages/ui test && bun run --cwd packages/harness test && bun run --cwd packages/skills test && bun run --cwd packages/cli test && bun run --cwd packages/annotation test && bun run --cwd packages/review test && bun run --cwd packages/website test",
     "typecheck": "bun run --filter '*' typecheck",
     "prelint": "bun run --cwd packages/website astro sync",
     "lint": "eslint . --max-warnings 0 --cache",

@@ -1,6 +1,6 @@
 # @contextbridge/ui — shared styling foundation
 
-This package holds the styling foundation for every browser UI in cb-cli (`packages/annotation`, later `packages/review`, …). It exports:
+This package holds the styling foundation for every browser UI in cb-cli (`packages/annotation`, `packages/review`, …). It exports:
 
 - **`./styles.css`** — global stylesheet (Tailwind v4 + fonts + OKLCH color palette + shadcn CSS variables). Consumers import this exactly once from their entry.
 - **`./lib/utils`** — `cn()` helper (clsx + tailwind-merge).
