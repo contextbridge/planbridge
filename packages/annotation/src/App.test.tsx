@@ -327,7 +327,7 @@ describe('App', () => {
     });
   });
 
-  it('uses Escape twice to discard a dirty annotation draft', async () => {
+  it('opens the discard dialog on Escape and keeps the draft when Escape dismisses the dialog', async () => {
     const user = userEvent.setup();
     renderApp({ initialPayload: { contentKind: 'plan', content: '# Title\n\nExplain the parser ordering.' } });
 
@@ -346,7 +346,8 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.queryByTestId(appTestIds.discardDraftDialog)).not.toBeInTheDocument();
     });
-    expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('Unsaved annotation');
   });
 
   it('updates the visible countdown after submission without waiting on real timers', async () => {

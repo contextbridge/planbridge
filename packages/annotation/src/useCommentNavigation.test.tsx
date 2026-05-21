@@ -1,9 +1,8 @@
-import { annotationThread } from '@contextbridge/shared/testFactories';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ResolvedAnnotationThread } from './annotationTypes.ts';
-import { isAnnotationCommentThread } from './annotationTypes.ts';
+import { resolvedAnnotationDraftThread, resolvedAnnotationThread } from './testFactories.ts';
 import { useCommentNavigation } from './useCommentNavigation.ts';
 
 describe('useCommentNavigation', () => {
@@ -96,7 +95,7 @@ describe('useCommentNavigation', () => {
     renderCommentNavigationHarness({
       threads: [
         resolvedAnnotationThread.build({ id: 'thr_saved' }),
-        resolvedAnnotationThread.buildDraft({ id: 'draft-annotation-0-5' }),
+        resolvedAnnotationDraftThread.build({ id: 'draft-annotation-0-5' }),
       ],
     });
 
@@ -197,66 +196,10 @@ function CommentNavigationHarness({
   );
 }
 
-const resolvedAnnotationThread = {
-  build({
-    id,
-    range = document.createRange(),
-    unresolved = false,
-  }: ResolvedThreadBuildOptions): ResolvedAnnotationThread {
-    const thread = annotationThread.build({ id });
-    if (!isAnnotationCommentThread(thread)) {
-      throw new Error('Expected annotation thread factory to build an annotation thread');
-    }
-
-    const primaryMessage = thread.messages[0];
-    if (!primaryMessage) {
-      throw new Error('Expected annotation thread factory to include a primary message');
-    }
-
-    return {
-      id: thread.id,
-      anchor: thread.subject.anchor,
-      range,
-      target: null,
-      unresolved,
-      quote: thread.subject.anchor.quote.exact,
-      comments: [{ kind: 'saved', threadId: thread.id, message: primaryMessage, isPrimary: true }],
-    };
-  },
-  buildDraft({ id }: { id: string }): ResolvedAnnotationThread {
-    const seed = annotationThread.build({ id });
-    if (!isAnnotationCommentThread(seed)) {
-      throw new Error('Expected annotation thread factory to build an annotation thread');
-    }
-
-    return {
-      id,
-      anchor: seed.subject.anchor,
-      range: document.createRange(),
-      target: null,
-      unresolved: false,
-      quote: seed.subject.anchor.quote.exact,
-      comments: [
-        {
-          kind: 'draft',
-          mode: 'new-thread',
-          draft: { kind: 'new-thread', anchor: seed.subject.anchor, body: '' },
-        },
-      ],
-    };
-  },
-};
-
 interface CommentNavigationHarnessProps {
   threads: ResolvedAnnotationThread[];
   enabled?: boolean;
   onOpenThreadComment?: (thread: ResolvedAnnotationThread) => void;
   selectedAnnotationId?: string | null;
   submitted?: boolean;
-}
-
-interface ResolvedThreadBuildOptions {
-  id: string;
-  range?: Range | null;
-  unresolved?: boolean;
 }

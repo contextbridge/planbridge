@@ -270,14 +270,7 @@ interface DiscardDraftDialogProps {
 function DiscardDraftDialog({ onConfirm, onOpenChange, open }: DiscardDraftDialogProps) {
   return (
     <AlertDialog onOpenChange={onOpenChange} open={open}>
-      <AlertDialogContent
-        data-testid={appTestIds.discardDraftDialog}
-        onEscapeKeyDown={(event) => {
-          event.preventDefault();
-          onConfirm();
-        }}
-        size="sm"
-      >
+      <AlertDialogContent data-testid={appTestIds.discardDraftDialog} size="sm">
         <AlertDialogHeader>
           <AlertDialogTitle>Discard unsaved comment?</AlertDialogTitle>
           <AlertDialogDescription>
