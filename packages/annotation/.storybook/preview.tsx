@@ -1,6 +1,5 @@
 import '@contextbridge/ui/styles.css';
 import type { Preview } from '@storybook/react-vite';
-import { withAppContext } from './appContextDecorator.tsx';
 
 const preview: Preview = {
   parameters: {
@@ -17,7 +16,6 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withAppContext()],
 };
 
 export default preview;

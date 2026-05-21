@@ -3,7 +3,7 @@ import { buildInfo as buildInfoFactory } from '@contextbridge/context/testFactor
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import userEvent from '@testing-library/user-event';
 import { screen, within } from '@testing-library/react';
-import { withAppContext } from '../.storybook/appContextDecorator.tsx';
+import { withAppContext } from './testHelpers/appContextDecorator.tsx';
 import { App } from './App.tsx';
 import { annotationPopoverTestIds } from './AnnotationPopover.tsx';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
@@ -29,6 +29,7 @@ const meta = {
     layout: 'fullscreen',
     chromatic: { disableSnapshot: true },
   },
+  decorators: [withAppContext()],
 } satisfies Meta<typeof App>;
 
 export default meta;
