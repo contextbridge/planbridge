@@ -6,6 +6,7 @@ import { registerHookCodex } from './hookCodex.ts';
 import { registerInstall } from './install.ts';
 import { registerOpen } from './open.ts';
 import { registerPlan } from './plan.ts';
+import { registerReview } from './review.ts';
 import { registerUninstall } from './uninstall.ts';
 import { registerUpdate } from './update.ts';
 
@@ -23,6 +24,7 @@ export function createProgram(ctx: CliContext): Command {
     .addHelpText('after', `\nDocs: ${QUICKSTART_URL}`);
 
   registerPlan(ctx, program);
+  registerReview(ctx, program);
   registerOpen(ctx, program);
   registerUpdate(ctx, program);
 
