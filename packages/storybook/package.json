@@ -13,19 +13,19 @@
     "@contextbridge/annotation": "workspace:*",
     "@contextbridge/review": "workspace:*",
     "@contextbridge/ui": "workspace:*",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@storybook/react-vite": "^10.2.14",
-    "@tailwindcss/vite": "^4.1.12",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "babel-plugin-react-compiler": "^1.0.0",
+    "@storybook/react-vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
     "chromatic": "^15.1.1",
     "storybook": "^10.2.14",
-    "tailwindcss": "^4.1.12",
-    "vite": "^6.2.0"
+    "tailwindcss": "catalog:",
+    "vite": "catalog:"
   }
 }
