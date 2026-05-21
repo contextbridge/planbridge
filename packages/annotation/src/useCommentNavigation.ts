@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import type { ActiveCommentDraft, ResolvedAnnotationThread } from './annotationTypes.ts';
 
@@ -40,24 +39,21 @@ export function useCommentNavigation({
   const currentThread = navigableThreads[currentThreadIndex] ?? null;
   const currentAnnotationId = currentThread?.id ?? null;
 
-  const navigateThread = useCallback(
-    (direction: CommentNavigationDirection) => {
-      const nextIndex = getAdjacentThreadIndex(navigableThreads, currentThreadIndex, direction);
-      const nextThread = navigableThreads[nextIndex];
-      if (nextThread) {
-        onActivateThread(nextThread);
-      }
-    },
-    [currentThreadIndex, navigableThreads, onActivateThread],
-  );
+  const navigateThread = (direction: CommentNavigationDirection) => {
+    const nextIndex = getAdjacentThreadIndex(navigableThreads, currentThreadIndex, direction);
+    const nextThread = navigableThreads[nextIndex];
+    if (nextThread) {
+      onActivateThread(nextThread);
+    }
+  };
 
-  const openCurrentThreadComment = useCallback(() => {
+  const openCurrentThreadComment = () => {
     if (!currentThread || submitted || activeDraft !== null) {
       return;
     }
 
     onOpenThreadComment(currentThread);
-  }, [activeDraft, currentThread, onOpenThreadComment, submitted]);
+  };
 
   // Capture-phase so an ancestor calling stopPropagation (e.g. Storybook
   // decorators) cannot swallow J/K/C before navigation sees them.

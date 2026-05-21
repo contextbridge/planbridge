@@ -109,19 +109,16 @@ export function useAnnotationInteractions({
     },
   });
 
-  const activateThread = useCallback((thread: ResolvedAnnotationThread) => {
+  const activateThread = (thread: ResolvedAnnotationThread) => {
     setHoveredAnnotationId(null);
     setSelectedAnnotationId(thread.id);
     scrollThreadIntoView(thread);
-  }, []);
+  };
 
-  const openThreadComment = useCallback(
-    (thread: ResolvedAnnotationThread) => {
-      scrollThreadIntoView(thread);
-      editAnnotationComment(thread);
-    },
-    [editAnnotationComment],
-  );
+  const openThreadComment = (thread: ResolvedAnnotationThread) => {
+    scrollThreadIntoView(thread);
+    editAnnotationComment(thread);
+  };
 
   const {
     activePosition,
