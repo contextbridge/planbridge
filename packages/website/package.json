@@ -24,19 +24,19 @@
     "astro": "^6.1.0",
     "astro-expressive-code": "^0.41.7",
     "astro-icon": "^1.1.5",
-    "lucide-react": "^1.14.0",
+    "lucide-react": "catalog:",
     "motion": "^12.38.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "sharp": "^0.34.0",
     "starlight-llms-txt": "^0.10.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@tailwindcss/vite": "^4.2.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "tailwindcss": "^4.2.4",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "^6.0.0"
   }
 }

@@ -20,10 +20,10 @@
   "dependencies": {
     "@contextbridge/shared": "workspace:*",
     "drizzle-orm": "1.0.0-rc.2",
-    "neverthrow": "^8.2.0"
+    "neverthrow": "catalog:"
   },
   "devDependencies": {
     "drizzle-kit": "1.0.0-rc.2",
-    "fishery": "^2.4.0"
+    "fishery": "catalog:"
   }
 }

@@ -12,23 +12,23 @@
   "dependencies": {
     "@contextbridge/context": "workspace:*",
     "@contextbridge/ui": "workspace:*",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@storybook/react-vite": "^10.2.14",
-    "@tailwindcss/vite": "^4.1.12",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "@vitest/browser-playwright": "^4.0.18",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "playwright": "^1.58.2",
-    "tailwindcss": "^4.1.12",
-    "vite": "^6.2.0",
-    "vite-plugin-singlefile": "^2.0.3",
-    "vitest": "^4.0.18"
+    "@storybook/react-vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "playwright": "catalog:",
+    "tailwindcss": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-singlefile": "catalog:",
+    "vitest": "catalog:"
   }
 }
