@@ -16,7 +16,7 @@ export function formatAgentResponse(
   templates: AnnotationTemplates,
   submission: AnnotationSubmission,
   content: string,
-  opts: { sourcePath?: string } = {},
+  opts: { planId?: string; sourcePath?: string } = {},
 ): string {
   if (submission.status === 'approved') {
     return templates.approved({ source: opts.sourcePath });
@@ -46,7 +46,7 @@ export function formatAgentResponse(
   }
 
   const body = sections.map((section) => section.trimEnd()).join('\n\n');
-  return `${templates.changesRequested({ body, source: opts.sourcePath }).trimEnd()}\n`;
+  return `${templates.changesRequested({ body, planId: opts.planId, source: opts.sourcePath }).trimEnd()}\n`;
 }
 
 function renderThreadsAsBlockquotes(threads: CommentThread[]): string {

@@ -12,6 +12,8 @@ import { environment } from '#src/testFactories.ts';
 import {
   createAnnotationDependencies,
   createStubContext,
+  extractPlanId,
+  loadPersistedPlan,
   readErrorLogs,
   readLogs,
   readWarnLogs,
@@ -31,7 +33,9 @@ describe('plan handler', () => {
 
   it('reads plan content from stdin and emits the review submission', async () => {
     const openedUrls: string[] = [];
-    const { context, io } = createStubContext({ openUrl: (url) => (openedUrls.push(url), Promise.resolve()) });
+    const { context, io, planRepository } = createStubContext({
+      openUrl: (url) => (openedUrls.push(url), Promise.resolve()),
+    });
     const expectedSubmission = annotationSubmission.build();
     const deps = createAnnotationDependencies({ submission: expectedSubmission });
     io.stdin.write('# My plan\n\nStep 1.\n');
@@ -39,7 +43,18 @@ describe('plan handler', () => {
 
     await runPlan(context, {}, deps);
 
-    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, expectedSubmission, deps.payloads[0]!.content));
+    const planId = extractPlanId(io.stdout.text());
+    expect(io.stdout.text()).toBe(
+      formatAgentResponse(PLAN_TEMPLATES, expectedSubmission, deps.payloads[0]!.content, { planId }),
+    );
+    const review = loadPersistedPlan(planRepository, planId);
+    expect(review).toMatchObject({ id: planId, projectRoot: '/work', status: expectedSubmission.status });
+    expect(review.revisions).toHaveLength(1);
+    expect(review.revisions[0]).toMatchObject({
+      content: deps.payloads[0]!.content,
+      status: expectedSubmission.status,
+    });
+    expect(review.revisions[0]?.id).toMatch(/^revision_[0-9a-f-]+$/);
     expect(openedUrls).toEqual(['http://localhost:4312']);
     expect(deps.closed).toBe(true);
   });
@@ -48,13 +63,18 @@ describe('plan handler', () => {
     const planPath = join(tmp, 'plan.md');
     writeFileSync(planPath, '# From positional path\n');
 
-    const { context, io } = createStubContext();
+    const { context, io, planRepository } = createStubContext();
     const deps = createAnnotationDependencies();
     io.stdin.isTTY = true;
 
     await runPlan(context, { path: planPath }, deps);
 
-    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content));
+    const planId = extractPlanId(io.stdout.text());
+    expect(io.stdout.text()).toBe(
+      formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content, { planId }),
+    );
+    const review = loadPersistedPlan(planRepository, planId);
+    expect(review.revisions[0]).toMatchObject({ sourcePath: resolvePath(planPath) });
     expect(deps.payloads[0]?.content).toBe('# From positional path\n');
   });
 

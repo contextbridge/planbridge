@@ -11,6 +11,7 @@ import {
 import { createNodeInstrumentation, getOrCreateAnonymousId } from '@contextbridge/instrumentation/node';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { Temporal } from '@contextbridge/shared/time';
+import { type PlanRepository, PlanRepositoryImpl, createDb, resolveStoragePath } from '@contextbridge/storage';
 import open from 'open';
 import { type CommandRunner, CommandRunnerImpl } from '#src/CommandRunnerImpl.ts';
 import { type Environment, getEnvironment } from '#src/environment.ts';
@@ -26,6 +27,7 @@ export interface CliContext extends BaseContext {
   readonly openUrl: (url: string) => Promise<void>;
   readonly commandRunner: CommandRunner;
   readonly prompter: Prompter;
+  readonly planRepository: PlanRepository;
   readonly updater: Updater;
 }
 
@@ -52,6 +54,13 @@ export function createContext(): CliContext {
   const fetcher = new FetcherImpl();
   const commandRunner = new CommandRunnerImpl({ out: io.stdout, err: io.stderr });
   const prompter = createClackPrompter(io);
+  const storage = createDb({ dbPath: resolveStoragePath({ env }) });
+  if (storage.isErr()) throw storage.error;
+
+  const planRepository = new PlanRepositoryImpl({
+    db: storage.value.db,
+    clock: () => Temporal.Now.instant(),
+  });
   const updater = new UpdaterImpl({
     buildInfo: BUILD_INFO,
     env,
@@ -71,6 +80,7 @@ export function createContext(): CliContext {
     openUrl: defaultOpenUrl,
     commandRunner,
     prompter,
+    planRepository,
     updater,
   };
 }

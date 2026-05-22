@@ -19,7 +19,7 @@ export interface PlanArgs {
 }
 
 export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
-  const { io, logger } = ctx;
+  const { io, logger, planRepository, projectRoot } = ctx;
   const { path, port } = args;
 
   if (!path && io.stdinIsTTY === true) {
@@ -53,7 +53,19 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
       { content, contentKind: 'plan', entrypoint: 'plan_command', port, sourcePath },
       deps,
     );
-    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
+    const planResult = planRepository.createInitialPlan({
+      projectRoot,
+      content,
+      sourcePath,
+      status: submission.status,
+    });
+    if (planResult.isErr()) {
+      throw new Error(`failed to persist initial plan: ${getErrorMessage(planResult.error)}`, {
+        cause: planResult.error,
+      });
+    }
+    const { planId } = planResult.value;
+    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content, { planId }));
   } catch (err) {
     if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');

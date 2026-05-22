@@ -84,7 +84,7 @@ async function handleExitPlanMode(
   payload: ClaudeHookPayload,
   deps: HookClaudeDependencies,
 ): Promise<ClaudeHookResponse> {
-  const { logger } = ctx;
+  const { logger, planRepository, projectRoot } = ctx;
   const { runReview = runAnnotation } = deps;
 
   if (!payload.tool_input?.plan) {
@@ -104,7 +104,19 @@ async function handleExitPlanMode(
     abort(ctx, 'runtime', getErrorMessage(err));
   }
 
-  return claudeHookResponse(submission, planContent);
+  const planResult = planRepository.createInitialPlan({
+    projectRoot,
+    content: planContent,
+    status: submission.status,
+  });
+  if (planResult.isErr()) {
+    throw new Error(`failed to persist initial plan: ${getErrorMessage(planResult.error)}`, {
+      cause: planResult.error,
+    });
+  }
+  const { planId } = planResult.value;
+
+  return claudeHookResponse(submission, planContent, { planId });
 }
 
 function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {

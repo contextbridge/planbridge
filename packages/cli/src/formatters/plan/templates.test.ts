@@ -21,6 +21,17 @@ The user reviewed this plan and approved it with no changes. Proceed to implemen
 `);
   });
 
+  it('includes the PlanBridge Plan ID when feedback is returned', () => {
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
+      { status: 'changes_requested', threads: [globalThread.build()] },
+      'unused plan source',
+      { planId: 'plan_123' },
+    );
+
+    expect(output).toContain('PlanBridge Plan ID: `plan_123`');
+  });
+
   it('renders changes requested with general feedback first and annotation source slices', () => {
     const planContent = [
       '# My plan',

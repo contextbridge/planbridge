@@ -6,11 +6,13 @@ import { storageMigrationsJournal, storageMigrationsTable } from './migrations.t
 describe('storage migrations', () => {
   test('migrates a fresh database and records applied migrations', async () => {
     await withDb(({ sqlite }) => {
-      expect(
-        sqlite
-          .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'projects'")
-          .get()?.name,
-      ).toBe('projects');
+      for (const tableName of ['projects', 'plans', 'plan_revisions']) {
+        expect(
+          sqlite
+            .query<{ name: string }, [string]>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?1")
+            .get(tableName)?.name,
+        ).toBe(tableName);
+      }
       expect(
         sqlite.query<{ count: number }, []>(`SELECT count(*) as count FROM ${storageMigrationsTable}`).get()?.count,
       ).toBe(storageMigrationsJournal.length);

@@ -4,7 +4,8 @@ import { instantFromString } from './time.ts';
 export const ContentKindSchema = z.enum(['plan', 'document']);
 export type ContentKind = z.infer<typeof ContentKindSchema>;
 
-export const AnnotationStatusSchema = z.enum(['approved', 'changes_requested']);
+export const ANNOTATION_STATUS_VALUES = ['approved', 'changes_requested'] as const;
+export const AnnotationStatusSchema = z.enum(ANNOTATION_STATUS_VALUES);
 export type AnnotationStatus = z.infer<typeof AnnotationStatusSchema>;
 
 export const TextQuoteSelectorSchema = z.object({

@@ -89,7 +89,7 @@ async function handleStop(
   payload: CodexStopHookPayload,
   deps: HookCodexDependencies,
 ): Promise<CodexStopResponse | null> {
-  const { logger } = ctx;
+  const { logger, planRepository, projectRoot } = ctx;
   const { runReview = runAnnotation } = deps;
 
   if (payload.stop_hook_active) {
@@ -109,7 +109,20 @@ async function handleStop(
     runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_codex' }),
     toError,
   ).match(
-    (submission: AnnotationSubmission) => codexStopResponse(submission, planContent),
+    (submission: AnnotationSubmission) => {
+      const planResult = planRepository.createInitialPlan({
+        projectRoot,
+        content: planContent,
+        status: submission.status,
+      });
+      if (planResult.isErr()) {
+        throw new Error(`failed to persist initial plan: ${getErrorMessage(planResult.error)}`, {
+          cause: planResult.error,
+        });
+      }
+      const { planId } = planResult.value;
+      return codexStopResponse(submission, planContent, { planId });
+    },
     (e) => {
       if (e instanceof AnnotationEnvironmentError) {
         abortCommand(ctx, 'hookCodex', 'environment', e.message);

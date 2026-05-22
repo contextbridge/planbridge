@@ -7,7 +7,15 @@ export interface ClaudeHookResponse {
   hookSpecificOutput: PermissionRequestHookSpecificOutput;
 }
 
-export function claudeHookResponse(submission: AnnotationSubmission, planContent: string): ClaudeHookResponse {
+export interface ClaudeHookResponseOptions {
+  readonly planId?: string;
+}
+
+export function claudeHookResponse(
+  submission: AnnotationSubmission,
+  planContent: string,
+  opts: ClaudeHookResponseOptions = {},
+): ClaudeHookResponse {
   if (submission.status === 'approved') {
     // setMode → acceptEdits is what actually exits plan mode for the session.
     // Without it, the allow only grants this ExitPlanMode call — the session
@@ -26,7 +34,7 @@ export function claudeHookResponse(submission: AnnotationSubmission, planContent
   return {
     hookSpecificOutput: {
       hookEventName: 'PermissionRequest',
-      decision: { behavior: 'deny', message: formatAgentResponse(PLAN_TEMPLATES, submission, planContent) },
+      decision: { behavior: 'deny', message: formatAgentResponse(PLAN_TEMPLATES, submission, planContent, opts) },
     },
   };
 }

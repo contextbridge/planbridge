@@ -13,6 +13,9 @@ import {
 import {
   createAnnotationDependencies,
   createStubContext,
+  extractPlanId,
+  loadOnlyPersistedReview,
+  loadPersistedPlan,
   readErrorLogs,
   readWarnLogs,
 } from '#src/testHelpers/index.ts';
@@ -21,7 +24,7 @@ import { type HookCodexDependencies, extractLatestPlanFromTranscript, runHookCod
 
 describe('hookCodex handler', () => {
   it('emits an empty JSON object on approval so Codex uses its native Plan Mode approval flow', async () => {
-    const { context, io } = createStubContext();
+    const { context, io, planRepository } = createStubContext();
     const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const deps = createHookDependencies({
       submission,
@@ -32,21 +35,34 @@ describe('hookCodex handler', () => {
     await runHookCodex(context, deps);
 
     expect(io.stdout.text().trim()).toBe('{}');
+    const review = loadOnlyPersistedReview(planRepository);
+    expect(review).toMatchObject({
+      content: '# Approved Plan\n\nStep 1.',
+      status: 'approved',
+    });
     expect(deps.calls).toEqual([
       annotationArgs.build({ content: '# Approved Plan\n\nStep 1.', entrypoint: 'hook_codex' }),
     ]);
   });
 
   it('emits a Stop continuation with review feedback when changes are requested', async () => {
-    const { context, io } = createStubContext();
+    const { context, io, planRepository } = createStubContext();
     const deps = createHookDependencies({ transcript: transcriptWithPlan('# Plan\n\n- Step 1\n') });
     writeStopPayload(io, { transcript_path: '/tmp/codex-transcript.jsonl', last_assistant_message: null });
 
     await runHookCodex(context, deps);
 
     const parsed = JSON.parse(io.stdout.text().trim()) as CodexStopResponse;
+    const planId = extractPlanId(parsed.reason);
+    const review = loadPersistedPlan(planRepository, planId);
+    expect(review).toMatchObject({ id: planId, projectRoot: '/work', status: 'changes_requested' });
+    expect(review.revisions[0]).toMatchObject({
+      content: '# Plan\n\n- Step 1',
+      status: 'changes_requested',
+    });
     expect(parsed.decision).toBe('block');
     expect(parsed.reason).toContain('Plan review: changes requested');
+    expect(parsed.reason).toMatch(/PlanBridge Plan ID: `plan_[0-9a-f-]+`/);
   });
 
   it('captures plan-review lifecycle analytics through the shared runner', async () => {

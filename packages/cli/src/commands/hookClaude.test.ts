@@ -5,12 +5,19 @@ import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
 import { annotationArgs } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import {
+  createAnnotationDependencies,
+  createStubContext,
+  extractPlanId,
+  loadOnlyPersistedReview,
+  loadPersistedPlan,
+  readErrorLogs,
+} from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
   it('emits the approved envelope when the review is approved', async () => {
-    const { context, io } = createStubContext();
+    const { context, io, planRepository } = createStubContext();
     const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const deps = createHookDependencies({ submission });
     io.stdin.write(
@@ -29,11 +36,16 @@ describe('hookClaude handler', () => {
     await runHookClaude(context, deps);
 
     expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, '# Plan\n\nStep 1.\n'))}\n`);
+    const review = loadOnlyPersistedReview(planRepository);
+    expect(review).toMatchObject({
+      content: '# Plan\n\nStep 1.\n',
+      status: 'approved',
+    });
     expect(deps.calls).toEqual([annotationArgs.build({ content: '# Plan\n\nStep 1.\n', entrypoint: 'hook_claude' })]);
   });
 
   it('emits a deny envelope with the markdown feedback when changes are requested', async () => {
-    const { context, io } = createStubContext();
+    const { context, io, planRepository } = createStubContext();
     const submission = annotationSubmission.build();
     const deps = createHookDependencies({ submission });
     const planContent = '# Plan\n\nStep 1.\n';
@@ -52,11 +64,18 @@ describe('hookClaude handler', () => {
 
     await runHookClaude(context, deps);
 
-    const expected = claudeHookResponse(submission, planContent);
-    expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
-    const parsed = JSON.parse(io.stdout.text().trim()) as typeof expected;
-    expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');
+    const parsed = JSON.parse(io.stdout.text().trim()) as ReturnType<typeof claudeHookResponse>;
     if (parsed.hookSpecificOutput.decision.behavior !== 'deny') throw new Error('expected deny');
+    const planId = extractPlanId(parsed.hookSpecificOutput.decision.message ?? '');
+    const expected = claudeHookResponse(submission, planContent, { planId });
+    expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
+    const review = loadPersistedPlan(planRepository, planId);
+    expect(review).toMatchObject({ id: planId, projectRoot: '/work', status: submission.status });
+    expect(review.revisions[0]).toMatchObject({
+      content: planContent,
+      status: submission.status,
+    });
+    expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');
     expect(parsed.hookSpecificOutput.decision.message?.length ?? 0).toBeGreaterThan(0);
   });
 

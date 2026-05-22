@@ -61,6 +61,10 @@ export const environment = Factory.define<Environment>(() => ({
   CI: false,
   CONTEXTBRIDGE_UPDATE_CHECK_DISABLED: false,
   CONTEXTBRIDGE_PORT: undefined,
+  CONTEXTBRIDGE_DB_PATH: undefined,
+  XDG_CONFIG_HOME: undefined,
+  XDG_DATA_HOME: undefined,
+  HOME: undefined,
 }));
 
 export const harnessDescriptor = Factory.define<HarnessDescriptor>(() => ({

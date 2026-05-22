@@ -15,6 +15,5 @@ npm-debug.log*
 .eslintcache
 packages/website/src/content/docs/cli/
 
-# Drizzle-generated migration artifacts. snapshot.json formatting is dialect-
-# dependent and changes shape between drizzle-kit versions; don't fight it.
-packages/storage/generated/
+# Drizzle migrations are committed. .gitattributes marks generated snapshots
+# as generated and suppresses noisy diffs.
