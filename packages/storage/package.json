@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@contextbridge/shared": "workspace:*",
-    "drizzle-orm": "1.0.0-rc.2",
+    "drizzle-orm": "1.0.0-rc.4-273829f",
     "neverthrow": "catalog:"
   },
   "devDependencies": {
