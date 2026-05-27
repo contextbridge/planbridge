@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactElement } from 'react';
-import type { FrontendTelemetry } from '../shared/frontend.tsx';
+import type { FrontendTelemetry } from '#src/shared/frontend.tsx';
 import type { FakeTelemetry } from './index.ts';
 
 export interface FakeFrontendTelemetry extends FrontendTelemetry, FakeTelemetry {}

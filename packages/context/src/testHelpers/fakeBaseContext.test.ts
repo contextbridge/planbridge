@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { buildInfo } from '../testFactories.ts';
+import { buildInfo } from '#src/testFactories.ts';
 import { fakeBaseContext } from './fakeBaseContext.ts';
 import { FakeFrontendBrowser } from './FakeFrontendBrowser.ts';
 import { fakeFrontendContext } from './fakeFrontendContext.ts';

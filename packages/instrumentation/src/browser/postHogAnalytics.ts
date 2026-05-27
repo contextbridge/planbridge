@@ -1,6 +1,6 @@
 import type { BuildInfo } from '@contextbridge/context';
 import posthog from 'posthog-js';
-import type { Analytics } from '../shared/index.ts';
+import type { Analytics } from '#src/shared/index.ts';
 import { createStableUrlRewriter } from './stableUrlRewriter.ts';
 
 export interface CreatePostHogBrowserAnalyticsOptions {

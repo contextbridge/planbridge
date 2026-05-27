@@ -2,8 +2,8 @@ import type { BuildInfo } from '@contextbridge/context';
 import * as Sentry from '@sentry/react';
 import type { LogEvent } from 'pino';
 import type { ComponentType, PropsWithChildren, ReactElement } from 'react';
-import type { BrowserPinoTransmit, FrontendTelemetry } from '../shared/frontend.tsx';
-import type { TelemetryUser } from '../shared/index.ts';
+import type { BrowserPinoTransmit, FrontendTelemetry } from '#src/shared/frontend.tsx';
+import type { TelemetryUser } from '#src/shared/index.ts';
 
 export interface CreateSentryBrowserTelemetryOptions {
   readonly buildInfo: BuildInfo;

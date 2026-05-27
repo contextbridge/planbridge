@@ -1,4 +1,4 @@
-import type { Analytics, Telemetry, TelemetryUser } from '../shared/index.ts';
+import type { Analytics, Telemetry, TelemetryUser } from '#src/shared/index.ts';
 
 export interface RecordedCapture {
   readonly event: string;

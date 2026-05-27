@@ -1,6 +1,6 @@
 import type { BuildInfo } from '@contextbridge/context';
-import { type FrontendTelemetry, createNoopFrontendTelemetry } from '../shared/frontend.tsx';
-import { type Analytics, createNoopAnalytics } from '../shared/index.ts';
+import { type FrontendTelemetry, createNoopFrontendTelemetry } from '#src/shared/frontend.tsx';
+import { type Analytics, createNoopAnalytics } from '#src/shared/index.ts';
 import { createPostHogBrowserAnalytics } from './postHogAnalytics.ts';
 import { createSentryBrowserTelemetry } from './sentryTelemetry.tsx';
 

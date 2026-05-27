@@ -1,4 +1,4 @@
-import type { BeforeUnloadGuardOptions, FrontendBrowser, TimeoutCancel } from '../FrontendBrowserImpl.ts';
+import type { BeforeUnloadGuardOptions, FrontendBrowser, TimeoutCancel } from '#src/FrontendBrowserImpl.ts';
 
 export interface ScheduledFakeTimeout {
   readonly id: number;
