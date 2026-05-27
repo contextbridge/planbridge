@@ -32,5 +32,10 @@ updates:
     ignore:
       - dependency-name: "@types/bun"
     groups:
+      # drizzle-orm and drizzle-kit must stay in lockstep on the same beta version.
+      # Once Drizzle 1.x is released from beta, we can remove this group.
+      drizzle:
+        patterns: ["drizzle-orm", "drizzle-kit"]
       npm-minor-patch:
         update-types: ["minor", "patch"]
+        exclude-patterns: ["drizzle-orm", "drizzle-kit"]
