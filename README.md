@@ -49,6 +49,16 @@ Using something else (Cursor, Aider, opencode, Gemini CLI, Aether)? Any agent th
 
 Your plan content stays on your machine. No remote backend, no account, no API keys. The CLI sends anonymous product analytics and crash reports unless you opt out with `DO_NOT_TRACK=1` or `CONTEXTBRIDGE_TELEMETRY_DISABLED=1`. Details: [Privacy & Telemetry](https://plan.contextbridge.ai/privacy/).
 
+## Verify what you're running
+
+PlanBridge is open source (this repo, MIT), and GitHub Actions builds the released binaries straight from it. Every release archive comes with [GitHub build provenance](https://docs.github.com/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds): a Sigstore-signed attestation that ties the archive back to the commit and CI workflow that built it, recorded in a public transparency log. Verify a download with:
+
+```sh
+gh attestation verify contextbridge_<version>_darwin_arm64.tar.gz --repo contextbridge/planbridge
+```
+
+macOS binaries are signed and Apple-notarized on top of that.
+
 ## Documentation
 
 - [Quickstart](https://plan.contextbridge.ai/quickstart/)
