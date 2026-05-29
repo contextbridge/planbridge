@@ -1,6 +1,6 @@
 ---
-title: Open arbitrary content
-description: Ask your coding agent to open any markdown file in the PlanBridge browser UI for human annotation.
+title: Precision feedback on a file
+description: Ask your coding agent to open any markdown file in the PlanBridge browser UI for inline annotation.
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
@@ -17,16 +17,17 @@ import { Code } from 'astro-expressive-code/components';
 
 The file opens in your browser for inline annotation. Your comments come back to the agent on stdout.
 
-This is the manual sibling to the automatic hook flow. Hooks fire when your agent finishes planning. The `open` and `last` skills fire whenever you ask for them.
+This is the on-demand sibling to the automatic [plan-mode hook](/usage/plan-mode/). The hook fires when your agent finishes planning. `planbridge-open` fires whenever you ask for it.
 
 ## When to use it
 
 - You want inline comments on a design doc, RFC, or spec.
-- You want to mark up the long answer your agent just wrote.
-- Your agent uses a workflow that bypasses plan mode. For example, the [obra/superpowers](https://github.com/obra/superpowers) plugin never enters Claude Code's plan mode. However, you can still use PlanBridge with it. See the [Superpowers recipe](/recipes/superpowers/) page for details.
+- Your agent uses a workflow that bypasses plan mode. For example, the [obra/superpowers](https://github.com/obra/superpowers) plugin never enters Claude Code's plan mode. You can still use PlanBridge with it. See the [Superpowers recipe](/recipes/superpowers/) for details.
 - You want to redirect the agent before it starts work, and the relevant context lives in a file rather than in plan mode.
 
-## Agent skills
+To mark up the answer your agent just wrote instead of a file on disk, use [Annotate the last message](/usage/last/).
+
+## Agent skill
 
 Use `planbridge-open` for files:
 
@@ -36,17 +37,6 @@ Use `planbridge-open` for files:
   </TabItem>
   <TabItem label="Codex CLI">
     <Code code="$planbridge-open path/to/file.md" lang="text" />
-  </TabItem>
-</Tabs>
-
-Use `planbridge-last` for the agent's previous message:
-
-<Tabs syncKey="harness">
-  <TabItem label="Claude Code">
-    <Code code="/planbridge-last" lang="text" />
-  </TabItem>
-  <TabItem label="Codex CLI">
-    <Code code="$planbridge-last" lang="text" />
   </TabItem>
 </Tabs>
 
@@ -63,13 +53,13 @@ You can also describe the file in plain language and your agent resolves it:
 
 <Tabs syncKey="harness">
   <TabItem label="Claude Code">
-    The `planbridge-open` and `planbridge-last` skills ship with the `planbridge@contextbridge` Claude plugin.
+    The `planbridge-open` skill ships with the `planbridge@contextbridge` Claude plugin.
 
-    Claude Code may display plugin skills as `/planbridge:planbridge-open` and `/planbridge:planbridge-last`. Use those forms if they appear in your slash-command picker.
+    Claude Code may display plugin skills as `/planbridge:planbridge-open`. Use that form if it appears in your slash-command picker.
 
   </TabItem>
   <TabItem label="Codex CLI">
-    `contextbridge install codex` writes both skills to `~/.agents/skills/`.
+    `contextbridge install codex` writes the skill to `~/.agents/skills/`.
   </TabItem>
 </Tabs>
 

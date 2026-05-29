@@ -1,0 +1,61 @@
+---
+title: Annotate the last message
+description: Open the agent's most recent message in the PlanBridge browser UI to mark it up inline.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-last" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-last" lang="text" />
+  </TabItem>
+</Tabs>
+
+The agent pipes its previous message verbatim into PlanBridge, which opens it in your browser for inline annotation. Your comments come back to the agent on stdout.
+
+Reach for this when the thing you want to mark up is the answer your agent just wrote, not a file on disk. To annotate a saved file instead, use [Precision feedback on a file](/usage/open/).
+
+## When to use it
+
+- Your agent wrote a long spec, architecture explanation, migration plan, or brainstorming section in chat and you want targeted line-level feedback.
+- You are in a workflow that presents work in the terminal rather than in plan mode. The [obra/superpowers](https://github.com/obra/superpowers) brainstorming skill is one example. See the [Superpowers recipe](/recipes/superpowers/).
+
+## Run it before you say anything
+
+`planbridge-last` targets your agent's most recent message. A preamble like "Sure, opening that now" becomes the new last message and gets annotated instead. So trigger it as the first thing in your turn, before the agent replies with anything else.
+
+## Agent skill
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    The `planbridge-last` skill ships with the `planbridge@contextbridge` Claude plugin.
+
+    Claude Code may display plugin skills as `/planbridge:planbridge-last`. Use that form if it appears in your slash-command picker.
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    `contextbridge install codex` writes the skill to `~/.agents/skills/`.
+  </TabItem>
+</Tabs>
+
+## What you see
+
+1. Your agent copies its previous message and pipes it to `contextbridge open` via stdin.
+2. PlanBridge opens that text in your browser.
+3. You leave inline annotations and general comments, then submit or approve.
+4. PlanBridge writes a markdown summary of your feedback to stdout.
+5. Your agent reads the summary and responds conversationally.
+
+The output is feedback for discussion, not a directive. The agent treats your comments the way it would treat a colleague's review notes, not a checklist to silently execute.
+
+## Direct CLI use
+
+The skill is a thin wrapper around `contextbridge open` reading from stdin:
+
+<Code code='printf "%s" "$message" | contextbridge open' lang="sh" title="terminal" />
+
+Full flags and exit codes live in the [CLI reference](/cli/open/).

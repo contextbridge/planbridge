@@ -1,0 +1,78 @@
+---
+title: Spec Kitty
+description: Pair PlanBridge with Spec Kitty to review the spec, plan, and tasks before implementation.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+[Spec Kitty](https://github.com/Priivacy-ai/spec-kitty) is a spec-driven CLI that adds a Kanban dashboard, git worktrees, and lifecycle lanes on top of a spec → plan → tasks → review → merge loop. After `spec-kitty init`, you drive it with `/spec-kitty.*` slash commands: `/spec-kitty.specify` writes a mission spec, `/spec-kitty.plan` a plan, `/spec-kitty.tasks` the work packages.
+
+Spec Kitty writes mission artifacts under `kitty-specs/<feature>/`:
+
+- `kitty-specs/<feature>/spec.md` after `/spec-kitty.specify`
+- `kitty-specs/<feature>/plan.md` after `/spec-kitty.plan`
+- `kitty-specs/<feature>/tasks.md` after `/spec-kitty.tasks`
+
+Spec Kitty already has a `/spec-kitty.review` lane for completed code. PlanBridge complements it upstream, on the spec, plan, and task markdown before any code is written.
+
+## Manual
+
+After `/spec-kitty.specify`, open the new spec for review:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+</Tabs>
+
+The agent resolves the path under `kitty-specs/<feature>/` and revises from your inline comments. Do the same after `/spec-kitty.plan` and `/spec-kitty.tasks`:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      code={`/planbridge-open kitty-specs/my-feature/plan.md
+/planbridge-open kitty-specs/my-feature/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      code={`$planbridge-open kitty-specs/my-feature/plan.md
+$planbridge-open kitty-specs/my-feature/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+</Tabs>
+
+## Automatic
+
+To review each artifact without asking, append a snippet to your global agent instructions:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      lang="bash"
+      code={`echo '
+## Spec Kitty + PlanBridge
+
+After running \`/spec-kitty.specify\`, \`/spec-kitty.plan\`, or \`/spec-kitty.tasks\`, run \`/planbridge-open\` on the file it just wrote (under \`kitty-specs/<feature>/\`) instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before moving to the next phase.
+' >> ~/.claude/CLAUDE.md`}
+/>
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      lang="bash"
+      code={`echo '
+## Spec Kitty + PlanBridge
+
+After running \`/spec-kitty.specify\`, \`/spec-kitty.plan\`, or \`/spec-kitty.tasks\`, run \`$planbridge-open\` on the file it just wrote (under \`kitty-specs/<feature>/\`) instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before moving to the next phase.
+' >> ~/.codex/AGENTS.md`}
+/>
+
+  </TabItem>
+</Tabs>

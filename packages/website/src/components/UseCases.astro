@@ -1,0 +1,115 @@
+---
+import { Icon } from 'astro-icon/components';
+import { Image } from 'astro:assets';
+import claudeCodeBadge from '../assets/brands/claude-code.svg';
+import codexCliBadge from '../assets/brands/codex-cli.png';
+
+const useCases = [
+  {
+    icon: 'lucide:clipboard-check',
+    title: 'Plan-mode collaboration',
+    body: 'PlanBridge opens automatically when your agent finishes a plan in Claude Code or Codex. Comment, then approve or send it back.',
+    badge: 'Plan mode · Automatic',
+    badgeNote: 'Using standard hooks',
+    commands: null,
+    href: '/usage/plan-mode/',
+  },
+  {
+    icon: 'lucide:file-text',
+    title: 'Precision feedback on a file',
+    body: 'Annotate any existing plan, spec, or doc on demand. Your comments come back to the agent.',
+    badge: null,
+    badgeNote: null,
+    commands: [
+      { agent: 'Claude Code', command: '/planbridge-open' },
+      { agent: 'Codex', command: '$planbridge-open' },
+    ],
+    href: '/usage/open/',
+  },
+  {
+    icon: 'lucide:message-square',
+    title: 'Annotate the last message',
+    body: 'Mark up the long answer your agent just wrote, then send your notes back inline.',
+    badge: null,
+    badgeNote: null,
+    commands: [
+      { agent: 'Claude Code', command: '/planbridge-last' },
+      { agent: 'Codex', command: '$planbridge-last' },
+    ],
+    href: '/usage/last/',
+  },
+];
+---
+
+<section class="border-t border-foreground bg-background px-8 py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl">
+    <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">Use cases</p>
+    <h2 class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]">
+      Three ways to use PlanBridge.
+    </h2>
+
+    <ol class="mt-16 grid list-none grid-cols-1 gap-px bg-foreground pl-0 md:grid-cols-3">
+      {
+        useCases.map((useCase, index) => (
+          <li class="flex list-none flex-col bg-background p-8">
+            <span class="font-mono text-2xl font-bold text-foreground">{String(index + 1).padStart(2, '0')}</span>
+            <div class="mt-6 flex items-center gap-4">
+              <Icon name={useCase.icon} class="h-8 w-8 flex-shrink-0 text-foreground" aria-hidden="true" />
+              <h3 class="font-mono text-2xl font-bold leading-tight text-foreground">{useCase.title}</h3>
+            </div>
+            <p class="mt-4 font-sans text-base leading-relaxed text-foreground">{useCase.body}</p>
+
+            <div class="mt-auto pt-8">
+              {useCase.commands ? (
+                <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 border border-foreground p-4">
+                  {useCase.commands.map((entry) => (
+                    <>
+                      <dt class="flex items-center gap-2 self-center font-mono text-xs font-bold uppercase tracking-[0.12em] text-foreground">
+                        {entry.agent === 'Claude Code' ? (
+                          <Image
+                            src={claudeCodeBadge}
+                            alt=""
+                            aria-hidden="true"
+                            width={16}
+                            height={16}
+                            layout="none"
+                            class="h-4 w-4 flex-shrink-0"
+                          />
+                        ) : (
+                          <Image
+                            src={codexCliBadge}
+                            alt=""
+                            aria-hidden="true"
+                            width={16}
+                            height={16}
+                            class="h-4 w-4 flex-shrink-0 object-contain"
+                          />
+                        )}
+                        {entry.agent}
+                      </dt>
+                      <dd class="m-0 self-center font-mono text-sm font-bold text-foreground">
+                        <code class="font-mono">{entry.command}</code>
+                      </dd>
+                    </>
+                  ))}
+                </dl>
+              ) : (
+                <div class="inline-flex flex-col gap-1 border border-foreground px-4 py-3 font-mono text-foreground">
+                  <span class="text-sm font-bold uppercase tracking-[0.12em]">{useCase.badge}</span>
+                  <span class="text-xs">{useCase.badgeNote}</span>
+                </div>
+              )}
+
+              <a
+                href={useCase.href}
+                class="mt-6 inline-block font-sans text-base text-foreground underline underline-offset-4 hover:no-underline"
+              >
+                Read the docs &rarr;
+              </a>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

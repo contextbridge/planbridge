@@ -2,19 +2,19 @@
 const valueProps = [
   {
     title: 'Agent UX is optimized for chat, not review',
-    body: 'Plans run hundreds of lines. Scrolling up and down to read and comment is tedious. The terminal does not anchor feedback to specific lines.',
+    body: 'A plan, a spec, or an agent message can run hundreds of lines. Scrolling up and down to read it is tedious, and the terminal gives you no way to comment on a specific line.',
   },
   {
-    title: 'One text box for all your feedback',
-    body: 'Coding agents give you a single input for every revision. PlanBridge lets you attach comments to the exact lines that need work.',
+    title: 'One text box cannot give precise feedback',
+    body: 'A single input box is a blunt way to respond to a spec, plan, or long message. PlanBridge lets you add inline comments, the most precise direction you can give.',
   },
   {
-    title: 'Less refined plans get accepted because of friction',
-    body: 'When iterating hurts, you stop early. The plan that ships is the one you tolerated, not the one you actually wanted.',
+    title: 'Less refined work gets accepted because of friction',
+    body: 'When iterating is tedious and hard, you stop early. What gets generated reflects the specificity of your feedback or the lack of it: great code, or slop that needs rework.',
   },
   {
-    title: 'Settling for a plan costs you rework and tokens',
-    body: 'Every problem missed at plan time pays twice. Once on the wrong implementation, again on the code-review thrash to fix it.',
+    title: 'Imprecision upstream costs more to fix downstream',
+    body: 'Refining hundreds of lines of markdown is a great investment compared to cleaning up thousands of lines of code slop.',
   },
 ];
 ---
@@ -23,7 +23,7 @@ const valueProps = [
   <div class="mx-auto max-w-7xl">
     <p class="font-mono text-base font-bold uppercase tracking-[0.16em] text-foreground">Why it matters</p>
     <h2 class="mt-8 font-medium leading-[1.0] tracking-tight text-foreground text-[40px] sm:text-[64px] lg:text-[80px]">
-      The most expensive bugs are the ones you didn't catch at plan time.
+      Precision steering saves you from slop.
     </h2>
 
     <div class="mt-16 h-px w-full bg-foreground"></div>

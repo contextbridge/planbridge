@@ -1,18 +1,27 @@
 ---
 title: Usage
-description: Use PlanBridge through standard harness hooks, or ask any other agent to call it directly.
+description: "The three ways to use PlanBridge: automatic plan-mode collaboration, precision feedback on a file, and annotating the agent's last message."
 ---
 
-PlanBridge has two paths into the browser review UI.
+PlanBridge opens a local browser UI where you annotate markdown and the result flows back to your agent. There are three ways to get content into that UI.
 
-**As a harness hook.** Your AI coding agent calls `contextbridge` through its standard plugin or hook system at decision points, a human annotates in the browser, and the decision flows back to the agent. The [install script](/install/) adds those entries for any supported harness it detects.
+## Plan-mode collaboration
 
-**As a manual skill.** You ask your agent to open content in the browser outside the automatic hook flow:
+Your agent calls `contextbridge` through its standard plugin or hook system when it finishes a plan, and PlanBridge opens automatically. You annotate, then approve or send it back. The [install script](/install/) adds those entries for any supported harness it detects.
 
-- Use `/planbridge-open <path>` in Claude Code or `$planbridge-open <path>` in Codex CLI for markdown files.
-- Use `/planbridge-last` in Claude Code or `$planbridge-last` in Codex CLI for the agent's last message.
+See [Plan-mode collaboration](/usage/plan-mode/).
 
-See [Open arbitrary content](/usage/open/).
+## Precision feedback on a file
+
+Ask your agent to open an existing markdown file on demand: `/planbridge-open <path>` in Claude Code or `$planbridge-open <path>` in Codex CLI. Good for a design doc, RFC, or spec that never went through plan mode.
+
+See [Precision feedback on a file](/usage/open/).
+
+## Annotate the last message
+
+Mark up the long answer your agent just wrote: `/planbridge-last` in Claude Code or `$planbridge-last` in Codex CLI.
+
+See [Annotate the last message](/usage/last/).
 
 ## Supported harnesses
 

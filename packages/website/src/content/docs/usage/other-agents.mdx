@@ -26,6 +26,18 @@ The agent runs something like:
 
 Your browser opens to the review UI. You annotate or approve. The markdown summary lands on stdout for the agent to read.
 
+## Open a file or arbitrary content
+
+PlanBridge is not limited to plans. The same binary opens any markdown for review through `contextbridge open`, so you can give precise feedback on a file or on your agent's last message, not just at plan time.
+
+<Code code="contextbridge open path/to/spec.md" lang="sh" title="agent shell" />
+
+Or pipe content the agent already has in hand (a draft, a generated doc, its previous reply):
+
+<Code code='printf "%s" "$content" | contextbridge open' lang="sh" title="agent shell" />
+
+The response shape and exit codes below are identical for `plan` and `open`.
+
 ## Response shape
 
 The agent receives markdown on stdout. It opens with one of two headers:

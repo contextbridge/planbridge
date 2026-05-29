@@ -1,0 +1,80 @@
+---
+title: Agent OS
+description: Pair PlanBridge with Agent OS to review the product plan and shaped specs before coding.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+[Agent OS](https://github.com/buildermethods/agent-os) (by Builder Methods) is a system for injecting codebase standards and writing better specs for spec-driven development. You drive it with slash commands: `/plan-product` lays out the product, `/shape-spec` turns a feature into a spec.
+
+`/plan-product` writes committed markdown under `agent-os/product/`:
+
+- `agent-os/product/mission.md`
+- `agent-os/product/roadmap.md`
+- `agent-os/product/tech-stack.md`
+
+`/shape-spec` (run in plan mode) gathers requirements into a spec doc. Both phases are pause points for PlanBridge.
+
+## Manual
+
+After `/plan-product`, review the product docs:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      code={`/planbridge-open agent-os/product/mission.md
+/planbridge-open agent-os/product/roadmap.md`}
+      lang="text"
+    />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      code={`$planbridge-open agent-os/product/mission.md
+$planbridge-open agent-os/product/roadmap.md`}
+      lang="text"
+    />
+  </TabItem>
+</Tabs>
+
+After `/shape-spec`, review the spec it just wrote:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+</Tabs>
+
+The agent revises the spec from your inline comments before any code is written.
+
+## Automatic
+
+To review each artifact without asking, append a snippet to your global agent instructions:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      lang="bash"
+      code={`echo '
+## Agent OS + PlanBridge
+
+After \`/plan-product\` writes the product docs under \`agent-os/product/\`, or \`/shape-spec\` writes a spec, run \`/planbridge-open\` on the file instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before coding.
+' >> ~/.claude/CLAUDE.md`}
+/>
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      lang="bash"
+      code={`echo '
+## Agent OS + PlanBridge
+
+After \`/plan-product\` writes the product docs under \`agent-os/product/\`, or \`/shape-spec\` writes a spec, run \`$planbridge-open\` on the file instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before coding.
+' >> ~/.codex/AGENTS.md`}
+/>
+
+  </TabItem>
+</Tabs>
