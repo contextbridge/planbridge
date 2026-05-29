@@ -1,0 +1,82 @@
+---
+title: BMAD Method
+description: Pair PlanBridge with BMAD-METHOD to review the PRD, architecture, and stories before implementation.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD) ("Breakthrough Method for Agile AI-Driven Development") is a multi-agent framework with Analyst, PM, Architect, and Dev personas that take you from idea to implementation. Install it with `npx bmad-method install`.
+
+Its planning agents write markdown to `docs/` at your repo root, with a clean handoff at each phase:
+
+- `docs/prd.md` after the PM agent drafts the product requirements
+- `docs/architecture.md` after the Architect agent designs the system
+- `docs/stories/*.story.md` for the sharded implementation stories
+
+Each of those is a pause point: review it before the next agent picks up the work.
+
+## Manual
+
+After the PM agent writes the PRD, open it for review:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open docs/prd.md" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open docs/prd.md" lang="text" />
+  </TabItem>
+</Tabs>
+
+Comment inline, and BMAD revises the PRD before the Architect agent starts. Do the same for the architecture doc and each story:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      code={`/planbridge-open docs/architecture.md
+/planbridge-open docs/stories/0.1.story.md`}
+      lang="text"
+    />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      code={`$planbridge-open docs/architecture.md
+$planbridge-open docs/stories/0.1.story.md`}
+      lang="text"
+    />
+  </TabItem>
+</Tabs>
+
+## Automatic
+
+To review each planning doc without asking, append a snippet to your global agent instructions:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      lang="bash"
+      code={`echo '
+## BMAD + PlanBridge
+
+When a BMAD agent writes a planning doc under \`docs/\` (\`prd.md\`, \`architecture.md\`, a file in \`docs/stories/\`), run \`/planbridge-open\` on it instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before the next agent or phase begins.
+' >> ~/.claude/CLAUDE.md`}
+/>
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      lang="bash"
+      code={`echo '
+## BMAD + PlanBridge
+
+When a BMAD agent writes a planning doc under \`docs/\` (\`prd.md\`, \`architecture.md\`, a file in \`docs/stories/\`), run \`$planbridge-open\` on it instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before the next agent or phase begins.
+' >> ~/.codex/AGENTS.md`}
+/>
+
+  </TabItem>
+</Tabs>
+
+## Notes
+
+Activate BMAD's agents and workflows the way its [docs](https://docs.bmad-method.org/) describe; the exact agent and command names depend on your install and version. PlanBridge plugs in wherever a phase writes a markdown doc under `docs/`.

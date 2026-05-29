@@ -1,0 +1,88 @@
+---
+title: OpenSpec
+description: Pair PlanBridge with OpenSpec to review a change proposal before the agent implements it.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+[OpenSpec](https://github.com/Fission-AI/OpenSpec) is a spec-driven framework where each proposed change gets its own folder so you and the agent agree on the spec before any code is written. After `openspec init`, you drive it with `/opsx:*` slash commands: `/opsx:propose` creates the change, `/opsx:apply` implements it, `/opsx:archive` merges the spec deltas.
+
+`/opsx:propose <idea>` writes a change folder under `openspec/changes/<change-name>/`:
+
+```
+openspec/changes/<change-name>/
+├── proposal.md   # why and what is changing
+├── design.md     # technical approach
+├── tasks.md      # implementation checklist
+└── specs/        # delta specs
+```
+
+OpenSpec designed that folder to be reviewed before you implement. That is the pause point for PlanBridge.
+
+## Manual
+
+After `/opsx:propose`, open the proposal for inline review:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open openspec/changes/add-dark-mode/proposal.md" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open openspec/changes/add-dark-mode/proposal.md" lang="text" />
+  </TabItem>
+</Tabs>
+
+PlanBridge opens one markdown file at a time, so review the design and tasks the same way before you run `/opsx:apply`:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      code={`/planbridge-open openspec/changes/add-dark-mode/design.md
+/planbridge-open openspec/changes/add-dark-mode/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      code={`$planbridge-open openspec/changes/add-dark-mode/design.md
+$planbridge-open openspec/changes/add-dark-mode/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+</Tabs>
+
+The agent revises the change from your inline comments before it applies it.
+
+## Automatic
+
+To review every proposal without asking, append a snippet to your global agent instructions:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      lang="bash"
+      code={`echo '
+## OpenSpec + PlanBridge
+
+After \`/opsx:propose\` writes a change under \`openspec/changes/<name>/\`, run \`/planbridge-open\` on its \`proposal.md\` (then \`design.md\` and \`tasks.md\`) before \`/opsx:apply\`. Treat the returned annotations as my review feedback and revise the change before implementing.
+' >> ~/.claude/CLAUDE.md`}
+/>
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      lang="bash"
+      code={`echo '
+## OpenSpec + PlanBridge
+
+After \`/opsx:propose\` writes a change under \`openspec/changes/<name>/\`, run \`$planbridge-open\` on its \`proposal.md\` (then \`design.md\` and \`tasks.md\`) before \`/opsx:apply\`. Treat the returned annotations as my review feedback and revise the change before implementing.
+' >> ~/.codex/AGENTS.md`}
+/>
+
+  </TabItem>
+</Tabs>
+
+## Notes
+
+The `/opsx:*` commands are OpenSpec's current default workflow. If you upgraded from an older install, run `openspec update` to refresh the agent instructions and confirm the command set with your `/` autocomplete.
