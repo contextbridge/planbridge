@@ -1,0 +1,84 @@
+---
+title: Spec Kit
+description: Pair PlanBridge with GitHub's Spec Kit to review specs, plans, and tasks before any code is generated.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Code } from 'astro-expressive-code/components';
+
+[Spec Kit](https://github.com/github/spec-kit) is GitHub's spec-driven development toolkit. You drive it with `/speckit.*` slash commands inside your agent: `/speckit.specify` writes a spec, `/speckit.plan` a technical plan, `/speckit.tasks` a task list, and `/speckit.implement` builds it.
+
+Each phase writes a markdown artifact you should read before the agent moves to the next one. That is where PlanBridge fits: open the file, comment inline, and the agent revises before generating the next artifact.
+
+Spec Kit writes feature artifacts to `specs/<NNN-feature>/` at your repo root:
+
+- `specs/<NNN-feature>/spec.md` after `/speckit.specify`
+- `specs/<NNN-feature>/plan.md` after `/speckit.plan`
+- `specs/<NNN-feature>/tasks.md` after `/speckit.tasks`
+
+The `.specify/` directory holds templates and scripts, not the generated specs.
+
+## Manual
+
+The strongest pause point is right after `/speckit.specify`. Open the new spec for review:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code code="/planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code code="$planbridge-open the spec you just wrote" lang="text" />
+  </TabItem>
+</Tabs>
+
+Your agent resolves the path, opens it in PlanBridge, and revises the spec from your inline comments. Do the same after `/speckit.plan` and `/speckit.tasks`:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      code={`/planbridge-open specs/001-my-feature/plan.md
+/planbridge-open specs/001-my-feature/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      code={`$planbridge-open specs/001-my-feature/plan.md
+$planbridge-open specs/001-my-feature/tasks.md`}
+      lang="text"
+    />
+  </TabItem>
+</Tabs>
+
+## Automatic
+
+To review each artifact without asking, append a snippet to your global agent instructions:
+
+<Tabs syncKey="harness">
+  <TabItem label="Claude Code">
+    <Code
+      lang="bash"
+      code={`echo '
+## Spec Kit + PlanBridge
+
+After running \`/speckit.specify\`, \`/speckit.plan\`, or \`/speckit.tasks\`, run \`/planbridge-open\` on the file it just wrote (under \`specs/<feature>/\`) instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before moving to the next phase.
+' >> ~/.claude/CLAUDE.md`}
+/>
+
+  </TabItem>
+  <TabItem label="Codex CLI">
+    <Code
+      lang="bash"
+      code={`echo '
+## Spec Kit + PlanBridge
+
+After running \`$speckit-specify\`, \`$speckit-plan\`, or \`$speckit-tasks\`, run \`$planbridge-open\` on the file it just wrote (under \`specs/<feature>/\`) instead of asking me to review it as text. Treat the returned annotations as my review feedback and revise before moving to the next phase.
+' >> ~/.codex/AGENTS.md`}
+/>
+
+  </TabItem>
+</Tabs>
+
+## Notes
+
+Spec Kit's command names have shifted across releases, and Codex skills mode uses `$speckit-*` rather than `/speckit.*`. Run `specify integration list` or check your `/` autocomplete to confirm the exact names for your install.

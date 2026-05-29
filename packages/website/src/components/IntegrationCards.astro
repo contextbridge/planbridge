@@ -32,7 +32,10 @@ import InstallActions from './InstallActions.astro';
         />
         <div>
           <h3 class="font-mono text-2xl font-bold tracking-tight">Claude Code</h3>
-          <p class="mt-2 font-sans text-base">Claude plugin hook on ExitPlanMode.</p>
+          <p class="mt-2 font-sans text-base">
+            Plugin hook on ExitPlanMode, plus the <code class="font-mono">/planbridge-open</code> and{' '}
+            <code class="font-mono">/planbridge-last</code> skills.
+          </p>
         </div>
       </a>
       <a
@@ -50,7 +53,10 @@ import InstallActions from './InstallActions.astro';
         />
         <div>
           <h3 class="font-mono text-2xl font-bold tracking-tight">Codex</h3>
-          <p class="mt-2 font-sans text-base">Codex Stop hook entry.</p>
+          <p class="mt-2 font-sans text-base">
+            Stop hook entry, plus the <code class="font-mono">$planbridge-open</code> and{' '}
+            <code class="font-mono">$planbridge-last</code> skills.
+          </p>
         </div>
       </a>
     </div>
@@ -63,7 +69,13 @@ import InstallActions from './InstallActions.astro';
 
     <p class="mt-4 font-sans text-base text-foreground">
       <a href="/usage/open/" class="text-foreground underline underline-offset-4">
-        Open files or the agent's last message manually &rarr;
+        Give feedback on a file manually &rarr;
+      </a>
+    </p>
+
+    <p class="mt-4 font-sans text-base text-foreground">
+      <a href="/usage/last/" class="text-foreground underline underline-offset-4">
+        Annotate the agent's last message &rarr;
       </a>
     </p>
 

@@ -1,0 +1,36 @@
+---
+title: Plan-mode collaboration
+description: PlanBridge opens automatically when your agent finishes a plan, so you can annotate before any code is written.
+---
+
+import { Code } from 'astro-expressive-code/components';
+
+Once the PlanBridge hook is installed, your agent opens PlanBridge in your browser the moment it finishes planning. You annotate the plan, then approve it or send it back. No code is written until you do.
+
+This is the default way to use PlanBridge. It fires on the harness's normal plan-approval point, so it fits the workflow you already have.
+
+## What you see
+
+1. Put your agent in plan mode and type your prompt.
+2. When the plan is ready, PlanBridge opens in your browser.
+3. Select the lines that need work and comment inline. This is the time to redirect the agent before it starts.
+4. Approve the plan, or request changes. On approval the agent begins implementing. On changes the agent reworks the plan and re-presents it.
+
+Keep iterating until the plan is one you want, not one you tolerated.
+
+## Per-harness setup
+
+The hook is wired in by `contextbridge install`, which detects the harnesses on your machine.
+
+<Code code="contextbridge install" lang="sh" title="terminal" />
+
+Each harness hooks a different point:
+
+- **Claude Code** runs on `PermissionRequest:ExitPlanMode`. See [Claude Code](/usage/claude-code/) for install, the terminal prompt to ignore, and uninstall.
+- **Codex CLI** runs on the `Stop` hook and needs a one-time trust step. See [Codex CLI](/usage/codex/) for install and the trust walkthrough.
+
+For agents without a plugin or hook system, see [Other agents](/usage/other-agents/).
+
+## When plan mode does not fire
+
+Some workflows never enter plan mode. The [obra/superpowers](https://github.com/obra/superpowers) plugin, for example, presents design sections and spec files outside Claude Code's plan mode. For those, trigger PlanBridge yourself with [Precision feedback on a file](/usage/open/) or [Annotate the last message](/usage/last/). See the [Superpowers recipe](/recipes/superpowers/).

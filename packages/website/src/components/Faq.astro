@@ -4,7 +4,7 @@ const GITHUB_URL = 'https://github.com/contextbridge/planbridge';
 const faqs = [
   {
     question: 'How does PlanBridge work?',
-    answer: `PlanBridge opens your coding agent's plan as rendered markdown in a local browser. You select the lines that need work, comment inline, and the agent revises with your feedback before writing any code. See the <a href="/quickstart/" class="underline underline-offset-4">docs</a> or the <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">source on GitHub</a>.`,
+    answer: `PlanBridge opens markdown in a local browser where you highlight lines and comment, then your agent acts on your feedback. There are three ways it works. <strong>Plan-mode collaboration:</strong> when your agent finishes a plan, PlanBridge opens automatically in Claude Code or Codex. <strong>Precision feedback on a file:</strong> open any markdown file with <code class="font-mono">/planbridge-open</code> (Claude Code) or <code class="font-mono">$planbridge-open</code> (Codex). <strong>Annotate the last message:</strong> mark up your agent's last reply with <code class="font-mono">/planbridge-last</code> or <code class="font-mono">$planbridge-last</code>. See the <a href="/quickstart/" class="underline underline-offset-4">docs</a> or the <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer" class="underline underline-offset-4">source on GitHub</a>.`,
   },
   {
     question: 'What coding agents does this work with?',
@@ -14,7 +14,7 @@ const faqs = [
   {
     question: 'Can I open a file in PlanBridge without going through plan mode?',
     answer:
-      'Yes. The <code class="font-mono">planbridge-open</code> skill opens any markdown file in the PlanBridge UI on demand. Use <code class="font-mono">planbridge-last</code> to annotate the agent&apos;s previous message. See <a href="/usage/open/" class="underline underline-offset-4">Open arbitrary content</a>.',
+      'Yes. The <code class="font-mono">planbridge-open</code> skill opens any markdown file in the PlanBridge UI on demand (<a href="/usage/open/" class="underline underline-offset-4">Precision feedback on a file</a>). Use <code class="font-mono">planbridge-last</code> to annotate the agent&apos;s previous message (<a href="/usage/last/" class="underline underline-offset-4">Annotate the last message</a>).',
   },
   {
     question: 'Does PlanBridge take over my agent workflow?',
@@ -32,7 +32,7 @@ const faqs = [
   {
     question: 'Why did you build this?',
     answer:
-      "Coding agents are optimized for chat, not review. They give you one text input for every revision, so you can't anchor comments to specific lines. Iteration friction wears you down and plans ship less refined than they could be. PlanBridge gives plans the same review experience developers expect from code review.",
+      "Coding agents are optimized for chat, not review. They give you one text input for every revision, so you can't anchor comments to specific lines. That friction wears you down, and what ships is less refined than it could be. PlanBridge gives anything your agent writes the same review experience developers expect from code review, whether it's a plan, a file you open, or the agent's last message.",
   },
   {
     question: 'Where can I request features?',

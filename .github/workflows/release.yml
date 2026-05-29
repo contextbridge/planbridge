@@ -26,6 +26,7 @@ jobs:
       contents: write
       id-token: write
       packages: read
+      attestations: write # publish Sigstore build-provenance attestations for release artifacts
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -85,6 +86,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ steps.tap-token.outputs.token }}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
+
+      # Build provenance: a Sigstore-signed attestation binding every release
+      # archive (each file in checksums.txt) to this repo, commit, and workflow
+      # run, recorded in a public transparency log. Attestations are keyed by
+      # artifact digest, so they also cover the byte-identical copies served from
+      # downloads.contextbridge.ai and the Homebrew cask. Verify a download with:
+      #   gh attestation verify <archive> --repo contextbridge/planbridge
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-checksums: dist/checksums.txt
 
       - name: Mirror release to channel alias
         shell: bash

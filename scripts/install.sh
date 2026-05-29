@@ -2,6 +2,9 @@
 #
 # install.sh — ContextBridge CLI installer
 #
+# Source Code:
+#   https://github.com/contextbridge/planbridge
+#
 # Usage:
 #   /bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)"
 #   /bin/sh -c "$(curl -fsSL https://downloads.contextbridge.ai/cli/install.sh)" -- --channel alpha
@@ -14,6 +17,16 @@
 # detected AI coding harnesses. The documented /bin/sh -c "$(curl ...)" form
 # preserves terminal stdin for prompts. Skip with --no-configure /
 # CB_SKIP_CONFIGURE=1.
+#
+# Privacy: PlanBridge runs locally. Your plan content stays on your machine,
+# with no remote backend, account, or API keys. It sends anonymous product
+# analytics and crash reports only; turn that off with DO_NOT_TRACK=1 or
+# CONTEXTBRIDGE_TELEMETRY_DISABLED=1. See https://plan.contextbridge.ai/privacy/.
+#
+# To verify the binary: macOS release builds are signed and Apple-notarized, and
+# every release archive carries GitHub build provenance. Check it with
+# `gh attestation verify` (the README's "Verify what you're running" section has
+# the command).
 #
 # Env vars (CLI flags take precedence):
 #   CB_CHANNEL          stable (default) | alpha

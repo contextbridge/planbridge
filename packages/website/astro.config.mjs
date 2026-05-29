@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, fontProviders } from 'astro/config';
 import expressiveCode from 'astro-expressive-code';
 import icon from 'astro-icon';
+import rehypeExternalLinks from 'rehype-external-links';
 import starlightLlmsTxt from 'starlight-llms-txt';
 
 export default defineConfig({
@@ -18,6 +19,9 @@ export default defineConfig({
   image: {
     responsiveStyles: true,
     layout: 'constrained',
+  },
+  markdown: {
+    rehypePlugins: [[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]],
   },
   fonts: [
     {
@@ -147,13 +151,22 @@ export default defineConfig({
             { label: 'Overview', slug: 'usage' },
             { label: 'Claude Code', slug: 'usage/claude-code' },
             { label: 'Codex CLI', slug: 'usage/codex' },
-            { label: 'Open arbitrary content', slug: 'usage/open' },
+            { label: 'Plan-mode collaboration', slug: 'usage/plan-mode' },
+            { label: 'Precision feedback on a file', slug: 'usage/open' },
+            { label: 'Annotate last message', slug: 'usage/last' },
             { label: 'Other agents', slug: 'usage/other-agents' },
           ],
         },
         {
           label: 'Recipes',
-          items: [{ label: 'Superpowers', slug: 'recipes/superpowers' }],
+          items: [
+            { label: 'Superpowers', slug: 'recipes/superpowers' },
+            { label: 'Spec Kit', slug: 'recipes/spec-kit' },
+            { label: 'Spec Kitty', slug: 'recipes/spec-kitty' },
+            { label: 'OpenSpec', slug: 'recipes/openspec' },
+            { label: 'BMAD Method', slug: 'recipes/bmad' },
+            { label: 'Agent OS', slug: 'recipes/agent-os' },
+          ],
         },
         {
           label: 'About',

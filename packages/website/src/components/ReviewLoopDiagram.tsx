@@ -1,9 +1,121 @@
-import { AppWindow, CheckCircle2, Code2, FileText, MessageSquare, TerminalSquare } from 'lucide-react';
+import { AppWindow, CheckCircle2, Code2, FileText, type LucideIcon, MessageSquare, TerminalSquare } from 'lucide-react';
 import { type Transition, motion, useInView, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 const DESKTOP_LOOP_HEIGHT = 60;
 const MOBILE_LOOP_INSET = 12;
+
+export type FlowVariantId = 'plan' | 'file' | 'last';
+
+interface NodeConfig {
+  icon: LucideIcon;
+  heading: string;
+  chip: string[];
+  chipMono?: boolean;
+  description: string;
+}
+
+export interface FlowVariant {
+  id: FlowVariantId;
+  tabLabel: string;
+  input: NodeConfig;
+  pill: { icon: LucideIcon; label: string };
+  output: NodeConfig;
+}
+
+export const flowVariants: FlowVariant[] = [
+  {
+    id: 'plan',
+    tabLabel: 'Plan-mode collaboration',
+    input: { icon: TerminalSquare, heading: 'Coding Agent', chip: ['Plan mode'], description: 'Generates plan' },
+    pill: { icon: FileText, label: 'Plan' },
+    output: { icon: Code2, heading: 'Coding Agent', chip: ['Accept edits'], description: 'Implements plan' },
+  },
+  {
+    id: 'file',
+    tabLabel: 'Precision feedback on a file',
+    input: {
+      icon: FileText,
+      heading: 'You',
+      chip: ['/planbridge-open', '$planbridge-open'],
+      chipMono: true,
+      description: 'Open a file',
+    },
+    pill: { icon: FileText, label: 'File' },
+    output: { icon: Code2, heading: 'Coding Agent', chip: ['Applies notes'], description: 'Revises the file' },
+  },
+  {
+    id: 'last',
+    tabLabel: 'Annotate the last message',
+    input: {
+      icon: MessageSquare,
+      heading: 'Coding Agent',
+      chip: ['/planbridge-last', '$planbridge-last'],
+      chipMono: true,
+      description: 'Wrote a reply',
+    },
+    pill: { icon: MessageSquare, label: 'Message' },
+    output: { icon: Code2, heading: 'Coding Agent', chip: ['Revises'], description: 'Revises the reply' },
+  },
+];
+
+export function UseCaseFlows() {
+  const [activeId, setActiveId] = useState<FlowVariantId>('plan');
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const active = flowVariants.find((v) => v.id === activeId);
+
+  const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const nextIndex = (index + direction + flowVariants.length) % flowVariants.length;
+    const nextVariant = flowVariants[nextIndex];
+    if (!nextVariant) return;
+    setActiveId(nextVariant.id);
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  return (
+    <div>
+      <div
+        role="tablist"
+        aria-label="PlanBridge use cases"
+        className="flex flex-wrap gap-px bg-foreground border border-foreground"
+      >
+        {flowVariants.map((variant, index) => {
+          const selected = variant.id === activeId;
+          return (
+            <button
+              key={variant.id}
+              ref={(el) => {
+                tabRefs.current[index] = el;
+              }}
+              role="tab"
+              type="button"
+              id={`flow-tab-${variant.id}`}
+              aria-selected={selected}
+              aria-controls={`flow-panel-${variant.id}`}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setActiveId(variant.id)}
+              onKeyDown={(event) => onKeyDown(event, index)}
+              className={`flex-1 whitespace-nowrap px-5 py-3 font-mono text-sm font-bold uppercase tracking-[0.12em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground ${
+                selected ? 'bg-foreground text-background' : 'bg-background text-foreground hover:bg-muted'
+              }`}
+            >
+              {variant.tabLabel}
+            </button>
+          );
+        })}
+      </div>
+
+      {active && (
+        <div role="tabpanel" id={`flow-panel-${active.id}`} aria-labelledby={`flow-tab-${active.id}`} className="mt-px">
+          <ReviewLoopDiagram key={active.id} variant={active} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface Box {
   cx: number;
@@ -32,16 +144,16 @@ interface MobileLayout {
   midY: number;
 }
 
-export function ReviewLoopDiagram() {
+export function ReviewLoopDiagram({ variant }: { variant: FlowVariant }) {
   return (
     <div className="w-full max-w-full mx-auto border border-foreground bg-background p-8 md:p-16 overflow-hidden">
-      <DesktopDiagram />
-      <MobileDiagram />
+      <DesktopDiagram variant={variant} />
+      <MobileDiagram variant={variant} />
     </div>
   );
 }
 
-function DesktopDiagram() {
+function DesktopDiagram({ variant }: { variant: FlowVariant }) {
   const desktopRef = useRef<HTMLDivElement>(null);
   const box1Ref = useRef<HTMLDivElement>(null);
   const box2Ref = useRef<HTMLDivElement>(null);
@@ -178,7 +290,7 @@ function DesktopDiagram() {
           animate={{ opacity: target }}
           transition={fade(0.5)}
         >
-          <PlanPill />
+          <InputPill icon={variant.pill.icon} label={variant.pill.label} />
         </motion.div>
       )}
 
@@ -220,8 +332,8 @@ function DesktopDiagram() {
             ref={box1Ref}
             className="w-full max-w-[240px] bg-background border border-foreground p-8 text-center flex flex-col items-center gap-4"
           >
-            <CodingAgentIcon size="desktop" />
-            <CodingAgentBody mode="plan" size="desktop" />
+            <NodeIcon icon={variant.input.icon} />
+            <NodeBody node={variant.input} />
           </div>
         </div>
 
@@ -230,8 +342,8 @@ function DesktopDiagram() {
             ref={box2Ref}
             className="w-full max-w-[240px] bg-foreground text-background border border-foreground p-8 text-center flex flex-col items-center gap-4"
           >
-            <PlanBridgeIcon size="desktop" />
-            <PlanBridgeBody size="desktop" />
+            <PlanBridgeIcon />
+            <PlanBridgeBody />
           </div>
         </div>
 
@@ -240,8 +352,8 @@ function DesktopDiagram() {
             ref={box3Ref}
             className="w-full max-w-[240px] bg-background border border-foreground p-8 text-center flex flex-col items-center gap-4"
           >
-            <CodingAgentIcon size="desktop" implement />
-            <CodingAgentBody mode="accept" size="desktop" />
+            <NodeIcon icon={variant.output.icon} />
+            <NodeBody node={variant.output} />
           </div>
         </div>
       </div>
@@ -249,7 +361,7 @@ function DesktopDiagram() {
   );
 }
 
-function MobileDiagram() {
+function MobileDiagram({ variant }: { variant: FlowVariant }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const b1Ref = useRef<HTMLDivElement>(null);
   const b2Ref = useRef<HTMLDivElement>(null);
@@ -388,7 +500,7 @@ function MobileDiagram() {
           animate={{ opacity: target }}
           transition={fade(0.4)}
         >
-          <PlanPill />
+          <InputPill icon={variant.pill.icon} label={variant.pill.label} />
         </motion.div>
       )}
 
@@ -429,24 +541,24 @@ function MobileDiagram() {
           ref={b1Ref}
           className="bg-background border border-foreground p-6 flex flex-col items-center text-center gap-4"
         >
-          <CodingAgentIcon size="mobile" />
-          <CodingAgentBody mode="plan" size="mobile" />
+          <NodeIcon icon={variant.input.icon} />
+          <NodeBody node={variant.input} />
         </div>
 
         <div
           ref={b2Ref}
           className="bg-foreground text-background border border-foreground p-6 flex flex-col items-center text-center gap-4"
         >
-          <PlanBridgeIcon size="mobile" />
-          <PlanBridgeBody size="mobile" />
+          <PlanBridgeIcon />
+          <PlanBridgeBody />
         </div>
 
         <div
           ref={b3Ref}
           className="bg-background border border-foreground p-6 flex flex-col items-center text-center gap-4"
         >
-          <CodingAgentIcon size="mobile" implement />
-          <CodingAgentBody mode="accept" size="mobile" />
+          <NodeIcon icon={variant.output.icon} />
+          <NodeBody node={variant.output} />
         </div>
       </div>
     </div>
@@ -492,40 +604,51 @@ function fadeTrans(reduce: boolean | null) {
 
 // --- Shared visual atoms ---
 
-function CodingAgentIcon({ size, implement }: { size: 'desktop' | 'mobile'; implement?: boolean }) {
-  const iconSize = size === 'desktop' ? 'w-8 h-8' : 'w-6 h-6';
-  const Icon = implement ? Code2 : TerminalSquare;
+function NodeIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <div className="p-2 border border-foreground text-foreground flex-shrink-0">
-      <Icon className={iconSize} />
+      <Icon className="w-8 h-8 md:w-6 md:h-6" />
     </div>
   );
 }
 
-function CodingAgentBody({ mode }: { mode: 'plan' | 'accept'; size: 'desktop' | 'mobile' }) {
-  const label = mode === 'plan' ? 'Plan mode' : 'Accept Edits';
-  const description = mode === 'plan' ? 'Generates plan' : 'Implements plan';
+function NodeBody({ node }: { node: NodeConfig }) {
   return (
     <div>
-      <h3 className="font-mono font-bold text-foreground text-base uppercase tracking-tight">Coding Agent</h3>
+      <h3 className="font-mono font-bold text-foreground text-base uppercase tracking-tight">{node.heading}</h3>
       <div className="mt-4 flex justify-center">
-        <ModeChip>{label}</ModeChip>
+        <NodeChip lines={node.chip} mono={node.chipMono} />
       </div>
-      <p className="text-base text-foreground mt-4 font-sans">{description}</p>
+      <p className="text-base text-foreground mt-4 font-sans">{node.description}</p>
     </div>
   );
 }
 
-function PlanBridgeIcon({ size }: { size: 'desktop' | 'mobile' }) {
-  const iconSize = size === 'desktop' ? 'w-8 h-8' : 'w-6 h-6';
+function NodeChip({ lines, mono }: { lines: string[]; mono?: boolean }) {
+  return (
+    <span
+      className={`inline-flex flex-col items-center border border-foreground px-2 py-2 font-mono text-foreground ${
+        mono ? 'text-sm gap-0.5' : 'text-base uppercase tracking-[0.16em]'
+      }`}
+    >
+      {lines.map((line) => (
+        <span key={line} className="whitespace-nowrap">
+          {line}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function PlanBridgeIcon() {
   return (
     <div className="p-2 border border-background text-background flex-shrink-0">
-      <AppWindow className={iconSize} />
+      <AppWindow className="w-8 h-8 md:w-6 md:h-6" />
     </div>
   );
 }
 
-function PlanBridgeBody({ size: _size }: { size: 'desktop' | 'mobile' }) {
+function PlanBridgeBody() {
   return (
     <div>
       <h3 className="font-mono font-bold text-background text-base uppercase tracking-tight">PlanBridge</h3>
@@ -534,19 +657,11 @@ function PlanBridgeBody({ size: _size }: { size: 'desktop' | 'mobile' }) {
   );
 }
 
-function ModeChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center border border-foreground px-2 py-2 font-mono text-base uppercase tracking-[0.16em] text-foreground">
-      {children}
-    </span>
-  );
-}
-
-function PlanPill() {
+function InputPill({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <div className="bg-background px-4 py-2 border border-foreground flex items-center gap-2 text-foreground text-base font-mono font-bold uppercase tracking-tight">
-      <FileText className="w-4 h-4" />
-      Plan
+      <Icon className="w-4 h-4" />
+      {label}
     </div>
   );
 }
@@ -561,18 +676,14 @@ function ApprovePill() {
 }
 
 function RevisePill({ compact }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <div className="bg-background px-4 py-2 border border-foreground flex items-center gap-2 text-foreground text-base font-mono font-bold uppercase tracking-tight whitespace-nowrap">
-        <MessageSquare className="w-4 h-4" />
-        Revise
-      </div>
-    );
-  }
   return (
-    <div className="bg-background px-6 py-2 border border-foreground flex items-center gap-2 text-foreground text-base font-mono font-bold uppercase tracking-tight">
+    <div
+      className={`bg-background py-2 border border-foreground flex items-center gap-2 text-foreground text-base font-mono font-bold uppercase tracking-tight ${
+        compact ? 'px-4 whitespace-nowrap' : 'px-6'
+      }`}
+    >
       <MessageSquare className="w-4 h-4" />
-      Revise Plan
+      Revise
     </div>
   );
 }

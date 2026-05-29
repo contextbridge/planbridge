@@ -1,7 +1,7 @@
 ---
 layout: ../layouts/Landing.astro
 title: 'PlanBridge: Inline comments on your coding agent plans'
-description: 'PlanBridge uses standard agent plugins and hooks to open plans in a local browser window, so you can highlight text and leave comments exactly like you would in a document.'
+description: "PlanBridge opens markdown in a local browser so you can highlight text and leave comments like you would in a document. Use it three ways: collaborate on a plan, give feedback on a file, or annotate your agent's last message."
 ---
 
 import Hero from '../components/Hero.astro';
@@ -9,6 +9,7 @@ import UserQuotes from '../components/UserQuotes.astro';
 import DataPrivacy from '../components/DataPrivacy.astro';
 import ValueProps from '../components/ValueProps.astro';
 import ReviewLoop from '../components/ReviewLoop.astro';
+import UseCases from '../components/UseCases.astro';
 import IntegrationCards from '../components/IntegrationCards.astro';
 import Faq from '../components/Faq.astro';
 import CallToAction from '../components/CallToAction.astro';
@@ -16,6 +17,8 @@ import CallToAction from '../components/CallToAction.astro';
 <Hero />
 
 <ValueProps />
+
+<UseCases />
 
 <ReviewLoop />
 
@@ -27,4 +30,4 @@ import CallToAction from '../components/CallToAction.astro';
 
 <Faq />
 
-<CallToAction title="Better plans, better code." description="Refine the plan first. Skip the rework." />
+<CallToAction title="Move faster with precision steering." description="Refine first.  Skip the rework." />
