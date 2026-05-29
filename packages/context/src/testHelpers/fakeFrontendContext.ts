@@ -1,5 +1,5 @@
 import { createFakeFrontendTelemetry } from '@contextbridge/instrumentation/testHelpers/frontend';
-import type { FrontendContext } from '../frontend.ts';
+import type { FrontendContext } from '#src/frontend.ts';
 import { fakeBaseContext } from './fakeBaseContext.ts';
 import { FakeFrontendBrowser } from './FakeFrontendBrowser.ts';
 

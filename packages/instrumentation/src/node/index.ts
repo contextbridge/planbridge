@@ -1,5 +1,5 @@
 import type { BuildInfo } from '@contextbridge/context';
-import { type Analytics, type Telemetry, createNoopAnalytics, createNoopTelemetry } from '../shared/index.ts';
+import { type Analytics, type Telemetry, createNoopAnalytics, createNoopTelemetry } from '#src/shared/index.ts';
 import { createPostHogAnalytics } from './postHogAnalytics.ts';
 import { createSentryTelemetry } from './sentryTelemetry.ts';
 

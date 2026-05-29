@@ -1,6 +1,6 @@
 import type { BuildInfo } from '@contextbridge/context';
 import * as Sentry from '@sentry/bun';
-import type { Telemetry, TelemetryUser } from '../shared/index.ts';
+import type { Telemetry, TelemetryUser } from '#src/shared/index.ts';
 
 export interface CreateSentryTelemetryOptions {
   readonly buildInfo: BuildInfo;

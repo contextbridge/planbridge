@@ -1,8 +1,8 @@
 import { createFakeAnalytics, createFakeTelemetry } from '@contextbridge/instrumentation/testHelpers';
 import pino from 'pino';
-import type { BaseContext } from '../base.ts';
-import type { Logger } from '../logger.ts';
-import { buildInfo } from '../testFactories.ts';
+import type { BaseContext } from '#src/base.ts';
+import type { Logger } from '#src/logger.ts';
+import { buildInfo } from '#src/testFactories.ts';
 import { FakeFetcher } from './FakeFetcher.ts';
 
 const silentLogger: Logger = pino({ level: 'silent' });

@@ -1,4 +1,4 @@
-import type { Fetcher } from '../FetcherImpl.ts';
+import type { Fetcher } from '#src/FetcherImpl.ts';
 
 export interface FakeFetchCall {
   readonly input: string | URL | Request;

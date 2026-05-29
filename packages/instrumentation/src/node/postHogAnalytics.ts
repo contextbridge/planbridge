@@ -1,7 +1,7 @@
 import type { BuildInfo } from '@contextbridge/context';
 import { ResultAsync, fromThrowable } from 'neverthrow';
 import { PostHog } from 'posthog-node';
-import type { Analytics } from '../shared/index.ts';
+import type { Analytics } from '#src/shared/index.ts';
 
 export type PostHogClient = Pick<PostHog, 'identify' | 'capture' | 'flush' | 'shutdown'>;
 
