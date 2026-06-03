@@ -12,6 +12,7 @@ export const commentsSidebarTestIds = {
   counter: 'plan-review-comment-navigation-position',
   emptyState: 'plan-review-comments-empty',
   threadList: 'plan-review-comments-thread-list',
+  composer: 'plan-review-comments-composer',
 };
 
 export interface SidebarNavigationState {
@@ -59,7 +60,7 @@ export function CommentsSidebar({
 
   return (
     <aside
-      className="sticky top-[4.25rem] flex max-h-[calc(100vh-4.25rem)] min-w-0 flex-col self-start"
+      className="flex min-w-0 flex-col self-start xl:sticky xl:top-[4.25rem] xl:max-h-[calc(100vh-4.25rem)]"
       data-testid={commentsSidebarTestIds.container}
     >
       <section className={cn(SIDEBAR_PANEL_CLASS, 'flex min-h-0 flex-1 flex-col gap-4')}>
@@ -114,7 +115,10 @@ export function CommentsSidebar({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-border pt-4">
+        <div
+          className="sticky bottom-0 flex shrink-0 flex-col gap-3 border-t border-border bg-background pt-4 xl:static"
+          data-testid={commentsSidebarTestIds.composer}
+        >
           <GlobalCommentComposer globalComment={globalComment} submission={submission} />
           <SubmitBar source={source} submission={submission} />
         </div>
