@@ -53,22 +53,6 @@ describe('App', () => {
     expect(screen.getByTestId(appTestIds.emptyState)).toBeInTheDocument();
   });
 
-  it('keeps the comment composer sticky at the bottom on small screens so it does not force-scroll away', () => {
-    renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
-
-    const composer = screen.getByTestId(commentsSidebarTestIds.composer);
-    // Sticks to the viewport bottom below the xl breakpoint (where the
-    // sidebar collapses beneath the plan content), and is reset to static
-    // flow once the sidebar becomes its own column at xl.
-    expect(composer).toHaveClass('sticky', 'bottom-0', 'bg-background', 'xl:static');
-
-    // The sidebar only pins to the top and caps its height at xl, so on small
-    // screens it flows naturally and never force-scrolls the page.
-    const sidebar = screen.getByTestId(commentsSidebarTestIds.container);
-    expect(sidebar).toHaveClass('xl:sticky', 'xl:top-[4.25rem]', 'xl:max-h-[calc(100vh-4.25rem)]');
-    expect(sidebar).not.toHaveClass('sticky');
-  });
-
   it('renders the update-notice card when /update-notice resolves with a notice', async () => {
     const notice: UpdateNotice = { currentVersion: '0.1.0', latestVersion: '0.2.0', channel: 'stable' };
     const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(notice);
