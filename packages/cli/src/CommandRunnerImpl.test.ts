@@ -6,17 +6,13 @@ describe('CommandRunnerImpl', () => {
   it('runs echo and captures stdout + exit code', async () => {
     const runner = new CommandRunnerImpl();
     const result = await runner.run('echo', ['hello']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toBe('hello\n');
-    expect(result.stderr).toBe('');
+    expect(result).toMatchObject({ exitCode: 0, stdout: 'hello\n', stderr: '' });
   });
 
   it('captures stderr and non-zero exit for a failing command', async () => {
     const runner = new CommandRunnerImpl();
     const result = await runner.run('sh', ['-c', 'echo oops 1>&2; exit 2']);
-    expect(result.exitCode).toBe(2);
-    expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('oops\n');
+    expect(result).toMatchObject({ exitCode: 2, stdout: '', stderr: 'oops\n' });
   });
 
   it('which resolves a known-present binary', () => {
@@ -35,9 +31,7 @@ describe('CommandRunnerImpl', () => {
     const runner = new CommandRunnerImpl({ out: out.stream, err: err.stream });
     const result = await runner.run('sh', ['-c', 'echo to-stdout; echo to-stderr 1>&2; exit 7'], { stdio: 'inherit' });
 
-    expect(result.exitCode).toBe(7);
-    expect(result.stdout).toBe('to-stdout\n');
-    expect(result.stderr).toBe('to-stderr\n');
+    expect(result).toMatchObject({ exitCode: 7, stdout: 'to-stdout\n', stderr: 'to-stderr\n' });
     expect(out.text()).toBe('to-stdout\n');
     expect(err.text()).toBe('to-stderr\n');
   });

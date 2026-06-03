@@ -14,9 +14,10 @@ describe('parseSkill', () => {
       ),
     );
 
-    expect(skill.frontmatter.name).toBe('planbridge-open');
-    expect(skill.frontmatter.description).toBe('Open a thing for review.');
-    expect(skill.body).toBe('# Body heading\n\nBody content.\n');
+    expect(skill).toMatchObject({
+      frontmatter: { name: 'planbridge-open', description: 'Open a thing for review.' },
+      body: '# Body heading\n\nBody content.\n',
+    });
   });
 
   it('rejects sources without YAML frontmatter', () => {

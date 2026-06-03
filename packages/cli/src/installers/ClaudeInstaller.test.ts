@@ -370,9 +370,7 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(false);
-    expect(status.installed).toBe(false);
-    expect(status.managed).toEqual([]);
+    expect(status).toMatchObject({ detected: false, installed: false, managed: [] });
     expect(commandRunner.calls).toEqual([]);
   });
 
@@ -384,12 +382,14 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(true);
-    expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
-      { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
-    ]);
+    expect(status).toMatchObject({
+      detected: true,
+      installed: true,
+      managed: [
+        { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+        { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
+      ],
+    });
   });
 
   it('reports project-scope plugin installs', async () => {
@@ -398,9 +398,11 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(true);
-    expect(status.managed).toEqual([{ kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'project' }]);
+    expect(status).toMatchObject({
+      detected: true,
+      installed: true,
+      managed: [{ kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'project' }],
+    });
   });
 
   it('reports a legacy cli@contextbridge install as managed but not installed', async () => {
@@ -411,12 +413,14 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(false);
-    expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
-      { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
-    ]);
+    expect(status).toMatchObject({
+      detected: true,
+      installed: false,
+      managed: [
+        { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+        { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
+      ],
+    });
   });
 
   it('reports both new and legacy plugin entries when both are installed', async () => {
@@ -435,13 +439,15 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(true);
-    expect(status.managed).toEqual([
-      { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
-      { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
-      { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
-    ]);
+    expect(status).toMatchObject({
+      detected: true,
+      installed: true,
+      managed: [
+        { kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME },
+        { kind: 'plugin', identifier: CLAUDE_PLUGIN_ID, scope: 'user' },
+        { kind: 'plugin', identifier: CLAUDE_LEGACY_PLUGIN_ID, scope: 'user' },
+      ],
+    });
   });
 
   it('reports marketplace-only partial state as managed but not installed', async () => {
@@ -450,9 +456,11 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(false);
-    expect(status.managed).toEqual([{ kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME }]);
+    expect(status).toMatchObject({
+      detected: true,
+      installed: false,
+      managed: [{ kind: 'marketplace', identifier: CLAUDE_MARKETPLACE_NAME }],
+    });
   });
 
   it('reports detected: true with no managed entries when claude is on PATH but PlanBridge is not installed', async () => {
@@ -460,9 +468,7 @@ describe('ClaudeInstaller.status', () => {
 
     const status = await installer.status(context);
 
-    expect(status.detected).toBe(true);
-    expect(status.installed).toBe(false);
-    expect(status.managed).toEqual([]);
+    expect(status).toMatchObject({ detected: true, installed: false, managed: [] });
   });
 
   it('bubbles a CommanderError when marketplace status cannot be listed', () => {

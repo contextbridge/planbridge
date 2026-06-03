@@ -280,9 +280,11 @@ describe('CodexInstaller', () => {
 
       const status = await installer.status(context);
 
-      expect(status.detected).toBe(true);
-      expect(status.installed).toBe(true);
-      expect(status.managed).toEqual([{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }]);
+      expect(status).toMatchObject({
+        detected: true,
+        installed: true,
+        managed: [{ kind: 'hook', identifier: 'contextbridge hook codex', scope: 'user' }],
+      });
     });
 
     it('does not report managed when hooks.json is absent', async () => {
@@ -292,9 +294,7 @@ describe('CodexInstaller', () => {
 
       const status = await installer.status(context);
 
-      expect(status.detected).toBe(true);
-      expect(status.installed).toBe(false);
-      expect(status.managed).toEqual([]);
+      expect(status).toMatchObject({ detected: true, installed: false, managed: [] });
     });
 
     it('bubbles invalid hooks.json as a CommanderError', () => {
