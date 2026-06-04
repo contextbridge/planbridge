@@ -6,6 +6,8 @@ import type { ResolvedAnnotationThread } from './annotationTypes.ts';
 import { CommentNavigationBar } from './CommentNavigationBar.tsx';
 import { GlobalCommentComposer, type GlobalCommentState } from './GlobalCommentComposer.tsx';
 import { type SubmissionState, SubmitBar } from './SubmitBar.tsx';
+import { usePinnedToVisualViewport } from './usePinnedToVisualViewport.ts';
+import { useSidebarDocked } from './useSidebarDocked.ts';
 
 export const commentsSidebarTestIds = {
   container: 'plan-review-comments-sidebar',
@@ -53,10 +55,22 @@ export function CommentsSidebar({
   onRequestRemove,
 }: CommentsSidebarProps) {
   const currentCardRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
+  const sidebarDocked = useSidebarDocked();
+
+  usePinnedToVisualViewport(composerRef, !sidebarDocked);
 
   useEffect(() => {
+    // On small screens the sidebar stacks far below the plan body, so pulling
+    // the active card into view would yank the page to the bottom and lose the
+    // user's place at the annotation anchor. Only auto-scroll when the sidebar
+    // is docked into its own column and scrolls independently.
+    if (!sidebarDocked) {
+      return;
+    }
+
     currentCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [currentThreadId]);
+  }, [currentThreadId, sidebarDocked]);
 
   return (
     <aside
@@ -121,6 +135,8 @@ export function CommentsSidebar({
         <div
           className="fixed inset-x-0 bottom-0 z-20 flex shrink-0 flex-col gap-3 border-t border-border bg-background px-4 pb-4 pt-4 sm:px-6 xl:static xl:z-auto xl:px-0 xl:pb-0"
           data-testid={commentsSidebarTestIds.composer}
+          ref={composerRef}
+          style={sidebarDocked ? undefined : { paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
         >
           <GlobalCommentComposer globalComment={globalComment} submission={submission} />
           <SubmitBar source={source} submission={submission} />
