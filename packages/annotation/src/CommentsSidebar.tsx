@@ -82,7 +82,10 @@ export function CommentsSidebar({
           {navigation && !navigation.disabled ? <CommentNavigationBar /> : null}
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 space-y-3 overflow-y-auto pr-1" data-testid={commentsSidebarTestIds.threadList}>
+          <div
+            className="flex-1 space-y-3 overflow-y-auto pb-44 pr-1 xl:pb-0"
+            data-testid={commentsSidebarTestIds.threadList}
+          >
             {threads.length === 0 ? (
               <div
                 className="rounded-md border border-dashed border-border px-3 py-4 text-sm leading-6 text-muted-foreground"
@@ -116,7 +119,7 @@ export function CommentsSidebar({
         </div>
 
         <div
-          className="sticky bottom-0 flex shrink-0 flex-col gap-3 border-t border-border bg-background pt-4 xl:static"
+          className="fixed inset-x-0 bottom-0 z-20 flex shrink-0 flex-col gap-3 border-t border-border bg-background px-4 pb-4 pt-4 sm:px-6 xl:static xl:z-auto xl:px-0 xl:pb-0"
           data-testid={commentsSidebarTestIds.composer}
         >
           <GlobalCommentComposer globalComment={globalComment} submission={submission} />
