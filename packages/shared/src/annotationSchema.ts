@@ -164,6 +164,13 @@ export const AssetSchema = z.object({
 });
 export type Asset = z.infer<typeof AssetSchema>;
 
+export const PlanRevisionMetadataSchema = z.object({
+  id: z.string().trim().nonempty(),
+  revisionId: z.string().trim().nonempty(),
+  revisionNumber: z.number().int().positive(),
+});
+export type PlanRevisionMetadata = z.infer<typeof PlanRevisionMetadataSchema>;
+
 export const AnnotationPayloadSchema = z.object({
   content: z.string(),
   title: z
@@ -176,6 +183,7 @@ export const AnnotationPayloadSchema = z.object({
     .object({
       entrypoint: AnnotationEntrypointSchema,
       sourcePath: z.string().trim().nonempty().optional(),
+      plan: PlanRevisionMetadataSchema.optional(),
     })
     .optional(),
   assets: z.array(AssetSchema).optional(),

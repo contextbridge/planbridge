@@ -166,6 +166,34 @@ describe('AnnotationPayloadSchema', () => {
     ).toThrow();
   });
 
+  it('accepts metadata.plan', () => {
+    const parsed = AnnotationPayloadSchema.parse({
+      content: '# plan',
+      contentKind: 'plan',
+      metadata: {
+        entrypoint: 'plan_command',
+        plan: { id: 'plan-id', revisionId: 'revision-id', revisionNumber: 1 },
+      },
+    });
+    expect(parsed.metadata?.plan).toEqual({ id: 'plan-id', revisionId: 'revision-id', revisionNumber: 1 });
+  });
+
+  it('rejects invalid metadata.plan values', () => {
+    for (const plan of [
+      { id: '', revisionId: 'revision-id', revisionNumber: 1 },
+      { id: 'plan-id', revisionId: '', revisionNumber: 1 },
+      { id: 'plan-id', revisionId: 'revision-id', revisionNumber: 0 },
+    ]) {
+      expect(() =>
+        AnnotationPayloadSchema.parse({
+          content: '# plan',
+          contentKind: 'plan',
+          metadata: { entrypoint: 'plan_command', plan },
+        }),
+      ).toThrow();
+    }
+  });
+
   it('rejects a whitespace-only sourcePath', () => {
     expect(() =>
       AnnotationPayloadSchema.parse({
