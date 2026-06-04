@@ -1,4 +1,5 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import type { FormatAgentResponseOptions } from '#src/formatters/annotation/markdown.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from './templates.ts';
 
@@ -13,11 +14,15 @@ export interface CodexStopResponse {
 // runs under Plan Mode.
 // Upstream output schema (more fields exist than we use; revisit on Codex bumps):
 // https://github.com/openai/codex/blob/main/codex-rs/hooks/schema/generated/stop.command.output.schema.json
-export function codexStopResponse(submission: AnnotationSubmission, planContent: string): CodexStopResponse | null {
+export function codexStopResponse(
+  submission: AnnotationSubmission,
+  planContent: string,
+  opts: FormatAgentResponseOptions = {},
+): CodexStopResponse | null {
   if (submission.status === 'approved') return null;
 
   return {
     decision: 'block',
-    reason: formatAgentResponse(PLAN_TEMPLATES, submission, planContent),
+    reason: formatAgentResponse(PLAN_TEMPLATES, submission, planContent, opts),
   };
 }

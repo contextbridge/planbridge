@@ -8,7 +8,12 @@ import type {
 import { instantFromString } from '@contextbridge/shared/time';
 import type { Blockquote, Root } from 'mdast';
 import { toMarkdown } from 'mdast-util-to-markdown';
-import type { AnnotationTemplates } from './templates.ts';
+import type { AnnotationTemplates, RevisionInstructions } from './templates.ts';
+
+export interface FormatAgentResponseOptions {
+  readonly sourcePath?: string;
+  readonly revision?: RevisionInstructions;
+}
 
 type AnnotationSubject = Extract<CommentThreadSubject, { kind: 'annotation' }>;
 
@@ -16,7 +21,7 @@ export function formatAgentResponse(
   templates: AnnotationTemplates,
   submission: AnnotationSubmission,
   content: string,
-  opts: { sourcePath?: string } = {},
+  opts: FormatAgentResponseOptions = {},
 ): string {
   if (submission.status === 'approved') {
     return templates.approved({ source: opts.sourcePath });
@@ -46,7 +51,7 @@ export function formatAgentResponse(
   }
 
   const body = sections.map((section) => section.trimEnd()).join('\n\n');
-  return `${templates.changesRequested({ body, source: opts.sourcePath }).trimEnd()}\n`;
+  return `${templates.changesRequested({ body, source: opts.sourcePath, revision: opts.revision }).trimEnd()}\n`;
 }
 
 function renderThreadsAsBlockquotes(threads: CommentThread[]): string {

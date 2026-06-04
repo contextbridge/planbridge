@@ -7,6 +7,7 @@ import {
 } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { buildPlanRevisionInstructions } from './revisionInstructions.ts';
 import { PLAN_TEMPLATES } from './templates.ts';
 
 describe('PLAN_TEMPLATES (plan-flavored formatAgentResponse output)', () => {
@@ -203,5 +204,47 @@ The comment below applies to the following section of the plan:
     );
 
     expect(output).not.toContain('Within that section, the reviewer specifically highlighted');
+  });
+  it('renders only the direct CLI revision command for command-submitted plans', () => {
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
+      {
+        status: 'changes_requested',
+        threads: [globalThread.build({ messages: [commentMessage.build({ body: 'Revise this.' })] })],
+      },
+      '# Plan',
+      {
+        revision: buildPlanRevisionInstructions({
+          plan: { id: 'plan-123', revisionId: 'revision-123', revisionNumber: 1 },
+          entrypoint: 'plan_command',
+        }),
+      },
+    );
+
+    expect(output).toContain('contextbridge plan --plan-id plan-123');
+    expect(output).not.toContain('contextbridge-plan-id');
+    expect(output).not.toContain('Claude/Codex hook-driven Plan Mode');
+  });
+
+  it('renders only the hidden revision marker for hook-submitted plans', () => {
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
+      {
+        status: 'changes_requested',
+        threads: [globalThread.build({ messages: [commentMessage.build({ body: 'Revise this.' })] })],
+      },
+      '# Plan',
+      {
+        revision: buildPlanRevisionInstructions({
+          plan: { id: 'plan-123', revisionId: 'revision-123', revisionNumber: 1 },
+          entrypoint: 'hook_claude',
+        }),
+      },
+    );
+
+    expect(output).toContain('<!-- contextbridge-plan-id: plan-123 -->');
+    expect(output).toContain('Include this hidden marker at the top of your revised plan');
+    expect(output).not.toContain('contextbridge plan --plan-id');
+    expect(output).not.toContain('Claude/Codex hook-driven Plan Mode');
   });
 });

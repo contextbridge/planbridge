@@ -9,4 +9,27 @@ Rules:
 - Do not paraphrase the feedback into the plan as if it were already addressed; actually change the plan.
 - Do not start implementing the plan until a subsequent review comes back approved.
 
+{{#if revision}}
+## Submit the revised plan
+
+This review is tracking plan ID `{{revision.planId}}`. After revising, submit the next version as a revision of this same plan, not as a new plan.
+
+{{#if revision.command}}
+Run this command with the revised plan:
+
+```sh
+{{revision.command}}
+```
+{{/if}}
+{{#if revision.directive}}
+Include this hidden marker at the top of your revised plan:
+
+```md
+{{{revision.directive}}}
+```
+
+Do not modify or remove the marker. ContextBridge uses it only to attach your revision to this same review and will strip it before showing the plan for review.
+{{/if}}
+
+{{/if}}
 {{{body}}}
