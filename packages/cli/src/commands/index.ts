@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import type { CliContext } from '#src/context.ts';
 import { registerHookClaude } from './hookClaude.ts';
 import { registerHookCodex } from './hookCodex.ts';
+import { registerInbox } from './inbox.ts';
 import { registerInstall } from './install.ts';
 import { registerOpen } from './open.ts';
 import { registerPlan } from './plan.ts';
@@ -25,6 +26,7 @@ export function createProgram(ctx: CliContext): Command {
 
   registerPlan(ctx, program);
   registerReview(ctx, program);
+  registerInbox(ctx, program);
   registerOpen(ctx, program);
   registerUpdate(ctx, program);
 

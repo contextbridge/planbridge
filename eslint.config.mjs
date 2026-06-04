@@ -8,6 +8,7 @@ import tseslint from 'typescript-eslint';
 
 const reactFiles = [
   'packages/annotation/src/**/*.{ts,tsx}',
+  'packages/inbox/src/**/*.{ts,tsx}',
   'packages/review/src/**/*.{ts,tsx}',
   'packages/ui/src/**/*.{ts,tsx}',
 ];

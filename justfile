@@ -13,6 +13,7 @@ install:
 # Compile a host-platform binary. For cross-platform builds, use `just release dry-run`.
 build version="0.0.0-development":
     __CB_VERSION__={{ version }} bun run --cwd packages/annotation build
+    __CB_VERSION__={{ version }} bun run --cwd packages/inbox build
     __CB_VERSION__={{ version }} bun run --cwd packages/review build
     bun run --cwd packages/cli build:compile {{ version }}
 

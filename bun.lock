@@ -112,6 +112,35 @@
       "name": "@contextbridge/harness",
       "version": "0.0.0-development",
     },
+    "packages/inbox": {
+      "name": "@contextbridge/inbox",
+      "version": "0.0.0-development",
+      "dependencies": {
+        "@contextbridge/context": "workspace:*",
+        "@contextbridge/shared": "workspace:*",
+        "@contextbridge/ui": "workspace:*",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@storybook/react-vite": "catalog:",
+        "@tailwindcss/vite": "catalog:",
+        "@testing-library/jest-dom": "catalog:",
+        "@testing-library/react": "catalog:",
+        "@testing-library/user-event": "^14.6.1",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "@vitest/browser-playwright": "catalog:",
+        "babel-plugin-react-compiler": "catalog:",
+        "fishery": "catalog:",
+        "playwright": "catalog:",
+        "tailwindcss": "catalog:",
+        "vite": "catalog:",
+        "vite-plugin-singlefile": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
     "packages/instrumentation": {
       "name": "@contextbridge/instrumentation",
       "version": "0.0.0-development",
@@ -164,6 +193,7 @@
       "dependencies": {
         "@contextbridge/context": "workspace:*",
         "@contextbridge/shared": "workspace:*",
+        "neverthrow": "catalog:",
       },
       "peerDependencies": {
         "bun": ">=1.0.0",
@@ -212,6 +242,7 @@
       "version": "0.0.0-development",
       "dependencies": {
         "@contextbridge/annotation": "workspace:*",
+        "@contextbridge/inbox": "workspace:*",
         "@contextbridge/review": "workspace:*",
         "@contextbridge/ui": "workspace:*",
         "react": "catalog:",
@@ -416,6 +447,8 @@
     "@contextbridge/context": ["@contextbridge/context@workspace:packages/context"],
 
     "@contextbridge/harness": ["@contextbridge/harness@workspace:packages/harness"],
+
+    "@contextbridge/inbox": ["@contextbridge/inbox@workspace:packages/inbox"],
 
     "@contextbridge/instrumentation": ["@contextbridge/instrumentation@workspace:packages/instrumentation"],
 

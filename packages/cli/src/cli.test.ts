@@ -22,6 +22,7 @@ describe('runCli', () => {
 
   it.each<{ argv: string[]; contains: string }>([
     { argv: ['--help'], contains: 'plan' },
+    { argv: ['--help'], contains: 'inbox' },
     { argv: ['--help'], contains: 'open' },
     { argv: ['plan', '--help'], contains: '[path]' },
     { argv: ['open', '--help'], contains: '[path]' },

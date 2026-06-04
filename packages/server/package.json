@@ -6,6 +6,7 @@
   "exports": {
     "./context": "./src/context.ts",
     "./annotation": "./src/annotation.ts",
+    "./inbox": "./src/inbox.ts",
     "./review": "./src/review.ts"
   },
   "imports": {
@@ -17,7 +18,8 @@
   },
   "dependencies": {
     "@contextbridge/context": "workspace:*",
-    "@contextbridge/shared": "workspace:*"
+    "@contextbridge/shared": "workspace:*",
+    "neverthrow": "catalog:"
   },
   "peerDependencies": {
     "bun": ">=1.0.0"

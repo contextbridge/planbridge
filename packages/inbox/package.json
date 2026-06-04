@@ -1,18 +1,17 @@
 {
-  "name": "@contextbridge/storybook",
+  "name": "@contextbridge/inbox",
   "version": "0.0.0-development",
   "private": true,
   "type": "module",
   "scripts": {
-    "storybook": "STORYBOOK=true storybook dev -p 6006",
-    "build-storybook": "STORYBOOK=true storybook build --stats-json",
-    "chromatic": "chromatic",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@contextbridge/annotation": "workspace:*",
-    "@contextbridge/inbox": "workspace:*",
-    "@contextbridge/review": "workspace:*",
+    "@contextbridge/context": "workspace:*",
+    "@contextbridge/shared": "workspace:*",
     "@contextbridge/ui": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:"
@@ -20,13 +19,19 @@
   "devDependencies": {
     "@storybook/react-vite": "catalog:",
     "@tailwindcss/vite": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
-    "chromatic": "^15.1.1",
-    "storybook": "^10.2.14",
+    "fishery": "catalog:",
+    "playwright": "catalog:",
     "tailwindcss": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-singlefile": "catalog:",
+    "vitest": "catalog:"
   }
 }

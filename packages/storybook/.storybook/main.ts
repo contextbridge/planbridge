@@ -6,9 +6,14 @@ const config: StorybookConfig = {
   stories: skipDemo
     ? [
         '../../annotation/src/**/!(*.demo).stories.@(js|jsx|mjs|ts|tsx)',
+        '../../inbox/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
         '../../review/src/**/!(*.demo).stories.@(js|jsx|mjs|ts|tsx)',
       ]
-    : ['../../annotation/src/**/*.stories.@(js|jsx|mjs|ts|tsx)', '../../review/src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+    : [
+        '../../annotation/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+        '../../inbox/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+        '../../review/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+      ],
   addons: [],
   framework: '@storybook/react-vite',
 };
