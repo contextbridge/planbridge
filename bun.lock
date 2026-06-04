@@ -119,6 +119,7 @@
         "@contextbridge/context": "workspace:*",
         "@contextbridge/shared": "workspace:*",
         "@contextbridge/ui": "workspace:*",
+        "lucide-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
       },

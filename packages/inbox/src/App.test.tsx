@@ -5,7 +5,13 @@ import type { InboxApiClient } from './apiClient.ts';
 import { App, LoadedInbox, type LoadedInboxProps, errorStateCopy } from './App.tsx';
 import { emptyStateCopy } from './components/EmptyState.tsx';
 import { inboxItem, inboxSnapshot } from './testFactories.ts';
-import { appTestIds, inboxItemCardTestIds, prioritySectionTestIds } from './testIds.ts';
+import {
+  appTestIds,
+  filterBarTestIds,
+  inboxItemCardTestIds,
+  pageTabsTestIds,
+  prioritySectionTestIds,
+} from './testIds.ts';
 
 afterEach(cleanup);
 
@@ -33,9 +39,8 @@ describe('App', () => {
         inboxItem.build({
           id: 'app-item-1',
           nodeId: 'app-node-1',
-          priority: 'urgent',
+          actionState: 'needs_my_review',
           title: 'Fix production crash',
-          reasons: ['review_requested'],
         }),
       ],
     });
@@ -44,6 +49,31 @@ describe('App', () => {
 
     expect(await screen.findByText('Fix production crash')).toBeInTheDocument();
     expect(screen.getByTestId(appTestIds.viewerLogin)).toHaveTextContent('testuser');
+  });
+
+  it('opens the pull requests page by default and refetches issues on tab switch', async () => {
+    const fetchSnapshot = vi.fn(() => Promise.resolve(inboxSnapshot.build()));
+    const client = fakeApiClient({ fetchSnapshot });
+    const user = userEvent.setup();
+    render(<App apiClient={client} />);
+
+    await screen.findByTestId(pageTabsTestIds.container);
+    expect(fetchSnapshot).toHaveBeenCalledWith(expect.objectContaining({ kinds: ['pull_request'] }));
+
+    await user.click(screen.getByTestId(pageTabsTestIds.issuesTab));
+    expect(fetchSnapshot).toHaveBeenLastCalledWith(expect.objectContaining({ kinds: ['issue'] }));
+  });
+
+  it('hides the pull-request-only filters on the issues page', async () => {
+    const client = fakeApiClient();
+    const user = userEvent.setup();
+    render(<App apiClient={client} />);
+
+    expect(await screen.findByTestId(filterBarTestIds.draftsToggle)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId(pageTabsTestIds.issuesTab));
+    expect(screen.queryByTestId(filterBarTestIds.draftsToggle)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(filterBarTestIds.dependabotToggle)).not.toBeInTheDocument();
   });
 
   it('renders error state on fetch failure', async () => {
@@ -70,9 +100,7 @@ function testItems() {
     inboxItem.build({
       id: 'item-urgent',
       nodeId: 'node-urgent',
-      priority: 'urgent',
-      priorityScore: 180,
-      reasons: ['review_requested', 'ci_failing'],
+      actionState: 'needs_my_review',
       title: 'Fix production crash in auth handler',
       kind: 'pull_request',
       owner: 'myorg',
@@ -83,9 +111,7 @@ function testItems() {
     inboxItem.build({
       id: 'item-high',
       nodeId: 'node-high',
-      priority: 'high',
-      priorityScore: 100,
-      reasons: ['review_requested'],
+      actionState: 'changes_requested',
       title: 'Refactor database connection pool',
       kind: 'pull_request',
       owner: 'myorg',
@@ -96,9 +122,7 @@ function testItems() {
     inboxItem.build({
       id: 'item-low',
       nodeId: 'node-low',
-      priority: 'low',
-      priorityScore: -30,
-      reasons: ['dependabot'],
+      actionState: 'waiting_on_others',
       title: 'Bump eslint from 9.0.0 to 9.1.0',
       kind: 'pull_request',
       url: 'https://github.com/owner/repo/pull/99',
@@ -117,10 +141,14 @@ describe('LoadedInbox', () => {
     onOpen: () => {},
   };
 
-  it('renders items grouped by priority', () => {
+  it('renders items grouped by action state', () => {
     render(<LoadedInbox {...defaultProps} />);
     const sections = screen.getAllByTestId(prioritySectionTestIds.heading);
-    expect(sections.map((el) => el.textContent)).toEqual(['Urgent', 'Needs Review', 'Lower Priority']);
+    expect(sections.map((el) => el.textContent)).toEqual([
+      'Needs My Review',
+      'My PRs — Action Needed',
+      'Waiting on Others',
+    ]);
   });
 
   it('shows item details', () => {
@@ -129,15 +157,15 @@ describe('LoadedInbox', () => {
     expect(screen.getByText('myorg/myrepo#42')).toBeInTheDocument();
   });
 
-  it('calls onOpen when Open in GitHub is clicked', async () => {
+  it('calls onOpen when an item title is clicked', async () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
     render(<LoadedInbox {...defaultProps} onOpen={onOpen} />);
 
-    const openButtons = screen.getAllByTestId(inboxItemCardTestIds.openButton);
-    const firstButton = openButtons[0];
-    if (!firstButton) throw new Error('Expected at least one open button');
-    await user.click(firstButton);
+    const titleLinks = screen.getAllByTestId(inboxItemCardTestIds.titleLink);
+    const firstLink = titleLinks[0];
+    if (!firstLink) throw new Error('Expected at least one item title link');
+    await user.click(firstLink);
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(onOpen).toHaveBeenCalledWith(expect.stringContaining('github.com'));
   });

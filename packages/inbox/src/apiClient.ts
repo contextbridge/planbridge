@@ -83,16 +83,13 @@ async function parseErrorBody(response: Response): Promise<InboxErrorPayload | n
 
 function buildFilterParams(filters: InboxFilters): string {
   const params = new URLSearchParams();
-  const { repositories, kinds, timeWindow, includeDrafts, includeDependabot } = filters;
+  const { repositories, kinds, includeDrafts, includeDependabot } = filters;
 
   if (repositories && repositories.length > 0) {
     params.set('repositories', repositories.join(','));
   }
   if (kinds && kinds.length > 0) {
     params.set('kinds', kinds.join(','));
-  }
-  if (timeWindow) {
-    params.set('timeWindow', timeWindow);
   }
   if (includeDrafts !== undefined) {
     params.set('includeDrafts', String(includeDrafts));

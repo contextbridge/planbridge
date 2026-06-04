@@ -23,14 +23,12 @@ describe('inbox schemas', () => {
           assignees: [{ login: 'octocat' }],
           createdAt: '2026-01-01T00:00:00Z',
           updatedAt: '2026-01-02T00:00:00Z',
-          priority: 'high',
-          priorityScore: 100,
-          reasons: ['review_requested'],
+          actionState: 'needs_my_review',
         },
       ],
     });
 
-    expect(snapshot.items[0]).toMatchObject({ title: 'Fix bug', priority: 'high' });
+    expect(snapshot.items[0]).toMatchObject({ title: 'Fix bug', actionState: 'needs_my_review' });
   });
 
   it('rejects empty required strings', () => {
@@ -49,13 +47,11 @@ describe('inbox schemas', () => {
       inboxFiltersSchema.parse({
         repositories: ['contextbridge/example'],
         kinds: ['issue'],
-        timeWindow: 'week',
         includeDrafts: true,
       }),
     ).toMatchObject({
       repositories: ['contextbridge/example'],
       kinds: ['issue'],
-      timeWindow: 'week',
       includeDrafts: true,
     });
   });

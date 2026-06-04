@@ -102,7 +102,6 @@ function parseFilters(searchParams: URLSearchParams): ReturnType<typeof inboxFil
   const filters: Record<string, unknown> = {};
   setIfDefined(filters, 'repositories', listParam(searchParams, 'repositories'));
   setIfDefined(filters, 'kinds', listParam(searchParams, 'kinds'));
-  setIfDefined(filters, 'timeWindow', optionalParam(searchParams, 'timeWindow'));
   setIfDefined(filters, 'includeDrafts', booleanParam(searchParams, 'includeDrafts'));
   setIfDefined(filters, 'includeDependabot', booleanParam(searchParams, 'includeDependabot'));
   return inboxFiltersSchema.safeParse(filters);
@@ -114,10 +113,6 @@ function listParam(searchParams: URLSearchParams, name: string): string[] | unde
     .flatMap((value) => value.split(','))
     .filter((value) => value.length > 0);
   return values.length > 0 ? values : undefined;
-}
-
-function optionalParam(searchParams: URLSearchParams, name: string): string | undefined {
-  return searchParams.get(name) ?? undefined;
 }
 
 function booleanParam(searchParams: URLSearchParams, name: string): boolean | undefined {

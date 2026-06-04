@@ -1,4 +1,4 @@
-import type { InboxFilters, InboxTimeWindow } from '@contextbridge/shared/inboxSchema';
+import type { InboxFilters } from '@contextbridge/shared/inboxSchema';
 import { filterBarTestIds } from '../testIds.ts';
 
 export interface FilterBarProps {
@@ -9,26 +9,18 @@ export interface FilterBarProps {
 
 export const filterBarCopy = {
   allRepos: 'All repos',
-  prsOnly: 'PRs',
-  issuesOnly: 'Issues',
-  allKinds: 'All',
-  allTime: 'All time',
-  today: 'Today',
-  week: 'Week',
-  month: 'Month',
   drafts: 'Drafts',
   dependabot: 'Dependabot',
 } as const;
 
-const TIME_WINDOWS: InboxTimeWindow[] = ['today', 'week', 'month', 'all'];
-const TIME_LABELS: Record<InboxTimeWindow, string> = {
-  today: filterBarCopy.today,
-  week: filterBarCopy.week,
-  month: filterBarCopy.month,
-  all: filterBarCopy.allTime,
-};
-
 export function FilterBar({ filters, repositories, onFiltersChange }: FilterBarProps) {
+  // Drafts and Dependabot are pull-request concepts — issues are never drafts,
+  // and Dependabot only opens PRs — so they only apply on the pull requests page.
+  const showPullRequestFilters = filters.kinds?.[0] === 'pull_request';
+  const showRepoSelect = repositories.length > 1;
+
+  if (!showRepoSelect && !showPullRequestFilters) return null;
+
   function update(patch: Partial<InboxFilters>): void {
     onFiltersChange({ ...filters, ...patch });
   }
@@ -36,12 +28,12 @@ export function FilterBar({ filters, repositories, onFiltersChange }: FilterBarP
   return (
     <div
       data-testid={filterBarTestIds.container}
-      className="flex flex-wrap items-center gap-3 border-b border-border pb-3"
+      className="flex flex-wrap items-center gap-2 border-b border-border pb-4"
     >
-      {repositories.length > 1 && (
+      {showRepoSelect && (
         <select
           data-testid={filterBarTestIds.repoSelect}
-          className="rounded border border-border bg-background px-2 py-1 text-sm"
+          className="rounded-md border border-border bg-background px-2 py-1 text-sm"
           value={filters.repositories?.[0] ?? ''}
           onChange={(event) => {
             const value = event.target.value;
@@ -57,78 +49,52 @@ export function FilterBar({ filters, repositories, onFiltersChange }: FilterBarP
         </select>
       )}
 
-      <div data-testid={filterBarTestIds.kindToggle} className="flex items-center gap-1">
-        <KindButton
-          label={filterBarCopy.allKinds}
-          active={!filters.kinds || filters.kinds.length === 0}
-          onClick={() => update({ kinds: undefined })}
-        />
-        <KindButton
-          label={filterBarCopy.prsOnly}
-          active={filters.kinds?.length === 1 && filters.kinds[0] === 'pull_request'}
-          onClick={() => update({ kinds: ['pull_request'] })}
-        />
-        <KindButton
-          label={filterBarCopy.issuesOnly}
-          active={filters.kinds?.length === 1 && filters.kinds[0] === 'issue'}
-          onClick={() => update({ kinds: ['issue'] })}
-        />
-      </div>
+      {showRepoSelect && showPullRequestFilters && <Divider />}
 
-      <div data-testid={filterBarTestIds.timeWindowToggle} className="flex items-center gap-1">
-        {TIME_WINDOWS.map((window) => (
-          <button
-            key={window}
-            type="button"
-            className={`rounded px-2 py-1 text-xs ${filters.timeWindow === window || (!filters.timeWindow && window === 'all') ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-            onClick={() => update({ timeWindow: window === 'all' ? undefined : window })}
-          >
-            {TIME_LABELS[window]}
-          </button>
-        ))}
-      </div>
-
-      <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-        <input
-          data-testid={filterBarTestIds.draftsToggle}
-          type="checkbox"
-          checked={filters.includeDrafts ?? false}
-          onChange={(event) => update({ includeDrafts: event.target.checked })}
-          className="rounded"
-        />
-        {filterBarCopy.drafts}
-      </label>
-
-      <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
-        <input
-          data-testid={filterBarTestIds.dependabotToggle}
-          type="checkbox"
-          checked={filters.includeDependabot ?? false}
-          onChange={(event) => update({ includeDependabot: event.target.checked })}
-          className="rounded"
-        />
-        {filterBarCopy.dependabot}
-      </label>
+      {showPullRequestFilters && (
+        <div className="flex items-center gap-1">
+          <FilterButton
+            label={filterBarCopy.drafts}
+            active={filters.includeDrafts ?? false}
+            onClick={() => update({ includeDrafts: !filters.includeDrafts })}
+            testId={filterBarTestIds.draftsToggle}
+          />
+          <FilterButton
+            label={filterBarCopy.dependabot}
+            active={filters.includeDependabot ?? false}
+            onClick={() => update({ includeDependabot: !filters.includeDependabot })}
+            testId={filterBarTestIds.dependabotToggle}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function KindButton({
+function FilterButton({
   label,
   active,
   onClick,
+  testId,
 }: {
   readonly label: string;
   readonly active: boolean;
   readonly onClick: () => void;
+  readonly testId?: string;
 }) {
   return (
     <button
       type="button"
-      className={`rounded px-2 py-1 text-xs ${active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+      data-testid={testId}
+      aria-pressed={active}
+      className={`rounded-md px-2 py-1 text-xs transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
       onClick={onClick}
     >
       {label}
     </button>
   );
+}
+
+function Divider() {
+  return <span aria-hidden className="mx-1 h-4 w-px bg-border" />;
 }

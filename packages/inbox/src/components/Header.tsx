@@ -13,26 +13,28 @@ export interface HeaderProps {
 
 export function Header({ viewer, onRefresh }: HeaderProps) {
   return (
-    <header data-testid={appTestIds.header} className="border-b border-border px-6 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold">{headerCopy.title}</h1>
-          {viewer && (
-            <span data-testid={appTestIds.viewerLogin} className="text-sm text-muted-foreground">
-              {viewer}
-            </span>
-          )}
+    <header data-testid={appTestIds.header} className="border-b border-border">
+      <div className="mx-auto max-w-4xl px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-3">
+            <h1 className="font-brand text-lg font-semibold tracking-tight">{headerCopy.title}</h1>
+            {viewer && (
+              <span data-testid={appTestIds.viewerLogin} className="text-sm text-muted-foreground">
+                {viewer}
+              </span>
+            )}
+          </div>
+          <button
+            data-testid={appTestIds.refreshButton}
+            type="button"
+            className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-muted"
+            onClick={onRefresh}
+          >
+            {headerCopy.refresh}
+          </button>
         </div>
-        <button
-          data-testid={appTestIds.refreshButton}
-          type="button"
-          className="rounded px-3 py-1 text-sm hover:bg-muted"
-          onClick={onRefresh}
-        >
-          {headerCopy.refresh}
-        </button>
+        <p className="mt-2 text-xs text-muted-foreground">{headerCopy.close}</p>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{headerCopy.close}</p>
     </header>
   );
 }

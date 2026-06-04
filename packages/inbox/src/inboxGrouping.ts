@@ -1,37 +1,44 @@
-import type { InboxItem, InboxPriority } from '@contextbridge/shared/inboxSchema';
+import type { InboxActionState, InboxItem } from '@contextbridge/shared/inboxSchema';
 
-export interface PriorityGroup {
-  readonly priority: InboxPriority;
+export interface InboxSection {
+  readonly key: string;
   readonly heading: string;
   readonly items: InboxItem[];
 }
 
-const PRIORITY_SECTION_ORDER: readonly InboxPriority[] = ['urgent', 'high', 'normal', 'low'];
+interface SectionDef {
+  readonly key: string;
+  readonly heading: string;
+  readonly states: readonly InboxActionState[];
+}
 
-const SECTION_HEADINGS: Record<InboxPriority, string> = {
-  urgent: 'Urgent',
-  high: 'Needs Review',
-  normal: 'Assigned to Me',
-  low: 'Lower Priority',
-};
+// Two lanes plus quiet tails. PR-page items land in needs-my-review / my-prs /
+// waiting; issue-page items land in assigned. Empty sections are dropped, so a
+// page only ever shows the lanes it has items for.
+const SECTIONS: readonly SectionDef[] = [
+  { key: 'needs_my_review', heading: 'Needs My Review', states: ['needs_my_review'] },
+  {
+    key: 'my_prs',
+    heading: 'My PRs — Action Needed',
+    states: ['changes_requested', 'ci_failing', 'conflicts', 'ready_to_merge'],
+  },
+  { key: 'assigned_issues', heading: 'Assigned to You', states: ['assigned_issue'] },
+  { key: 'waiting', heading: 'Waiting on Others', states: ['waiting_on_others'] },
+];
 
-export function groupByPriority(items: readonly InboxItem[]): PriorityGroup[] {
-  const buckets = new Map<InboxPriority, InboxItem[]>();
-
-  for (const priority of PRIORITY_SECTION_ORDER) {
-    buckets.set(priority, []);
-  }
-
+export function groupByActionState(items: readonly InboxItem[]): InboxSection[] {
+  const byState = new Map<InboxActionState, InboxItem[]>();
   for (const item of items) {
-    const bucket = buckets.get(item.priority);
-    if (bucket) bucket.push(item);
+    const bucket = byState.get(item.actionState) ?? [];
+    bucket.push(item);
+    byState.set(item.actionState, bucket);
   }
 
-  return PRIORITY_SECTION_ORDER.map((priority) => ({
-    priority,
-    heading: SECTION_HEADINGS[priority],
-    items: buckets.get(priority) ?? [],
-  })).filter((group) => group.items.length > 0);
+  return SECTIONS.map((section) => ({
+    key: section.key,
+    heading: section.heading,
+    items: section.states.flatMap((state) => byState.get(state) ?? []),
+  })).filter((section) => section.items.length > 0);
 }
 
 export function extractRepositories(items: readonly InboxItem[]): string[] {

@@ -24,9 +24,7 @@ export const inboxItem = Factory.define<InboxItem>(() => ({
   author: inboxActor.build(),
   createdAt: '2026-05-01T00:00:00Z',
   updatedAt: '2026-05-15T00:00:00Z',
-  priority: 'high',
-  priorityScore: 100,
-  reasons: ['review_requested'],
+  actionState: 'needs_my_review',
 }));
 
 export const inboxFilters = Factory.define<InboxFilters>(() => ({}));

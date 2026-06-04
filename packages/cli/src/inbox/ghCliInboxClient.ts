@@ -1,18 +1,12 @@
 import { getErrorMessage, toError } from '@contextbridge/shared/errors';
-import type {
-  InboxActor,
-  InboxFilters,
-  InboxItem,
-  InboxSnapshot,
-  InboxTimeWindow,
-} from '@contextbridge/shared/inboxSchema';
+import type { InboxActor, InboxFilters, InboxItem, InboxSnapshot } from '@contextbridge/shared/inboxSchema';
 import { inboxFiltersSchema, inboxSnapshotSchema } from '@contextbridge/shared/inboxSchema';
 import { Temporal, instantToString } from '@contextbridge/shared/time';
 import { Result, ResultAsync, err, ok } from 'neverthrow';
 import { z } from 'zod';
 import type { RunCommandResult } from '#src/CommandRunnerImpl.ts';
 import type { CliContext } from '#src/context.ts';
-import { scoreInboxItem } from './inboxPriority.ts';
+import { type InboxItemSource, actionStateRank, deriveActionState } from './inboxActionState.ts';
 
 export type InboxErrorCode =
   | 'gh_missing'
@@ -65,14 +59,15 @@ export class GhCliInboxClient {
 
     return this.getViewer().andThen((viewer) =>
       this.resolveRepositories(options).andThen((repositories) =>
-        ResultAsync.combine([
-          this.searchItems('review_requested', viewer.login, repositories, parsedFilters),
-          this.searchItems('assigned_prs', viewer.login, repositories, parsedFilters),
-          this.searchItems('assigned_issues', viewer.login, repositories, parsedFilters),
-        ]).andThen((groups) => {
-          const items = groups
-            .flat()
-            .map((item) => normalizeItem(item, viewer.login))
+        this.fetchInbox(viewer.login, repositories).andThen((data) => {
+          const normalized = [
+            ...(data.reviewRequested?.nodes ?? []).map((node) =>
+              normalizePrNode(node, viewer.login, 'review_requested'),
+            ),
+            ...(data.authored?.nodes ?? []).map((node) => normalizePrNode(node, viewer.login, 'authored')),
+            ...(data.assignedIssues?.nodes ?? []).map((node) => normalizeIssueNode(node, viewer.login)),
+          ];
+          const items = dedupeItems(normalized.filter(isItem))
             .filter((item) => matchesFilters(item, parsedFilters))
             .sort(compareItems);
 
@@ -80,7 +75,7 @@ export class GhCliInboxClient {
             viewer: viewer.login,
             generatedAt: instantToString(Temporal.Now.instant()),
             filters: repositories.length > 0 ? { ...parsedFilters, repositories } : parsedFilters,
-            items: dedupeItems(items),
+            items,
           });
         }),
       ),
@@ -124,22 +119,17 @@ export class GhCliInboxClient {
     ).map((result) => (result.exitCode === 0 ? parseGitHubRemote(result.stdout.trim()) : null));
   }
 
-  private searchItems(
-    queryKind: 'review_requested' | 'assigned_prs' | 'assigned_issues',
-    viewer: string,
-    repositories: readonly string[],
-    filters: InboxFilters,
-  ): ResultAsync<RawSearchItem[], InboxError> {
+  private fetchInbox(viewer: string, repositories: readonly string[]): ResultAsync<InboxGraphqlData, InboxError> {
     const { commandRunner } = this.ctx;
-    const args = buildSearchArgs(queryKind, viewer, repositories, filters.timeWindow);
+    const args = buildGraphqlArgs(viewer, repositories);
     return ResultAsync.fromPromise(commandRunner.run('gh', args), (cause) =>
-      commandError('gh_command_failed', `failed to run gh ${args.join(' ')}`, cause),
+      commandError('gh_command_failed', 'failed to query the GitHub inbox', cause),
     ).andThen((result) =>
       result.exitCode === 0
-        ? parseJson(result.stdout, rawSearchItemsSchema, `invalid GitHub search payload for ${queryKind}`)
-        : err(
-            failure('gh_command_failed', result.stderr.trim() || `gh ${args.join(' ')} exited with ${result.exitCode}`),
-          ),
+        ? parseJson(result.stdout, inboxGraphqlResponseSchema, 'invalid GitHub GraphQL inbox payload').map(
+            (parsed) => parsed.data,
+          )
+        : err(failure('gh_command_failed', result.stderr.trim() || `gh inbox query exited with ${result.exitCode}`)),
     );
   }
 
@@ -165,143 +155,220 @@ const ghViewerSchema = z.object({
   html_url: z.string().trim().nonempty().optional(),
 });
 
-const rawActorSchema = z
+// One GraphQL round trip splits the inbox into its three lanes by search
+// qualifier: PRs whose review GitHub requested of me, PRs I authored, and issues
+// assigned to me. The PR nodes carry the review/CI/merge signals the old
+// `gh search` payload could not, which is what the action-state classifier needs.
+const INBOX_GRAPHQL_QUERY = `query ($reviewQuery: String!, $authoredQuery: String!, $issueQuery: String!) {
+  reviewRequested: search(query: $reviewQuery, type: ISSUE, first: 50) { nodes { ...PrFields } }
+  authored: search(query: $authoredQuery, type: ISSUE, first: 50) { nodes { ...PrFields } }
+  assignedIssues: search(query: $issueQuery, type: ISSUE, first: 50) { nodes { ...IssueFields } }
+}
+fragment PrFields on PullRequest {
+  id number title url isDraft createdAt updatedAt reviewDecision mergeable
+  repository { nameWithOwner name owner { login } }
+  author { login url ... on User { name } ... on Organization { name } }
+  labels(first: 20) { nodes { name color } }
+  assignees(first: 10) { nodes { login url name } }
+  latestReviews(first: 30) { nodes { author { login } state } }
+  commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
+}
+fragment IssueFields on Issue {
+  id number title url createdAt updatedAt
+  repository { nameWithOwner name owner { login } }
+  author { login url ... on User { name } }
+  labels(first: 20) { nodes { name color } }
+  assignees(first: 10) { nodes { login url name } }
+}`;
+
+const ghActorSchema = z
+  .object({ login: z.string().optional(), url: z.string().optional(), name: z.string().nullable().optional() })
+  .passthrough()
+  .nullable()
+  .optional();
+
+const ghRepositorySchema = z
   .object({
-    login: z.string().trim().nonempty().optional(),
-    name: z.string().trim().nonempty().nullable().optional(),
-    url: z.string().trim().nonempty().optional(),
+    nameWithOwner: z.string().optional(),
+    name: z.string().optional(),
+    owner: z.object({ login: z.string().optional() }).passthrough().nullable().optional(),
   })
   .passthrough();
 
-const rawRepositorySchema = z.union([
-  z.string().trim().nonempty(),
-  z
-    .object({
-      nameWithOwner: z.string().trim().nonempty().optional(),
-      name: z.string().trim().nonempty().optional(),
-      owner: z.union([z.string().trim().nonempty(), rawActorSchema]).optional(),
-    })
-    .passthrough(),
-]);
+const ghLabelsSchema = z
+  .object({ nodes: z.array(z.object({ name: z.string(), color: z.string().optional() }).passthrough()).optional() })
+  .nullable()
+  .optional();
 
-const rawSearchItemSchema = z
+const ghAssigneesSchema = z
+  .object({ nodes: z.array(ghActorSchema).optional() })
+  .nullable()
+  .optional();
+
+const ghPrNodeSchema = z
   .object({
-    id: z.union([z.string(), z.number()]).optional(),
-    nodeId: z.string().optional(),
-    number: z.number().int().positive(),
-    title: z.string().trim().nonempty(),
-    url: z.string().trim().nonempty(),
-    repository: rawRepositorySchema,
-    author: rawActorSchema.optional(),
-    assignees: z.array(rawActorSchema).optional(),
-    reviewRequests: z.array(rawActorSchema).optional(),
-    labels: z
-      .array(z.object({ name: z.string().trim().nonempty(), color: z.string().optional() }).passthrough())
-      .optional(),
-    createdAt: z.string().trim().nonempty(),
-    updatedAt: z.string().trim().nonempty(),
+    id: z.string().optional(),
+    number: z.number().int().positive().optional(),
+    title: z.string().optional(),
+    url: z.string().optional(),
     isDraft: z.boolean().optional(),
-    state: z.string().trim().nonempty().optional(),
-    baseRefName: z.string().optional(),
-    headRefName: z.string().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
     reviewDecision: z.string().nullable().optional(),
-    checksConclusion: z.string().nullable().optional(),
+    mergeable: z.string().nullable().optional(),
+    repository: ghRepositorySchema.optional(),
+    author: ghActorSchema,
+    labels: ghLabelsSchema,
+    assignees: ghAssigneesSchema,
+    latestReviews: z
+      .object({
+        nodes: z
+          .array(
+            z.object({
+              author: z.object({ login: z.string().optional() }).nullable().optional(),
+              state: z.string().optional(),
+            }),
+          )
+          .optional(),
+      })
+      .nullable()
+      .optional(),
+    commits: z
+      .object({
+        nodes: z
+          .array(
+            z.object({
+              commit: z.object({ statusCheckRollup: z.object({ state: z.string() }).nullable().optional() }),
+            }),
+          )
+          .optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough()
+  .nullable();
+
+const ghIssueNodeSchema = z
+  .object({
+    id: z.string().optional(),
+    number: z.number().int().positive().optional(),
+    title: z.string().optional(),
+    url: z.string().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    repository: ghRepositorySchema.optional(),
+    author: ghActorSchema,
+    labels: ghLabelsSchema,
+    assignees: ghAssigneesSchema,
+  })
+  .passthrough()
+  .nullable();
+
+const inboxGraphqlResponseSchema = z
+  .object({
+    data: z.object({
+      reviewRequested: z
+        .object({ nodes: z.array(ghPrNodeSchema).optional() })
+        .nullable()
+        .optional(),
+      authored: z
+        .object({ nodes: z.array(ghPrNodeSchema).optional() })
+        .nullable()
+        .optional(),
+      assignedIssues: z
+        .object({ nodes: z.array(ghIssueNodeSchema).optional() })
+        .nullable()
+        .optional(),
+    }),
   })
   .passthrough();
 
-const rawSearchItemsSchema = z.array(rawSearchItemSchema);
-type RawSearchItem = z.infer<typeof rawSearchItemSchema>;
+type InboxGraphqlData = z.infer<typeof inboxGraphqlResponseSchema>['data'];
+type GhPrNode = z.infer<typeof ghPrNodeSchema>;
+type GhIssueNode = z.infer<typeof ghIssueNodeSchema>;
 
-function buildSearchArgs(
-  queryKind: 'review_requested' | 'assigned_prs' | 'assigned_issues',
-  viewer: string,
-  repositories: readonly string[],
-  timeWindow: InboxTimeWindow | undefined,
-): string[] {
-  const isIssueQuery = queryKind === 'assigned_issues';
-  const args = [
-    'search',
-    isIssueQuery ? 'issues' : 'prs',
-    '--state',
-    'open',
-    '--limit',
-    '100',
-    '--json',
-    searchFields(isIssueQuery),
+function buildGraphqlArgs(viewer: string, repositories: readonly string[]): string[] {
+  const repoScope = repositories.map((repository) => `repo:${repository}`).join(' ');
+  const suffix = repoScope ? ` ${repoScope}` : '';
+  return [
+    'api',
+    'graphql',
+    '-f',
+    `query=${INBOX_GRAPHQL_QUERY}`,
+    '-f',
+    `reviewQuery=is:open is:pr review-requested:${viewer}${suffix}`,
+    '-f',
+    `authoredQuery=is:open is:pr author:${viewer}${suffix}`,
+    '-f',
+    `issueQuery=is:open is:issue assignee:${viewer}${suffix}`,
   ];
-
-  if (queryKind === 'review_requested') args.push('--review-requested', viewer);
-  if (queryKind !== 'review_requested') args.push('--assignee', viewer);
-  for (const repository of repositories) args.push('--repo', repository);
-  for (const searchToken of timeWindowSearchTokens(timeWindow)) args.push(searchToken);
-
-  return args;
 }
 
-function searchFields(isIssueQuery: boolean): string {
-  const fields = [
-    'assignees',
-    'author',
-    'createdAt',
-    'id',
-    'labels',
-    'number',
-    'repository',
-    'state',
-    'title',
-    'updatedAt',
-    'url',
-  ];
-  if (!isIssueQuery) fields.push('isDraft');
-  return fields.join(',');
-}
+function normalizePrNode(node: GhPrNode, viewerLogin: string, source: InboxItemSource): InboxItem | null {
+  if (!node || !node.url || !node.number || !node.title || !node.createdAt || !node.updatedAt) return null;
 
-function normalizeItem(raw: RawSearchItem, viewerLogin: string): InboxItem {
-  const repository = normalizeRepository(raw.repository);
-  const author = normalizeActor(raw.author, 'unknown');
-  const assignees = raw.assignees?.map((actor) => normalizeActor(actor, 'unknown')) ?? [];
-  const reviewRequests = raw.reviewRequests?.map((actor) => normalizeActor(actor, 'unknown')) ?? [];
-  const isPr = raw.url.includes('/pull/');
-  const isDraft = raw.isDraft ?? false;
-  const state = isDraft ? 'draft' : normalizeState(raw.state);
-  const priority = scoreInboxItem({
-    kind: isPr ? 'pull_request' : 'issue',
+  const repository = normalizeRepository(node.repository);
+  const isDraft = node.isDraft ?? false;
+  const checksState = node.commits?.nodes?.[0]?.commit?.statusCheckRollup?.state ?? undefined;
+  const viewerHasApproved = (node.latestReviews?.nodes ?? []).some(
+    (review) => review.author?.login === viewerLogin && review.state === 'APPROVED',
+  );
+  const actionState = deriveActionState({
+    kind: 'pull_request',
+    source,
     isDraft,
-    authorLogin: author.login,
-    viewerLogin,
-    assigneeLogins: assignees.map((actor) => actor.login),
-    reviewRequestLogins: reviewRequests.map((actor) => actor.login),
-    updatedAt: raw.updatedAt,
-    checksConclusion: raw.checksConclusion ?? undefined,
+    reviewDecision: node.reviewDecision ?? undefined,
+    viewerHasApproved,
+    checksState,
+    mergeable: node.mergeable ?? undefined,
   });
 
   return {
-    id: String(raw.id ?? raw.nodeId ?? raw.url),
-    nodeId: raw.nodeId ?? String(raw.id ?? raw.url),
-    number: raw.number,
-    kind: isPr ? 'pull_request' : 'issue',
-    title: raw.title,
-    url: raw.url,
+    id: node.id ?? node.url,
+    nodeId: node.id ?? node.url,
+    number: node.number,
+    kind: 'pull_request',
+    title: node.title,
+    url: node.url,
     repository: repository.name,
     owner: repository.owner,
-    state,
+    state: isDraft ? 'draft' : 'open',
     isDraft,
-    author,
-    assignees,
-    reviewRequests,
-    labels: raw.labels
-      ?.map((label) => ({ name: label.name, color: label.color }))
-      .filter((label) => label.name.length > 0),
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    lastActivityAt: raw.updatedAt,
-    baseRefName: raw.baseRefName,
-    headRefName: raw.headRefName,
-    reviewDecision: raw.reviewDecision ?? undefined,
-    checksConclusion: raw.checksConclusion ?? undefined,
-    priority: priority.priority,
-    priorityScore: priority.priorityScore,
-    reasons: [...priority.reasons],
+    author: normalizeActor(node.author),
+    assignees: (node.assignees?.nodes ?? []).map((actor) => normalizeActor(actor)),
+    labels: normalizeLabels(node.labels),
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+    lastActivityAt: node.updatedAt,
+    reviewDecision: node.reviewDecision ?? undefined,
+    checksConclusion: checksState,
+    actionState,
+  };
+}
+
+function normalizeIssueNode(node: GhIssueNode, _viewerLogin: string): InboxItem | null {
+  if (!node || !node.url || !node.number || !node.title || !node.createdAt || !node.updatedAt) return null;
+
+  const repository = normalizeRepository(node.repository);
+  return {
+    id: node.id ?? node.url,
+    nodeId: node.id ?? node.url,
+    number: node.number,
+    kind: 'issue',
+    title: node.title,
+    url: node.url,
+    repository: repository.name,
+    owner: repository.owner,
+    state: 'open',
+    isDraft: false,
+    author: normalizeActor(node.author),
+    assignees: (node.assignees?.nodes ?? []).map((actor) => normalizeActor(actor)),
+    labels: normalizeLabels(node.labels),
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+    lastActivityAt: node.updatedAt,
+    actionState: 'assigned_issue',
   };
 }
 
@@ -326,7 +393,7 @@ function matchesFilters(item: InboxItem, filters: InboxFilters): boolean {
     return false;
   if (kinds && !kinds.includes(item.kind)) return false;
   if (!includeDrafts && item.isDraft) return false;
-  if (!includeDependabot && item.reasons.includes('dependabot')) return false;
+  if (!includeDependabot && isDependabot(item.author.login)) return false;
   return true;
 }
 
@@ -342,49 +409,51 @@ function dedupeItems(items: readonly InboxItem[]): InboxItem[] {
   return deduped;
 }
 
+// Sort by action urgency first; within "needs my review" surface the oldest
+// request (longest someone has been blocked), otherwise most recent activity.
 function compareItems(a: InboxItem, b: InboxItem): number {
-  if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
+  const rankDelta = actionStateRank(a.actionState) - actionStateRank(b.actionState);
+  if (rankDelta !== 0) return rankDelta;
+  if (a.actionState === 'needs_my_review') {
+    return Temporal.Instant.compare(Temporal.Instant.from(a.createdAt), Temporal.Instant.from(b.createdAt));
+  }
   return Temporal.Instant.compare(Temporal.Instant.from(b.updatedAt), Temporal.Instant.from(a.updatedAt));
 }
 
-function normalizeActor(actor: RawSearchItem['author'], fallback: string): InboxActor {
+function isItem(item: InboxItem | null): item is InboxItem {
+  return item !== null;
+}
+
+function isDependabot(login: string): boolean {
+  return login === 'dependabot' || login === 'dependabot[bot]';
+}
+
+type GhActor = z.infer<typeof ghActorSchema>;
+type GhRepository = z.infer<typeof ghRepositorySchema>;
+type GhLabels = z.infer<typeof ghLabelsSchema>;
+
+function normalizeActor(actor: GhActor): InboxActor {
   return {
-    login: actor?.login ?? fallback,
+    login: actor?.login ?? 'unknown',
     name: actor?.name ?? undefined,
     url: actor?.url,
   };
 }
 
-function normalizeRepository(repository: RawSearchItem['repository']): { name: string; owner: string } {
-  if (typeof repository === 'string') {
-    const [owner = 'unknown', name = repository] = repository.split('/');
-    return { owner, name };
-  }
-
-  const owner = typeof repository.owner === 'string' ? repository.owner : repository.owner?.login;
-  if (repository.nameWithOwner) {
+function normalizeRepository(repository: GhRepository | undefined): { name: string; owner: string } {
+  const owner = repository?.owner?.login;
+  if (repository?.nameWithOwner) {
     const [nameOwner = owner ?? 'unknown', name = repository.name ?? repository.nameWithOwner] =
       repository.nameWithOwner.split('/');
     return { owner: nameOwner, name };
   }
-
-  return { owner: owner ?? 'unknown', name: repository.name ?? 'unknown' };
+  return { owner: owner ?? 'unknown', name: repository?.name ?? 'unknown' };
 }
 
-function normalizeState(state: string | undefined): InboxItem['state'] {
-  const normalized = state?.toLowerCase();
-  if (normalized === 'merged') return 'merged';
-  if (normalized === 'closed') return 'closed';
-  return 'open';
-}
-
-function timeWindowSearchTokens(timeWindow: InboxTimeWindow | undefined): string[] {
-  const now = Temporal.Now.instant();
-  const zonedNow = now.toZonedDateTimeISO('UTC');
-  if (timeWindow === 'today') return [`updated:>=${zonedNow.toPlainDate().toString()}`];
-  if (timeWindow === 'week') return [`updated:>=${zonedNow.subtract({ days: 7 }).toPlainDate().toString()}`];
-  if (timeWindow === 'month') return [`updated:>=${zonedNow.subtract({ months: 1 }).toPlainDate().toString()}`];
-  return [];
+function normalizeLabels(labels: GhLabels): InboxItem['labels'] {
+  return labels?.nodes
+    ?.map((label) => ({ name: label.name, color: label.color }))
+    .filter((label) => label.name.length > 0);
 }
 
 function parseGitHubRemote(remote: string): string | null {

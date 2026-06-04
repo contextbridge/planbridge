@@ -7,22 +7,19 @@ export type InboxItemKind = z.infer<typeof inboxItemKindSchema>;
 export const inboxItemStateSchema = z.enum(['open', 'draft', 'merged', 'closed']);
 export type InboxItemState = z.infer<typeof inboxItemStateSchema>;
 
-export const inboxPrioritySchema = z.enum(['urgent', 'high', 'normal', 'low']);
-export type InboxPriority = z.infer<typeof inboxPrioritySchema>;
-
-export const inboxReasonSchema = z.enum([
-  'review_requested',
-  'assigned_to_me',
-  'mentioned_me',
-  'authored_by_me_needs_attention',
-  'recent_activity',
+// What the viewer needs to do about an item, in descending urgency. The first
+// state is the inbound "someone is blocked on me" lane; the middle four are the
+// outbound "my PR, ball is in my court" lane; the last two are quiet.
+export const inboxActionStateSchema = z.enum([
+  'needs_my_review',
+  'changes_requested',
   'ci_failing',
-  'dependabot',
+  'conflicts',
+  'ready_to_merge',
+  'waiting_on_others',
+  'assigned_issue',
 ]);
-export type InboxReason = z.infer<typeof inboxReasonSchema>;
-
-export const inboxTimeWindowSchema = z.enum(['today', 'week', 'month', 'all']);
-export type InboxTimeWindow = z.infer<typeof inboxTimeWindowSchema>;
+export type InboxActionState = z.infer<typeof inboxActionStateSchema>;
 
 const isoInstantStringSchema = z
   .string()
@@ -50,7 +47,6 @@ const githubUrlSchema = z
 export const inboxFiltersSchema = z.object({
   repositories: z.array(z.string().trim().nonempty()).optional(),
   kinds: z.array(inboxItemKindSchema).optional(),
-  timeWindow: inboxTimeWindowSchema.optional(),
   includeDrafts: z.boolean().optional(),
   includeDependabot: z.boolean().optional(),
 });
@@ -92,9 +88,7 @@ export const inboxItemSchema = z.object({
   headRefName: z.string().trim().nonempty().optional(),
   reviewDecision: z.string().trim().nonempty().optional(),
   checksConclusion: z.string().trim().nonempty().optional(),
-  priority: inboxPrioritySchema,
-  priorityScore: z.number().int(),
-  reasons: z.array(inboxReasonSchema),
+  actionState: inboxActionStateSchema,
 });
 export type InboxItem = z.infer<typeof inboxItemSchema>;
 

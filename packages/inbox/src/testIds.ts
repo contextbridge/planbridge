@@ -14,20 +14,23 @@ export const appTestIds = {
   warningBanner: 'inbox-warning-banner',
 } as const;
 
+export const pageTabsTestIds = {
+  container: 'inbox-page-tabs',
+  pullRequestsTab: 'inbox-page-tab-pull-requests',
+  issuesTab: 'inbox-page-tab-issues',
+} as const;
+
 export const filterBarTestIds = {
   container: 'inbox-filter-bar',
   repoSelect: 'inbox-filter-repo',
-  kindToggle: 'inbox-filter-kind',
-  timeWindowToggle: 'inbox-filter-time',
   draftsToggle: 'inbox-filter-drafts',
   dependabotToggle: 'inbox-filter-dependabot',
 } as const;
 
 export const inboxItemCardTestIds = {
   container: 'inbox-item-card',
-  openButton: 'inbox-item-open-button',
-  priorityBadge: 'inbox-item-priority-badge',
-  reasonBadge: 'inbox-item-reason-badge',
+  titleLink: 'inbox-item-title-link',
+  stateBadge: 'inbox-item-state-badge',
   kindIcon: 'inbox-item-kind-icon',
 } as const;
 
