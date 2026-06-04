@@ -4,6 +4,7 @@ import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
+import { buildPlanRevisionInstructions } from '#src/formatters/plan/revisionInstructions.ts';
 import { annotationArgs } from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
@@ -52,7 +53,12 @@ describe('hookClaude handler', () => {
 
     await runHookClaude(context, deps);
 
-    const expected = claudeHookResponse(submission, planContent);
+    const expected = claudeHookResponse(submission, planContent, {
+      revision: buildPlanRevisionInstructions({
+        plan: { id: 'fake-plan-id', revisionId: 'fake-revision-id', revisionNumber: 1 },
+        entrypoint: 'hook_claude',
+      }),
+    });
     expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
     const parsed = JSON.parse(io.stdout.text().trim()) as typeof expected;
     expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');

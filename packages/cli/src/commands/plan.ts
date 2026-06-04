@@ -5,22 +5,23 @@ import {
   type AnnotationDependencies,
   AnnotationEnvironmentError,
   AnnotationInterruptedError,
-  runAnnotation,
 } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { parsePort } from '#src/environment.ts';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
+import { InvalidPlanIdError, UnknownPlanIdError, runPlanReview } from '#src/planPersistence/runPlanReview.ts';
 import { abort } from './abort.ts';
 
 export interface PlanArgs {
   path?: string;
   port?: number;
+  planId?: string;
 }
 
 export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: AnnotationDependencies): Promise<void> {
   const { io, logger } = ctx;
-  const { path, port } = args;
+  const { path, port, planId: explicitPlanId } = args;
 
   if (!path && io.stdinIsTTY === true) {
     abort(
@@ -44,16 +45,23 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
   }
 
   const sourcePath = path ? resolvePath(path) : undefined;
-
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'plan received');
 
   try {
-    const submission = await runAnnotation(
+    const result = await runPlanReview(
       ctx,
-      { content, contentKind: 'plan', entrypoint: 'plan_command', port, sourcePath },
-      deps,
+      {
+        content,
+        entrypoint: 'plan_command',
+        explicitPlanId,
+        port,
+        sourcePath,
+      },
+      { annotationDeps: deps },
     );
-    io.writeStdout(formatAgentResponse(PLAN_TEMPLATES, submission, content));
+    io.writeStdout(
+      formatAgentResponse(PLAN_TEMPLATES, result.submission, result.content, { revision: result.revision }),
+    );
   } catch (err) {
     if (err instanceof AnnotationInterruptedError) {
       logger.info('plan review interrupted');
@@ -61,6 +69,9 @@ export async function runPlan(ctx: CliContext, args: PlanArgs, deps?: Annotation
     }
     if (err instanceof AnnotationEnvironmentError) {
       abort(ctx, 'plan', 'environment', err.message);
+    }
+    if (err instanceof InvalidPlanIdError || err instanceof UnknownPlanIdError) {
+      abort(ctx, 'plan', 'input', err.message);
     }
     abort(ctx, 'plan', 'runtime', getErrorMessage(err));
   }
@@ -74,8 +85,9 @@ export function registerPlan(ctx: CliContext, program: Command): void {
     )
     .argument('[path]', 'path to a file containing the plan (alternative to stdin)')
     .option('--port <number>', 'serve the plan review browser UI on a specific port', parsePortOption)
-    .action(async (path: string | undefined, opts: { port?: number }) => {
-      await runPlan(ctx, { path, port: opts.port });
+    .option('--plan-id <id>', 'append this submission as a revision of an existing persisted plan')
+    .action(async (path: string | undefined, opts: { port?: number; planId?: string }) => {
+      await runPlan(ctx, { path, port: opts.port, planId: opts.planId });
     });
 }
 

@@ -7,6 +7,7 @@ import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { formatAgentResponse } from '#src/formatters/annotation/markdown.ts';
+import { buildPlanRevisionInstructions } from '#src/formatters/plan/revisionInstructions.ts';
 import { PLAN_TEMPLATES } from '#src/formatters/plan/templates.ts';
 import { environment } from '#src/testFactories.ts';
 import {
@@ -39,7 +40,14 @@ describe('plan handler', () => {
 
     await runPlan(context, {}, deps);
 
-    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, expectedSubmission, deps.payloads[0]!.content));
+    expect(io.stdout.text()).toBe(
+      formatAgentResponse(PLAN_TEMPLATES, expectedSubmission, deps.payloads[0]!.content, {
+        revision: buildPlanRevisionInstructions({
+          plan: { id: 'fake-plan-id', revisionId: 'fake-revision-id', revisionNumber: 1 },
+          entrypoint: 'plan_command',
+        }),
+      }),
+    );
     expect(openedUrls).toEqual(['http://localhost:4312']);
     expect(deps.closed).toBe(true);
   });
@@ -54,7 +62,15 @@ describe('plan handler', () => {
 
     await runPlan(context, { path: planPath }, deps);
 
-    expect(io.stdout.text()).toBe(formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content));
+    expect(io.stdout.text()).toBe(
+      formatAgentResponse(PLAN_TEMPLATES, deps.submission, deps.payloads[0]!.content, {
+        revision: buildPlanRevisionInstructions({
+          plan: { id: 'fake-plan-id', revisionId: 'fake-revision-id', revisionNumber: 1 },
+          entrypoint: 'plan_command',
+          sourcePath: resolvePath(planPath),
+        }),
+      }),
+    );
     expect(deps.payloads[0]?.content).toBe('# From positional path\n');
   });
 

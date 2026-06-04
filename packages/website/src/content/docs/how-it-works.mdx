@@ -27,7 +27,7 @@ Select any line, leave a comment. When you're happy, click **Approve**. If somet
 
 Your content never leaves your machine. There's no remote backend, no account, no API keys, and no background daemon. The only network traffic is your browser talking to a CLI process on `localhost`.
 
-The CLI launches the local server only when your agent needs review, then shuts it down as soon as you submit. Nothing persists.
+The CLI launches the local server only when your agent needs review, then shuts it down as soon as you submit. Plan review content is stored locally in a SQLite database so PlanBridge can compare future plan revisions. It never leaves your machine.
 
 ## Under the hood
 

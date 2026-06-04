@@ -11,12 +11,15 @@ import {
 import { createNodeInstrumentation, getOrCreateAnonymousId } from '@contextbridge/instrumentation/node';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { Temporal } from '@contextbridge/shared/time';
+import { PlanService, createDb, resolveStoragePath } from '@contextbridge/storage';
 import open from 'open';
 import { type CommandRunner, CommandRunnerImpl } from '#src/CommandRunnerImpl.ts';
 import { type Environment, getEnvironment } from '#src/environment.ts';
 import { type Io, IoImpl } from '#src/IoImpl.ts';
 import { type Prompter, createClackPrompter } from '#src/prompter.ts';
 import { type Updater, UpdaterImpl } from '#src/updater/UpdaterImpl.ts';
+
+export type PlanRevisionService = Pick<PlanService, 'createRevision'>;
 
 export interface CliContext extends BaseContext {
   readonly env: Environment;
@@ -27,6 +30,7 @@ export interface CliContext extends BaseContext {
   readonly commandRunner: CommandRunner;
   readonly prompter: Prompter;
   readonly updater: Updater;
+  readonly planService: PlanRevisionService;
 }
 
 export function createContext(): CliContext {
@@ -62,6 +66,14 @@ export function createContext(): CliContext {
     logger,
   });
 
+  const storage = createDb({ dbPath: resolveStoragePath({ env }) }).match(
+    (value) => value,
+    (error) => {
+      throw error;
+    },
+  );
+  const planService = new PlanService(storage.db, { clock: () => Temporal.Now.instant() });
+
   return {
     ...createBaseContext({ logger, distinctId, telemetryDisabled, analytics, telemetry, fetcher }),
     env,
@@ -72,6 +84,7 @@ export function createContext(): CliContext {
     commandRunner,
     prompter,
     updater,
+    planService,
   };
 }
 

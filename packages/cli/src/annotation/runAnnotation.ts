@@ -38,6 +38,12 @@ export interface RunAnnotationArgs {
   entrypoint: AnnotationEntrypoint;
   port?: number;
   sourcePath?: string;
+  metadata?: AnnotationPayload['metadata'];
+}
+
+export interface RunAnnotationResult {
+  readonly submission: AnnotationSubmission;
+  readonly metadata: AnnotationPayload['metadata'];
 }
 
 export interface AnnotationDependencies {
@@ -59,25 +65,32 @@ export async function runAnnotation(
   ctx: CliContext,
   args: RunAnnotationArgs,
   deps: AnnotationDependencies = defaultAnnotationDependencies,
-): Promise<AnnotationSubmission> {
+): Promise<RunAnnotationResult> {
   const { analytics, logger, openUrl, frontendConfig, updater, env } = ctx;
-  const { port = env.CONTEXTBRIDGE_PORT } = args;
+  const {
+    content,
+    contentKind,
+    entrypoint,
+    port = env.CONTEXTBRIDGE_PORT,
+    sourcePath,
+    metadata = {
+      entrypoint,
+      ...(sourcePath ? { sourcePath } : {}),
+    },
+  } = args;
   const startedAt = nowInstant();
 
   const payload: AnnotationPayload = {
-    content: args.content,
-    title: extractDocumentTitle(args.content),
-    contentKind: args.contentKind,
-    metadata: {
-      entrypoint: args.entrypoint,
-      ...(args.sourcePath ? { sourcePath: args.sourcePath } : {}),
-    },
+    content,
+    title: extractDocumentTitle(content),
+    contentKind,
+    metadata,
   };
-  analytics.capture('plan_review_started', { source: args.entrypoint });
+  analytics.capture('plan_review_started', { source: entrypoint });
 
   const assets = await extractAssets(ctx, {
-    content: args.content,
-    sourcePath: args.sourcePath,
+    content,
+    sourcePath,
   });
   if (assets.length > 0) {
     payload.assets = assets;
@@ -133,7 +146,7 @@ export async function runAnnotation(
       threads_count: submittedReview.threads.length,
       duration_ms: nowInstant().epochMilliseconds - startedAt.epochMilliseconds,
     });
-    return submittedReview;
+    return { submission: submittedReview, metadata: payload.metadata };
   } finally {
     removeSigintHandler();
     await closeServer();

@@ -14,10 +14,13 @@ The setup is one instruction in your agent's system prompt or rules file: pipe t
 Add something like this to your prompt, system instructions, or rules file (`.cursorrules`, `AGENTS.md`, project README, wherever your agent picks up persistent guidance):
 
 ```markdown
-Whenever you produce a plan, pipe it to `contextbridge plan` on stdin and read
+Whenever you produce a new plan, pipe it to `contextbridge plan` on stdin and read
 the markdown returned on stdout. The response will tell you whether your plan
-was approved or needs revision and what to change. Follow the instructions in
-the response. If the command exits with a non-zero status, stop.
+was approved or needs revision and what to change. If changes are requested,
+submit the next version with the returned `contextbridge plan --plan-id <id>`
+command so it is recorded as a revision of the same plan. Follow the
+instructions in the response. If the command exits with a non-zero status,
+stop.
 ```
 
 The agent runs something like:
@@ -43,7 +46,7 @@ The response shape and exit codes below are identical for `plan` and `open`.
 The agent receives markdown on stdout. It opens with one of two headers:
 
 - `# Plan review: approved`. The human approved with no changes. Continue with implementation.
-- `# Plan review: changes requested`. The human left feedback. Revise the plan to address every comment, then run `contextbridge plan` again with the revised plan.
+- `# Plan review: changes requested`. The human left feedback. Revise the plan to address every comment, then run the returned `contextbridge plan --plan-id <id>` command with the revised plan. Do not start over with a plain `contextbridge plan` unless the next plan is genuinely different.
 
 The body of a "changes requested" response contains the human's annotations as `## Comment (lines X–Y)` sections, each with the relevant plan excerpt quoted and the human's comment in a blockquote. A `## General feedback` section appears for comments not anchored to a specific line.
 

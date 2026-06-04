@@ -1,14 +1,19 @@
-import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage } from '@contextbridge/shared/errors';
 import { type Command, CommanderError } from 'commander';
-import { AnnotationEnvironmentError, type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
+import { AnnotationEnvironmentError, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type ClaudeHookResponse, claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
+import {
+  InvalidPlanIdError,
+  type PlanReviewRunner,
+  UnknownPlanIdError,
+  runPlanReview,
+} from '#src/planPersistence/runPlanReview.ts';
 import { abort as abortCommand } from './abort.ts';
 import { type ClaudeHookPayload, ClaudeHookPayloadSchema } from './claudeHookSchema.ts';
 
 export interface HookClaudeDependencies {
-  runReview?: (ctx: CliContext, args: RunAnnotationArgs) => Promise<AnnotationSubmission>;
+  runReview?: PlanReviewRunner;
 }
 
 export async function runHookClaude(ctx: CliContext, deps: HookClaudeDependencies = {}): Promise<void> {
@@ -91,20 +96,30 @@ async function handleExitPlanMode(
     abort(ctx, 'input', 'missing tool_input.plan for ExitPlanMode');
   }
 
-  const planContent = payload.tool_input.plan;
-  logger.info({ tool: payload.tool_name, bytes: Buffer.byteLength(planContent, 'utf8') }, 'claude hook received');
+  logger.info(
+    { tool: payload.tool_name, bytes: Buffer.byteLength(payload.tool_input.plan, 'utf8') },
+    'claude hook received',
+  );
 
-  let submission: AnnotationSubmission;
   try {
-    submission = await runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_claude' });
+    const result = await runPlanReview(
+      ctx,
+      {
+        content: payload.tool_input.plan,
+        entrypoint: 'hook_claude',
+      },
+      { runReview },
+    );
+    return claudeHookResponse(result.submission, result.content, { revision: result.revision });
   } catch (err) {
     if (err instanceof AnnotationEnvironmentError) {
       abortCommand(ctx, 'hookClaude', 'environment', err.message);
     }
+    if (err instanceof InvalidPlanIdError || err instanceof UnknownPlanIdError) {
+      abort(ctx, 'input', err.message);
+    }
     abort(ctx, 'runtime', getErrorMessage(err));
   }
-
-  return claudeHookResponse(submission, planContent);
 }
 
 function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {

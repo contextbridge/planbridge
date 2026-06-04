@@ -46,7 +46,7 @@ export async function runOpen(ctx: CliContext, args: OpenArgs, deps?: Annotation
   logger.info({ source, bytes: Buffer.byteLength(content, 'utf8') }, 'open received');
 
   try {
-    const submission = await runAnnotation(
+    const { submission } = await runAnnotation(
       ctx,
       { content, contentKind: 'document', entrypoint: 'open_command', sourcePath },
       deps,

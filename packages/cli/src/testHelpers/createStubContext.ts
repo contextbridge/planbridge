@@ -7,8 +7,7 @@ import {
 } from '@contextbridge/context/testHelpers';
 import { okAsync } from 'neverthrow';
 import pino from 'pino';
-import type { CliContext } from '#src/context.ts';
-import type { PlanRevisionStore } from '#src/planPersistence/planRevisionStore.ts';
+import type { CliContext, PlanRevisionService } from '#src/context.ts';
 import { environment } from '#src/testFactories.ts';
 import { FakeCommandRunner, FakeIo, FakePrompter, FakeUpdater, MemoryStream } from './index.ts';
 
@@ -19,7 +18,7 @@ export interface TestContext {
   commandRunner: FakeCommandRunner;
   prompter: FakePrompter;
   updater: FakeUpdater;
-  planRevisionStore: PlanRevisionStore;
+  planService: PlanRevisionService;
   analytics: FakeAnalytics;
   telemetry: FakeTelemetry;
 }
@@ -33,7 +32,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
   const commandRunner = new FakeCommandRunner();
   const prompter = new FakePrompter();
   const updater = new FakeUpdater();
-  const planRevisionStore = createFakePlanRevisionStore();
+  const planService = createFakePlanService();
 
   const context: CliContext = {
     ...fakeBaseContext({ logger, analytics, telemetry }),
@@ -45,7 +44,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     commandRunner,
     prompter,
     updater,
-    planRevisionStore,
+    planService,
     ...overrides,
   };
 
@@ -56,20 +55,20 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     commandRunner: context.commandRunner instanceof FakeCommandRunner ? context.commandRunner : commandRunner,
     prompter: context.prompter instanceof FakePrompter ? context.prompter : prompter,
     updater: context.updater instanceof FakeUpdater ? context.updater : updater,
-    planRevisionStore: context.planRevisionStore,
+    planService: context.planService,
     analytics: context.analytics as FakeAnalytics,
     telemetry: context.telemetry as FakeTelemetry,
   };
 }
 
-function createFakePlanRevisionStore(): PlanRevisionStore {
+function createFakePlanService(): PlanRevisionService {
   return {
-    createRevision: () =>
+    createRevision: (args) =>
       okAsync({
-        planId: 'fake-plan-id',
+        planId: args.planId ?? 'fake-plan-id',
         revisionId: 'fake-revision-id',
-        revisionNumber: 1,
-        previousRevisionId: null,
+        revisionNumber: args.planId ? 2 : 1,
+        previousRevisionId: args.planId ? 'fake-previous-revision-id' : null,
       }),
   };
 }

@@ -14,12 +14,19 @@ describe('runAnnotation', () => {
     const { context } = createStubContext({ openUrl: (url) => (openedUrls.push(url), Promise.resolve()) });
     const deps = createAnnotationDependencies();
 
-    const submission = await runAnnotation(context, annotationArgs.build(), deps);
+    const result = await runAnnotation(context, annotationArgs.build(), deps);
 
-    expect(submission).toEqual(deps.submission);
+    expect(result.submission).toEqual(deps.submission);
     expect(openedUrls).toEqual(['http://localhost:4312']);
     expect(deps.payloads).toEqual([
-      { content: '# Plan', title: 'Plan', contentKind: 'plan', metadata: { entrypoint: 'plan_command' } },
+      {
+        content: '# Plan',
+        title: 'Plan',
+        contentKind: 'plan',
+        metadata: {
+          entrypoint: 'plan_command',
+        },
+      },
     ]);
     expect(deps.port).toBeUndefined();
     expect(deps.closeCount).toBe(1);
@@ -138,7 +145,7 @@ describe('runAnnotation', () => {
         { content: '# doc', contentKind: 'document', entrypoint: 'open_command', sourcePath: '/abs/doc.md' },
         deps,
       ),
-    ).resolves.toEqual(deps.submission);
+    ).resolves.toMatchObject({ submission: deps.submission });
     expect(deps.payloads[0]?.metadata?.sourcePath).toBe('/abs/doc.md');
   });
 
@@ -147,7 +154,7 @@ describe('runAnnotation', () => {
     const deps = createAnnotationDependencies();
     expect(
       runAnnotation(context, { content: '# doc', contentKind: 'document', entrypoint: 'open_command' }, deps),
-    ).resolves.toEqual(deps.submission);
+    ).resolves.toMatchObject({ submission: deps.submission });
     expect(deps.payloads[0]?.metadata?.sourcePath).toBeUndefined();
   });
 

@@ -1,11 +1,16 @@
-import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage, toError } from '@contextbridge/shared/errors';
 import { safeJsonParse } from '@contextbridge/shared/json';
 import { type Command, CommanderError } from 'commander';
 import { ResultAsync, err, ok } from 'neverthrow';
-import { AnnotationEnvironmentError, type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
+import { AnnotationEnvironmentError, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import type { CliContext } from '#src/context.ts';
 import { type CodexStopResponse, codexStopResponse } from '#src/formatters/plan/codexStopResponse.ts';
+import {
+  InvalidPlanIdError,
+  type PlanReviewRunner,
+  UnknownPlanIdError,
+  runPlanReview,
+} from '#src/planPersistence/runPlanReview.ts';
 import { abort as abortCommand } from './abort.ts';
 import {
   type CodexStopHookPayload,
@@ -15,7 +20,7 @@ import {
 } from './codexHookSchema.ts';
 
 export interface HookCodexDependencies {
-  runReview?: (ctx: CliContext, args: RunAnnotationArgs) => Promise<AnnotationSubmission>;
+  runReview?: PlanReviewRunner;
   readTranscript?: (path: string) => Promise<string>;
 }
 
@@ -105,18 +110,25 @@ async function handleStop(
 
   logger.info({ bytes: Buffer.byteLength(planContent, 'utf8') }, 'codex hook received');
 
-  return ResultAsync.fromPromise(
-    runReview(ctx, { content: planContent, contentKind: 'plan', entrypoint: 'hook_codex' }),
-    toError,
-  ).match(
-    (submission: AnnotationSubmission) => codexStopResponse(submission, planContent),
-    (e) => {
-      if (e instanceof AnnotationEnvironmentError) {
-        abortCommand(ctx, 'hookCodex', 'environment', e.message);
-      }
-      abort(ctx, 'runtime', getErrorMessage(e));
-    },
-  );
+  try {
+    const result = await runPlanReview(
+      ctx,
+      {
+        content: planContent,
+        entrypoint: 'hook_codex',
+      },
+      { runReview },
+    );
+    return codexStopResponse(result.submission, result.content, { revision: result.revision });
+  } catch (e) {
+    if (e instanceof AnnotationEnvironmentError) {
+      abortCommand(ctx, 'hookCodex', 'environment', e.message);
+    }
+    if (e instanceof InvalidPlanIdError || e instanceof UnknownPlanIdError) {
+      abort(ctx, 'input', e.message);
+    }
+    abort(ctx, 'runtime', getErrorMessage(e));
+  }
 }
 
 async function resolvePlanContent(
