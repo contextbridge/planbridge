@@ -7,10 +7,11 @@ import { fakeFrontendContext } from './fakeFrontendContext.ts';
 describe('fakeBaseContext', () => {
   it('returns a BaseContext with test defaults, silent logger, and fake instrumentation', () => {
     const ctx = fakeBaseContext();
-    expect(ctx.buildInfo.version).toBe('test');
-    expect(ctx.buildInfo.environment).toBe('local');
-    expect(ctx.distinctId).toBe('fake-distinct-id');
-    expect(ctx.telemetryDisabled).toBe(true);
+    expect(ctx).toMatchObject({
+      buildInfo: { version: 'test', environment: 'local' },
+      distinctId: 'fake-distinct-id',
+      telemetryDisabled: true,
+    });
     expect(typeof ctx.logger.info).toBe('function');
     expect(typeof ctx.analytics.capture).toBe('function');
     expect(typeof ctx.telemetry.captureException).toBe('function');
