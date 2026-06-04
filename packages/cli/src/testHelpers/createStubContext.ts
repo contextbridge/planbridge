@@ -5,8 +5,10 @@ import {
   createFakeTelemetry,
   fakeBaseContext,
 } from '@contextbridge/context/testHelpers';
+import { okAsync } from 'neverthrow';
 import pino from 'pino';
 import type { CliContext } from '#src/context.ts';
+import type { PlanRevisionStore } from '#src/planPersistence/planRevisionStore.ts';
 import { environment } from '#src/testFactories.ts';
 import { FakeCommandRunner, FakeIo, FakePrompter, FakeUpdater, MemoryStream } from './index.ts';
 
@@ -17,6 +19,7 @@ export interface TestContext {
   commandRunner: FakeCommandRunner;
   prompter: FakePrompter;
   updater: FakeUpdater;
+  planRevisionStore: PlanRevisionStore;
   analytics: FakeAnalytics;
   telemetry: FakeTelemetry;
 }
@@ -30,6 +33,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
   const commandRunner = new FakeCommandRunner();
   const prompter = new FakePrompter();
   const updater = new FakeUpdater();
+  const planRevisionStore = createFakePlanRevisionStore();
 
   const context: CliContext = {
     ...fakeBaseContext({ logger, analytics, telemetry }),
@@ -41,6 +45,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     commandRunner,
     prompter,
     updater,
+    planRevisionStore,
     ...overrides,
   };
 
@@ -51,7 +56,20 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     commandRunner: context.commandRunner instanceof FakeCommandRunner ? context.commandRunner : commandRunner,
     prompter: context.prompter instanceof FakePrompter ? context.prompter : prompter,
     updater: context.updater instanceof FakeUpdater ? context.updater : updater,
+    planRevisionStore: context.planRevisionStore,
     analytics: context.analytics as FakeAnalytics,
     telemetry: context.telemetry as FakeTelemetry,
+  };
+}
+
+function createFakePlanRevisionStore(): PlanRevisionStore {
+  return {
+    createRevision: () =>
+      okAsync({
+        planId: 'fake-plan-id',
+        revisionId: 'fake-revision-id',
+        revisionNumber: 1,
+        previousRevisionId: null,
+      }),
   };
 }
