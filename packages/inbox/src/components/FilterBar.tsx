@@ -1,22 +1,24 @@
 import type { InboxFilters } from '@contextbridge/shared/inboxSchema';
+import { getParentKind } from '../sectionConfig.ts';
 import { filterBarTestIds } from '../testIds.ts';
 
 export interface FilterBarProps {
   readonly filters: InboxFilters;
   readonly repositories: string[];
+  readonly activeSection: string;
   readonly onFiltersChange: (filters: InboxFilters) => void;
 }
 
 export const filterBarCopy = {
   allRepos: 'All repos',
   drafts: 'Drafts',
-  dependabot: 'Dependabot',
 } as const;
 
-export function FilterBar({ filters, repositories, onFiltersChange }: FilterBarProps) {
-  // Drafts and Dependabot are pull-request concepts — issues are never drafts,
-  // and Dependabot only opens PRs — so they only apply on the pull requests page.
-  const showPullRequestFilters = filters.kinds?.[0] === 'pull_request';
+export function FilterBar({ filters, repositories, activeSection, onFiltersChange }: FilterBarProps) {
+  // Drafts is a pull-request concept — issues are never drafts — so it only
+  // applies on the pull requests page. Dependabot never creates draft PRs so
+  // the toggle is hidden on that section too.
+  const showPullRequestFilters = getParentKind(activeSection) === 'pull_request' && activeSection !== 'dependabot';
   const showRepoSelect = repositories.length > 1;
 
   if (!showRepoSelect && !showPullRequestFilters) return null;
@@ -58,12 +60,6 @@ export function FilterBar({ filters, repositories, onFiltersChange }: FilterBarP
             active={filters.includeDrafts ?? false}
             onClick={() => update({ includeDrafts: !filters.includeDrafts })}
             testId={filterBarTestIds.draftsToggle}
-          />
-          <FilterButton
-            label={filterBarCopy.dependabot}
-            active={filters.includeDependabot ?? false}
-            onClick={() => update({ includeDependabot: !filters.includeDependabot })}
-            testId={filterBarTestIds.dependabotToggle}
           />
         </div>
       )}

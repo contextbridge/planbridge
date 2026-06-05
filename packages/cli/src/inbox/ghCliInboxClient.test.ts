@@ -1,23 +1,21 @@
 import { describe, expect, it } from 'bun:test';
 import { createStubContext } from '#src/testHelpers/index.ts';
-import { GhCliInboxClient } from './ghCliInboxClient.ts';
+import { GhCliInboxClient, type GhCliInboxClientDeps } from './ghCliInboxClient.ts';
+import type { GitHubGraphqlClient } from './githubGraphqlClient.ts';
 
 describe('GhCliInboxClient', () => {
   it('classifies GraphQL results into action states in a single query', async () => {
     const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich('gh', '/usr/bin/gh');
-    commandRunner.on('gh', ['api', 'user']).resolves({ stdout: JSON.stringify({ login: 'octocat' }) });
-    commandRunner.on('gh', ['api', 'graphql']).resolves({
-      stdout: JSON.stringify(
-        envelope({
-          reviewRequested: [prNode({ number: 1, author: 'alice', reviewDecision: 'REVIEW_REQUIRED' })],
-          authored: [prNode({ number: 3, author: 'octocat', reviewDecision: 'CHANGES_REQUESTED' })],
-          assignedIssues: [issueNode({ number: 2 })],
-        }),
-      ),
-    });
+    stubGhAuth(commandRunner);
+    const { deps, graphql } = fakeGraphql(
+      dataPayload({
+        reviewRequested: [prNode({ number: 1, author: 'alice', reviewDecision: 'REVIEW_REQUIRED' })],
+        authored: [prNode({ number: 3, author: 'octocat', reviewDecision: 'CHANGES_REQUESTED' })],
+        assignedIssues: [issueNode({ number: 2 })],
+      }),
+    );
 
-    const result = await new GhCliInboxClient(context, { allRepos: true }).getInbox();
+    const result = await new GhCliInboxClient(context, { allRepos: true }, deps).getInbox();
 
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
@@ -25,20 +23,17 @@ describe('GhCliInboxClient', () => {
     expect(byNumber.get(1)).toMatchObject({ kind: 'pull_request', actionState: 'needs_my_review' });
     expect(byNumber.get(3)).toMatchObject({ kind: 'pull_request', actionState: 'changes_requested' });
     expect(byNumber.get(2)).toMatchObject({ kind: 'issue', actionState: 'assigned_issue' });
-    expect(commandRunner.callsTo('gh', ['api', 'graphql'])).toHaveLength(1);
+    expect(graphql.calls).toHaveLength(1);
   });
 
   it('drops a review-requested PR a co-owner already approved', async () => {
     const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich('gh', '/usr/bin/gh');
-    commandRunner.on('gh', ['api', 'user']).resolves({ stdout: JSON.stringify({ login: 'octocat' }) });
-    commandRunner.on('gh', ['api', 'graphql']).resolves({
-      stdout: JSON.stringify(
-        envelope({ reviewRequested: [prNode({ number: 5, author: 'alice', reviewDecision: 'APPROVED' })] }),
-      ),
-    });
+    stubGhAuth(commandRunner);
+    const { deps } = fakeGraphql(
+      dataPayload({ reviewRequested: [prNode({ number: 5, author: 'alice', reviewDecision: 'APPROVED' })] }),
+    );
 
-    const result = await new GhCliInboxClient(context, { allRepos: true }).getInbox();
+    const result = await new GhCliInboxClient(context, { allRepos: true }, deps).getInbox();
 
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
@@ -56,41 +51,89 @@ describe('GhCliInboxClient', () => {
     expect(result.error).toMatchObject({ code: 'gh_missing' });
   });
 
-  it('scopes the GraphQL search to explicit repositories', async () => {
+  it('drops items from archived repositories', async () => {
     const { context, commandRunner } = createStubContext();
-    commandRunner.setWhich('gh', '/usr/bin/gh');
-    commandRunner.on('gh', ['api', 'user']).resolves({ stdout: JSON.stringify({ login: 'octocat' }) });
-    commandRunner.on('gh', ['api', 'graphql']).resolves({ stdout: JSON.stringify(envelope({})) });
+    stubGhAuth(commandRunner);
+    const { deps } = fakeGraphql(
+      dataPayload({
+        reviewRequested: [
+          prNode({ number: 1, author: 'alice', reviewDecision: 'REVIEW_REQUIRED' }),
+          prNode({ number: 9, author: 'alice', reviewDecision: 'REVIEW_REQUIRED', archived: true }),
+        ],
+        assignedIssues: [issueNode({ number: 7, archived: true })],
+      }),
+    );
 
-    const result = await new GhCliInboxClient(context, { repositories: ['contextbridge/example'] }).getInbox();
+    const result = await new GhCliInboxClient(context, { allRepos: true }, deps).getInbox();
 
     expect(result.isOk()).toBe(true);
-    const args = commandRunner.callsTo('gh', ['api', 'graphql'])[0]?.args ?? [];
-    expect(args.some((arg) => arg.includes('repo:contextbridge/example'))).toBe(true);
+    if (result.isErr()) return;
+    expect(result.value.items.map((item) => item.number)).toEqual([1]);
+  });
+
+  it('scopes the GraphQL search to explicit repositories', async () => {
+    const { context, commandRunner } = createStubContext();
+    stubGhAuth(commandRunner);
+    const { deps, graphql } = fakeGraphql(dataPayload({}));
+
+    const result = await new GhCliInboxClient(context, { repositories: ['contextbridge/example'] }, deps).getInbox();
+
+    expect(result.isOk()).toBe(true);
+    const variables = graphql.calls[0]?.variables ?? {};
+    expect(String(variables.reviewQuery)).toContain('repo:contextbridge/example');
+    expect(String(variables.authoredQuery)).toContain('repo:contextbridge/example');
   });
 });
 
-interface EnvelopeNodes {
+interface DataPayloadNodes {
   readonly reviewRequested?: unknown[];
   readonly authored?: unknown[];
   readonly assignedIssues?: unknown[];
 }
 
-function envelope({
+interface GraphqlCall {
+  readonly query: string;
+  readonly variables: Record<string, unknown>;
+}
+
+function stubGhAuth(commandRunner: ReturnType<typeof createStubContext>['commandRunner']): void {
+  commandRunner.setWhich('gh', '/usr/bin/gh');
+  commandRunner.on('gh', ['auth', 'token']).resolves({ stdout: 'gho_testtoken\n' });
+}
+
+function fakeGraphql(payload: Record<string, unknown>): {
+  deps: GhCliInboxClientDeps;
+  graphql: { calls: GraphqlCall[] };
+} {
+  const calls: GraphqlCall[] = [];
+  const client: GitHubGraphqlClient = {
+    graphql: <T>(query: string, variables: Record<string, unknown>): Promise<T> => {
+      calls.push({ query, variables });
+      return Promise.resolve(payload as T);
+    },
+  };
+  return { deps: { createGraphqlClient: () => client }, graphql: { calls } };
+}
+
+function dataPayload({
   reviewRequested = [],
   authored = [],
   assignedIssues = [],
-}: EnvelopeNodes): Record<string, unknown> {
+}: DataPayloadNodes): Record<string, unknown> {
   return {
-    data: {
-      reviewRequested: { nodes: reviewRequested },
-      authored: { nodes: authored },
-      assignedIssues: { nodes: assignedIssues },
-    },
+    viewer: { login: 'octocat' },
+    reviewRequested: { nodes: reviewRequested },
+    authored: { nodes: authored },
+    assignedIssues: { nodes: assignedIssues },
   };
 }
 
-function prNode(over: { number: number; author: string; reviewDecision?: string }): Record<string, unknown> {
+function prNode(over: {
+  number: number;
+  author: string;
+  reviewDecision?: string;
+  archived?: boolean;
+}): Record<string, unknown> {
   return {
     id: `PR_${over.number}`,
     number: over.number,
@@ -101,7 +144,12 @@ function prNode(over: { number: number; author: string; reviewDecision?: string 
     updatedAt: '2026-01-02T00:00:00Z',
     reviewDecision: over.reviewDecision ?? null,
     mergeable: 'MERGEABLE',
-    repository: { nameWithOwner: 'contextbridge/example', name: 'example', owner: { login: 'contextbridge' } },
+    repository: {
+      nameWithOwner: 'contextbridge/example',
+      name: 'example',
+      isArchived: over.archived ?? false,
+      owner: { login: 'contextbridge' },
+    },
     author: { login: over.author },
     labels: { nodes: [] },
     assignees: { nodes: [] },
@@ -110,7 +158,7 @@ function prNode(over: { number: number; author: string; reviewDecision?: string 
   };
 }
 
-function issueNode(over: { number: number }): Record<string, unknown> {
+function issueNode(over: { number: number; archived?: boolean }): Record<string, unknown> {
   return {
     id: `I_${over.number}`,
     number: over.number,
@@ -118,7 +166,12 @@ function issueNode(over: { number: number }): Record<string, unknown> {
     url: `https://github.com/contextbridge/example/issues/${over.number}`,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-02T00:00:00Z',
-    repository: { nameWithOwner: 'contextbridge/example', name: 'example', owner: { login: 'contextbridge' } },
+    repository: {
+      nameWithOwner: 'contextbridge/example',
+      name: 'example',
+      isArchived: over.archived ?? false,
+      owner: { login: 'contextbridge' },
+    },
     author: { login: 'bob' },
     labels: { nodes: [] },
     assignees: { nodes: [{ login: 'octocat' }] },

@@ -11,14 +11,19 @@ export interface SnapshotState {
 }
 
 export interface UseInboxSnapshotResult extends SnapshotState {
-  readonly refresh: (filters?: InboxFilters) => Promise<void>;
+  readonly refresh: () => Promise<void>;
 }
 
 const LOADING_STATE: SnapshotState = Object.freeze({ snapshot: null, status: 'loading', error: null });
 
-export function useInboxSnapshot(apiClient: InboxApiClient, initialFilters: InboxFilters = {}): UseInboxSnapshotResult {
+// The snapshot is fetched once and refreshed only on explicit user action.
+// Section switching, draft/repository filtering, and sorting are all derived
+// client-side from this snapshot — none of them re-hit GitHub. So the hook always
+// fetches the same complete set; `fetchFilters` only scopes what the server
+// returns (e.g. always include drafts so the client can toggle them locally).
+export function useInboxSnapshot(apiClient: InboxApiClient, fetchFilters: InboxFilters = {}): UseInboxSnapshotResult {
   const [state, setState] = useState<SnapshotState>(LOADING_STATE);
-  const filtersRef = useRef<InboxFilters>(initialFilters);
+  const filtersRef = useRef<InboxFilters>(fetchFilters);
   const mountedRef = useRef(true);
   const fetchIdRef = useRef(0);
 
@@ -48,13 +53,11 @@ export function useInboxSnapshot(apiClient: InboxApiClient, initialFilters: Inbo
     );
   }, [apiClient]);
 
-  async function refresh(filters?: InboxFilters): Promise<void> {
-    const nextFilters = filters ?? filtersRef.current;
-    filtersRef.current = nextFilters;
+  async function refresh(): Promise<void> {
     const id = ++fetchIdRef.current;
     setState(LOADING_STATE);
     try {
-      const result = await apiClient.fetchSnapshot(nextFilters);
+      const result = await apiClient.fetchSnapshot(filtersRef.current);
       if (!mountedRef.current || fetchIdRef.current !== id) return;
       setState({ snapshot: result, status: 'loaded', error: null });
     } catch (err: unknown) {

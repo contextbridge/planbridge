@@ -2,6 +2,7 @@ import type { InboxActionState, InboxFilters, InboxItem } from '@contextbridge/s
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { InboxApiClient } from './apiClient.ts';
 import { App } from './App.tsx';
+import { SECTIONS } from './sectionConfig.ts';
 import { inboxItem, inboxSnapshot } from './testFactories.ts';
 
 const meta: Meta<typeof App> = {
@@ -20,10 +21,8 @@ const BUG = { name: 'bug', color: 'd73a4a' };
 const FEATURE = { name: 'feature', color: '0e8a16' };
 const DOCS = { name: 'docs', color: '0075ca' };
 
-// A full inbox: every PR action state (both lanes plus the quiet tail), a draft,
-// a Dependabot PR, and assigned issues — spread across two repos so the repo
-// picker shows up. The fake client filters this set the way the real server
-// does, so the page tabs and filter toggles behave for real in Storybook.
+// A full inbox: items spanning all action states across two repos so the repo
+// picker shows up. The sidebar section buttons let you drill into each lane.
 const ALL_ITEMS: InboxItem[] = [
   pr(101, 'needs_my_review', 'Fix critical parsing bug in the lexer', 'aether', { labels: [BUG] }),
   pr(102, 'needs_my_review', 'Add OAuth device-flow login', 'planbridge', { labels: [FEATURE] }),
@@ -49,8 +48,8 @@ export const Empty: Story = {
   render: () => <App apiClient={filteringApiClient([])} />,
 };
 
-// Switch the page tabs (Pull Requests / Issues) and the Drafts / Dependabot
-// toggles to walk through every lane and badge.
+// Click sidebar section buttons and toggle Drafts to walk through every lane
+// and badge.
 export const Populated: Story = {
   render: () => <App apiClient={filteringApiClient(ALL_ITEMS)} />,
 };
@@ -77,16 +76,11 @@ function filteringApiClient(items: InboxItem[], warnings?: string[]): InboxApiCl
 }
 
 function matches(item: InboxItem, filters: InboxFilters): boolean {
-  const { kinds, includeDrafts = false, includeDependabot = false, repositories } = filters;
+  const { kinds, includeDrafts = false, repositories } = filters;
   if (kinds && !kinds.includes(item.kind)) return false;
   if (!includeDrafts && item.isDraft) return false;
-  if (!includeDependabot && isDependabot(item.author.login)) return false;
   if (repositories?.length && !repositories.includes(`${item.owner}/${item.repository}`)) return false;
   return true;
-}
-
-function isDependabot(login: string): boolean {
-  return login === 'dependabot' || login === 'dependabot[bot]';
 }
 
 function pr(

@@ -10,4 +10,5 @@
 @import '@contextbridge/ui/styles.css';
 
 @source "../../annotation/src/**/*.{ts,tsx}";
+@source "../../inbox/src/**/*.{ts,tsx}";
 @source "../../review/src/**/*.{ts,tsx}";

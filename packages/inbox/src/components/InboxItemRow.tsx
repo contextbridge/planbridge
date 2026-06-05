@@ -21,7 +21,6 @@ export const actionStateLabels: Record<InboxActionState, string> = {
   assigned_issue: 'Assigned',
 };
 
-// The dot carries the state; the label stays muted so it never competes with the title.
 const ACTION_STATE_DOT_COLORS: Record<InboxActionState, string> = {
   needs_my_review: 'bg-amber-500',
   changes_requested: 'bg-red-500',
@@ -37,67 +36,74 @@ const KIND_COLORS: Record<string, string> = {
   issue: 'text-blue-600 dark:text-blue-400',
 };
 
-// Quiet outline chip — shared by reasons, labels, and the draft marker so no
-// single piece of metadata looks louder than the rest.
-const CHIP_CLASS = 'rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground';
+const CHIP_CLASS = 'rounded-full px-1.5 py-0.5 text-xs text-muted-foreground';
 
 export function InboxItemRow({ item, onOpen }: InboxItemRowProps) {
   const Icon = item.kind === 'pull_request' ? GitPullRequest : CircleDot;
   const iconColor = KIND_COLORS[item.kind] ?? '';
 
-  return (
-    <div
-      data-testid={inboxItemCardTestIds.container}
-      className="group flex items-start gap-3 border-b border-border px-2 py-2 transition-colors hover:bg-muted/40"
-    >
-      <span
-        data-testid={inboxItemCardTestIds.kindIcon}
-        className={`flex h-6 w-4 shrink-0 items-center justify-center ${iconColor}`}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+  function handleRowClick() {
+    onOpen(item.url);
+  }
 
-      <div className="min-w-0 flex-1">
-        <a
-          data-testid={inboxItemCardTestIds.titleLink}
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block truncate text-sm font-medium leading-6 hover:underline"
-          onClick={(event) => {
-            event.preventDefault();
-            onOpen(item.url);
-          }}
+  return (
+    <tr
+      data-testid={inboxItemCardTestIds.container}
+      className="group cursor-pointer border-b border-border transition-colors last:border-b-0 hover:bg-muted/40"
+      onClick={handleRowClick}
+    >
+      <td className="w-10 px-3 py-2 align-middle">
+        <span
+          data-testid={inboxItemCardTestIds.kindIcon}
+          className={`flex h-6 w-4 items-center justify-center ${iconColor}`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </td>
+
+      <td className="max-w-0 px-3 py-2 align-middle">
+        <span
+          className="block truncate text-sm font-medium leading-6 underline-offset-2 group-hover:underline"
+          title={item.title}
         >
           {item.title}
-        </a>
+        </span>
+      </td>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-mono text-xs text-muted-foreground">
-            {item.owner}/{item.repository}#{item.number}
-          </span>
+      <td className="whitespace-nowrap px-3 py-2 align-middle">
+        <span className="font-mono text-xs text-muted-foreground">
+          {item.owner}/{item.repository}
+        </span>
+      </td>
 
-          <span
-            data-testid={inboxItemCardTestIds.stateBadge}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-          >
-            <span aria-hidden className={`size-1.5 rounded-full ${ACTION_STATE_DOT_COLORS[item.actionState]}`} />
-            {actionStateLabels[item.actionState]}
-          </span>
+      <td className="whitespace-nowrap px-3 py-2 align-middle">
+        <span className="font-mono text-xs text-muted-foreground">#{item.number}</span>
+      </td>
 
+      <td className="whitespace-nowrap px-3 py-2 align-middle">
+        <span
+          data-testid={inboxItemCardTestIds.stateBadge}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <span aria-hidden className={`size-1.5 rounded-full ${ACTION_STATE_DOT_COLORS[item.actionState]}`} />
+          {actionStateLabels[item.actionState]}
+        </span>
+      </td>
+
+      <td className="px-3 py-2 align-middle">
+        <div className="flex flex-wrap items-center gap-1.5">
           {item.isDraft && <span className={`${CHIP_CLASS} uppercase tracking-wide`}>{inboxItemCardCopy.draft}</span>}
-
           {item.labels?.map((label) => (
             <span
               key={label.name}
               className={CHIP_CLASS}
-              style={label.color ? { borderColor: `#${label.color}` } : undefined}
+              style={label.color ? { backgroundColor: `#${label.color}1A` } : undefined}
             >
               {label.name}
             </span>
           ))}
         </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }

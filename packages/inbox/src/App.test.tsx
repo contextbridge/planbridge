@@ -5,13 +5,7 @@ import type { InboxApiClient } from './apiClient.ts';
 import { App, LoadedInbox, type LoadedInboxProps, errorStateCopy } from './App.tsx';
 import { emptyStateCopy } from './components/EmptyState.tsx';
 import { inboxItem, inboxSnapshot } from './testFactories.ts';
-import {
-  appTestIds,
-  filterBarTestIds,
-  inboxItemCardTestIds,
-  pageTabsTestIds,
-  prioritySectionTestIds,
-} from './testIds.ts';
+import { appTestIds, filterBarTestIds, inboxItemCardTestIds, sidebarNavTestIds } from './testIds.ts';
 
 afterEach(cleanup);
 
@@ -51,29 +45,66 @@ describe('App', () => {
     expect(screen.getByTestId(appTestIds.viewerLogin)).toHaveTextContent('testuser');
   });
 
-  it('opens the pull requests page by default and refetches issues on tab switch', async () => {
+  it('defaults to Needs My Review and fetches the full snapshot once on mount', async () => {
     const fetchSnapshot = vi.fn(() => Promise.resolve(inboxSnapshot.build()));
+    const client = fakeApiClient({ fetchSnapshot });
+    render(<App apiClient={client} />);
+
+    await screen.findByTestId(sidebarNavTestIds.container);
+    expect(fetchSnapshot).toHaveBeenCalledTimes(1);
+    // Drafts/Dependabot are fetched so the client can toggle/section them locally.
+    expect(fetchSnapshot).toHaveBeenCalledWith(expect.objectContaining({ includeDrafts: true }));
+
+    const needsReviewButton = screen.getByTestId(sidebarNavTestIds.sectionButton('needs_my_review'));
+    expect(needsReviewButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('switches sections client-side without re-fetching', async () => {
+    const snapshot = inboxSnapshot.build({
+      items: [
+        inboxItem.build({
+          id: 'pr-1',
+          nodeId: 'pr-1',
+          actionState: 'needs_my_review',
+          kind: 'pull_request',
+          title: 'Review me please',
+        }),
+        inboxItem.build({
+          id: 'issue-1',
+          nodeId: 'issue-1',
+          number: 2,
+          actionState: 'assigned_issue',
+          kind: 'issue',
+          title: 'An assigned issue',
+          url: 'https://github.com/owner/repo/issues/2',
+        }),
+      ],
+    });
+    const fetchSnapshot = vi.fn(() => Promise.resolve(snapshot));
     const client = fakeApiClient({ fetchSnapshot });
     const user = userEvent.setup();
     render(<App apiClient={client} />);
 
-    await screen.findByTestId(pageTabsTestIds.container);
-    expect(fetchSnapshot).toHaveBeenCalledWith(expect.objectContaining({ kinds: ['pull_request'] }));
+    expect(await screen.findByText('Review me please')).toBeInTheDocument();
+    expect(screen.queryByText('An assigned issue')).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId(pageTabsTestIds.issuesTab));
-    expect(fetchSnapshot).toHaveBeenLastCalledWith(expect.objectContaining({ kinds: ['issue'] }));
+    await user.click(screen.getByTestId(sidebarNavTestIds.sectionButton('assigned_issues')));
+    expect(screen.getByText('An assigned issue')).toBeInTheDocument();
+    expect(screen.queryByText('Review me please')).not.toBeInTheDocument();
+
+    // The section change is pure client-side filtering — no extra GitHub round trip.
+    expect(fetchSnapshot).toHaveBeenCalledTimes(1);
   });
 
-  it('hides the pull-request-only filters on the issues page', async () => {
+  it('hides the pull-request-only filters when an issues section is active', async () => {
     const client = fakeApiClient();
     const user = userEvent.setup();
     render(<App apiClient={client} />);
 
     expect(await screen.findByTestId(filterBarTestIds.draftsToggle)).toBeInTheDocument();
 
-    await user.click(screen.getByTestId(pageTabsTestIds.issuesTab));
+    await user.click(screen.getByTestId(sidebarNavTestIds.sectionButton('assigned_issues')));
     expect(screen.queryByTestId(filterBarTestIds.draftsToggle)).not.toBeInTheDocument();
-    expect(screen.queryByTestId(filterBarTestIds.dependabotToggle)).not.toBeInTheDocument();
   });
 
   it('renders error state on fetch failure', async () => {
@@ -86,7 +117,7 @@ describe('App', () => {
     expect(screen.getByText('Network error')).toBeInTheDocument();
   });
 
-  it('renders empty state when no items', async () => {
+  it('renders empty state when no items match the active section', async () => {
     const snapshot = inboxSnapshot.build({ items: [] });
     const client = fakeApiClient({ fetchSnapshot: () => Promise.resolve(snapshot) });
     render(<App apiClient={client} />);
@@ -95,8 +126,8 @@ describe('App', () => {
   });
 });
 
-function testItems() {
-  return [
+describe('LoadedInbox', () => {
+  const testItems = [
     inboxItem.build({
       id: 'item-urgent',
       nodeId: 'node-urgent',
@@ -128,44 +159,42 @@ function testItems() {
       url: 'https://github.com/owner/repo/pull/99',
     }),
   ];
-}
 
-describe('LoadedInbox', () => {
   const defaultProps: LoadedInboxProps = {
+    items: testItems,
     snapshot: inboxSnapshot.build({
       viewer: 'testuser',
-      items: testItems(),
+      items: testItems,
     }),
     filters: {},
+    activeSection: 'needs_my_review',
     onFiltersChange: () => {},
     onOpen: () => {},
   };
 
-  it('renders items grouped by action state', () => {
-    render(<LoadedInbox {...defaultProps} />);
-    const sections = screen.getAllByTestId(prioritySectionTestIds.heading);
-    expect(sections.map((el) => el.textContent)).toEqual([
-      'Needs My Review',
-      'My PRs — Action Needed',
-      'Waiting on Others',
-    ]);
-  });
-
-  it('shows item details', () => {
+  it('renders items passed via props', () => {
     render(<LoadedInbox {...defaultProps} />);
     expect(screen.getByText('Fix production crash in auth handler')).toBeInTheDocument();
-    expect(screen.getByText('myorg/myrepo#42')).toBeInTheDocument();
+    expect(screen.getByText('Refactor database connection pool')).toBeInTheDocument();
+    expect(screen.getByText('Bump eslint from 9.0.0 to 9.1.0')).toBeInTheDocument();
   });
 
-  it('calls onOpen when an item title is clicked', async () => {
+  it('shows item details in table columns', () => {
+    render(<LoadedInbox {...defaultProps} />);
+    expect(screen.getByText('#42')).toBeInTheDocument();
+    const repoMatches = screen.getAllByText('myorg/myrepo');
+    expect(repoMatches.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('calls onOpen when an item row is clicked', async () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
     render(<LoadedInbox {...defaultProps} onOpen={onOpen} />);
 
-    const titleLinks = screen.getAllByTestId(inboxItemCardTestIds.titleLink);
-    const firstLink = titleLinks[0];
-    if (!firstLink) throw new Error('Expected at least one item title link');
-    await user.click(firstLink);
+    const rows = screen.getAllByTestId(inboxItemCardTestIds.container);
+    const firstRow = rows[0];
+    if (!firstRow) throw new Error('Expected at least one item row');
+    await user.click(firstRow);
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(onOpen).toHaveBeenCalledWith(expect.stringContaining('github.com'));
   });
@@ -174,7 +203,7 @@ describe('LoadedInbox', () => {
     const props: LoadedInboxProps = {
       ...defaultProps,
       snapshot: inboxSnapshot.build({
-        items: testItems(),
+        items: testItems,
         warnings: ['Partial query failure for assigned issues.'],
       }),
     };
@@ -186,4 +215,53 @@ describe('LoadedInbox', () => {
     render(<LoadedInbox {...defaultProps} />);
     expect(screen.queryByTestId(appTestIds.warningBanner)).not.toBeInTheDocument();
   });
+
+  it('sorts table columns when headers are clicked', async () => {
+    const user = userEvent.setup();
+    render(<LoadedInbox {...defaultProps} />);
+
+    const titleHeader = screen.getByRole('columnheader', { name: /title/i });
+    const titleSortButton = screen.getByRole('button', { name: /title/i });
+
+    await user.click(titleSortButton);
+    expect(titleHeader).toHaveAttribute('aria-sort', 'ascending');
+    expect(rowTexts()).toEqual([
+      expect.stringContaining('Bump eslint from 9.0.0 to 9.1.0'),
+      expect.stringContaining('Fix production crash in auth handler'),
+      expect.stringContaining('Refactor database connection pool'),
+    ]);
+
+    await user.click(titleSortButton);
+    expect(titleHeader).toHaveAttribute('aria-sort', 'descending');
+    expect(rowTexts()).toEqual([
+      expect.stringContaining('Refactor database connection pool'),
+      expect.stringContaining('Fix production crash in auth handler'),
+      expect.stringContaining('Bump eslint from 9.0.0 to 9.1.0'),
+    ]);
+  });
+
+  it('keeps long titles constrained while preserving the full title as a tooltip', () => {
+    const longTitle =
+      'Investigate a very long pull request title that should truncate inside the table instead of widening it';
+    const props: LoadedInboxProps = {
+      ...defaultProps,
+      items: [inboxItem.build({ id: 'item-long-title', nodeId: 'node-long-title', title: longTitle })],
+    };
+    render(<LoadedInbox {...props} />);
+
+    expect(screen.getByText(longTitle)).toHaveAttribute('title', longTitle);
+  });
+
+  it('shows empty state when items array is empty', () => {
+    const props: LoadedInboxProps = {
+      ...defaultProps,
+      items: [],
+    };
+    render(<LoadedInbox {...props} />);
+    expect(screen.getByText(emptyStateCopy.title)).toBeInTheDocument();
+  });
 });
+
+function rowTexts(): string[] {
+  return screen.getAllByTestId(inboxItemCardTestIds.container).map((row) => row.textContent ?? '');
+}

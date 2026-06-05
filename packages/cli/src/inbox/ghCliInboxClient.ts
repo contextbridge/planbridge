@@ -1,11 +1,12 @@
-import { getErrorMessage, toError } from '@contextbridge/shared/errors';
+import { getErrorMessage } from '@contextbridge/shared/errors';
 import type { InboxActor, InboxFilters, InboxItem, InboxSnapshot } from '@contextbridge/shared/inboxSchema';
 import { inboxFiltersSchema, inboxSnapshotSchema } from '@contextbridge/shared/inboxSchema';
 import { Temporal, instantToString } from '@contextbridge/shared/time';
-import { Result, ResultAsync, err, ok } from 'neverthrow';
+import { Result, ResultAsync, err, ok, okAsync } from 'neverthrow';
 import { z } from 'zod';
 import type { RunCommandResult } from '#src/CommandRunnerImpl.ts';
 import type { CliContext } from '#src/context.ts';
+import { type GitHubGraphqlClient, OctokitGraphqlClient } from './githubGraphqlClient.ts';
 import { type InboxItemSource, actionStateRank, deriveActionState } from './inboxActionState.ts';
 
 export type InboxErrorCode =
@@ -28,13 +29,22 @@ export interface InboxQueryOptions {
   readonly allRepos?: boolean;
 }
 
+export interface GhCliInboxClientDeps {
+  /** Builds the GraphQL client once a `gh` auth token has been resolved. */
+  readonly createGraphqlClient: (token: string) => GitHubGraphqlClient;
+}
+
 export class GhCliInboxClient {
   private readonly ctx: CliContext;
   private readonly defaultOptions: InboxQueryOptions;
+  private readonly deps: GhCliInboxClientDeps;
+  private cachedToken: string | null = null;
+  private cachedClient: GitHubGraphqlClient | null = null;
 
-  constructor(ctx: CliContext, defaultOptions: InboxQueryOptions = {}) {
+  constructor(ctx: CliContext, defaultOptions: InboxQueryOptions = {}, deps?: GhCliInboxClientDeps) {
     this.ctx = ctx;
     this.defaultOptions = defaultOptions;
+    this.deps = deps ?? { createGraphqlClient: (token) => new OctokitGraphqlClient(token, ctx.logger) };
   }
 
   preflight(): ResultAsync<void, InboxError> {
@@ -47,38 +57,29 @@ export class GhCliInboxClient {
       );
   }
 
-  getViewer(): ResultAsync<GitHubViewer, InboxError> {
-    return this.ensureGhAvailable()
-      .andThen(() => this.runGh(['api', 'user']))
-      .andThen((result) => parseJson(result.stdout, ghViewerSchema, 'invalid GitHub viewer payload'));
-  }
-
   getInbox(filters: InboxFilters = {}): ResultAsync<InboxSnapshot, InboxError> {
     const options = this.defaultOptions;
     const parsedFilters = inboxFiltersSchema.parse({ ...options.filters, ...withoutUndefined(filters) });
 
-    return this.getViewer().andThen((viewer) =>
-      this.resolveRepositories(options).andThen((repositories) =>
-        this.fetchInbox(viewer.login, repositories).andThen((data) => {
-          const normalized = [
-            ...(data.reviewRequested?.nodes ?? []).map((node) =>
-              normalizePrNode(node, viewer.login, 'review_requested'),
-            ),
-            ...(data.authored?.nodes ?? []).map((node) => normalizePrNode(node, viewer.login, 'authored')),
-            ...(data.assignedIssues?.nodes ?? []).map((node) => normalizeIssueNode(node, viewer.login)),
-          ];
-          const items = dedupeItems(normalized.filter(isItem))
-            .filter((item) => matchesFilters(item, parsedFilters))
-            .sort(compareItems);
+    return this.resolveRepositories(options).andThen((repositories) =>
+      this.fetchInbox(repositories).andThen((data) => {
+        const viewerLogin = data.viewer.login;
+        const normalized = [
+          ...(data.reviewRequested?.nodes ?? []).map((node) => normalizePrNode(node, viewerLogin, 'review_requested')),
+          ...(data.authored?.nodes ?? []).map((node) => normalizePrNode(node, viewerLogin, 'authored')),
+          ...(data.assignedIssues?.nodes ?? []).map((node) => normalizeIssueNode(node, viewerLogin)),
+        ];
+        const items = dedupeItems(normalized.filter(isItem))
+          .filter((item) => matchesFilters(item, parsedFilters))
+          .sort(compareItems);
 
-          return validateSnapshot({
-            viewer: viewer.login,
-            generatedAt: instantToString(Temporal.Now.instant()),
-            filters: repositories.length > 0 ? { ...parsedFilters, repositories } : parsedFilters,
-            items,
-          });
-        }),
-      ),
+        return validateSnapshot({
+          viewer: viewerLogin,
+          generatedAt: instantToString(Temporal.Now.instant()),
+          filters: repositories.length > 0 ? { ...parsedFilters, repositories } : parsedFilters,
+          items,
+        });
+      }),
     );
   }
 
@@ -119,18 +120,45 @@ export class GhCliInboxClient {
     ).map((result) => (result.exitCode === 0 ? parseGitHubRemote(result.stdout.trim()) : null));
   }
 
-  private fetchInbox(viewer: string, repositories: readonly string[]): ResultAsync<InboxGraphqlData, InboxError> {
-    const { commandRunner } = this.ctx;
-    const args = buildGraphqlArgs(viewer, repositories);
-    return ResultAsync.fromPromise(commandRunner.run('gh', args), (cause) =>
-      commandError('gh_command_failed', 'failed to query the GitHub inbox', cause),
-    ).andThen((result) =>
-      result.exitCode === 0
-        ? parseJson(result.stdout, inboxGraphqlResponseSchema, 'invalid GitHub GraphQL inbox payload').map(
-            (parsed) => parsed.data,
-          )
-        : err(failure('gh_command_failed', result.stderr.trim() || `gh inbox query exited with ${result.exitCode}`)),
+  private fetchInbox(repositories: readonly string[]): ResultAsync<InboxGraphqlData, InboxError> {
+    return this.getGraphqlClient().andThen((client) =>
+      ResultAsync.fromPromise(
+        client.graphql<unknown>(INBOX_GRAPHQL_QUERY, buildGraphqlVariables(repositories)),
+        (cause) => commandError('gh_command_failed', 'failed to query the GitHub inbox', cause),
+      ).andThen((response) => {
+        const parsed = inboxGraphqlDataSchema.safeParse(response);
+        if (parsed.success) return ok(parsed.data);
+        const error: InboxError = {
+          code: 'invalid_data',
+          message: 'invalid GitHub GraphQL inbox payload',
+          cause: parsed.error,
+        };
+        return err(error);
+      }),
     );
+  }
+
+  // Resolve the user's token through `gh` once, then reuse it (and the Octokit
+  // client it builds) for the whole session — one subprocess spawn instead of one
+  // per snapshot fetch.
+  private getAuthToken(): ResultAsync<string, InboxError> {
+    if (this.cachedToken) return okAsync(this.cachedToken);
+    return this.ensureGhAvailable()
+      .andThen(() => this.runGh(['auth', 'token']))
+      .andThen((result) => {
+        const token = result.stdout.trim();
+        if (!token) return err(failure('gh_auth', 'gh returned an empty token; run `gh auth login`.'));
+        this.cachedToken = token;
+        return ok(token);
+      });
+  }
+
+  private getGraphqlClient(): ResultAsync<GitHubGraphqlClient, InboxError> {
+    if (this.cachedClient) return okAsync(this.cachedClient);
+    return this.getAuthToken().map((token) => {
+      this.cachedClient ??= this.deps.createGraphqlClient(token);
+      return this.cachedClient;
+    });
   }
 
   private runGh(args: readonly string[]): ResultAsync<RunCommandResult, InboxError> {
@@ -147,26 +175,21 @@ export class GhCliInboxClient {
   }
 }
 
-export type GitHubViewer = z.infer<typeof ghViewerSchema>;
-
-const ghViewerSchema = z.object({
-  login: z.string().trim().nonempty(),
-  name: z.string().trim().nonempty().nullable().optional(),
-  html_url: z.string().trim().nonempty().optional(),
-});
-
-// One GraphQL round trip splits the inbox into its three lanes by search
-// qualifier: PRs whose review GitHub requested of me, PRs I authored, and issues
-// assigned to me. The PR nodes carry the review/CI/merge signals the old
-// `gh search` payload could not, which is what the action-state classifier needs.
+// One GraphQL round trip resolves the viewer and splits the inbox into its three
+// lanes by search qualifier: PRs whose review GitHub requested of me, PRs I
+// authored, and issues assigned to me. `@me` lets the search resolve the viewer
+// server-side, and `viewer { login }` returns the login in the same request — so
+// there is no separate `gh api user` round trip. The PR nodes carry the
+// review/CI/merge signals the action-state classifier needs.
 const INBOX_GRAPHQL_QUERY = `query ($reviewQuery: String!, $authoredQuery: String!, $issueQuery: String!) {
+  viewer { login }
   reviewRequested: search(query: $reviewQuery, type: ISSUE, first: 50) { nodes { ...PrFields } }
   authored: search(query: $authoredQuery, type: ISSUE, first: 50) { nodes { ...PrFields } }
   assignedIssues: search(query: $issueQuery, type: ISSUE, first: 50) { nodes { ...IssueFields } }
 }
 fragment PrFields on PullRequest {
   id number title url isDraft createdAt updatedAt reviewDecision mergeable
-  repository { nameWithOwner name owner { login } }
+  repository { nameWithOwner name isArchived owner { login } }
   author { login url ... on User { name } ... on Organization { name } }
   labels(first: 20) { nodes { name color } }
   assignees(first: 10) { nodes { login url name } }
@@ -175,7 +198,7 @@ fragment PrFields on PullRequest {
 }
 fragment IssueFields on Issue {
   id number title url createdAt updatedAt
-  repository { nameWithOwner name owner { login } }
+  repository { nameWithOwner name isArchived owner { login } }
   author { login url ... on User { name } }
   labels(first: 20) { nodes { name color } }
   assignees(first: 10) { nodes { login url name } }
@@ -191,6 +214,7 @@ const ghRepositorySchema = z
   .object({
     nameWithOwner: z.string().optional(),
     name: z.string().optional(),
+    isArchived: z.boolean().optional(),
     owner: z.object({ login: z.string().optional() }).passthrough().nullable().optional(),
   })
   .passthrough();
@@ -265,48 +289,44 @@ const ghIssueNodeSchema = z
   .passthrough()
   .nullable();
 
-const inboxGraphqlResponseSchema = z
+// Octokit's `graphql` unwraps the `{ data: ... }` envelope and throws on GraphQL
+// errors, so we validate the inner data object directly.
+const inboxGraphqlDataSchema = z
   .object({
-    data: z.object({
-      reviewRequested: z
-        .object({ nodes: z.array(ghPrNodeSchema).optional() })
-        .nullable()
-        .optional(),
-      authored: z
-        .object({ nodes: z.array(ghPrNodeSchema).optional() })
-        .nullable()
-        .optional(),
-      assignedIssues: z
-        .object({ nodes: z.array(ghIssueNodeSchema).optional() })
-        .nullable()
-        .optional(),
-    }),
+    viewer: z.object({ login: z.string().trim().nonempty() }),
+    reviewRequested: z
+      .object({ nodes: z.array(ghPrNodeSchema).optional() })
+      .nullable()
+      .optional(),
+    authored: z
+      .object({ nodes: z.array(ghPrNodeSchema).optional() })
+      .nullable()
+      .optional(),
+    assignedIssues: z
+      .object({ nodes: z.array(ghIssueNodeSchema).optional() })
+      .nullable()
+      .optional(),
   })
   .passthrough();
 
-type InboxGraphqlData = z.infer<typeof inboxGraphqlResponseSchema>['data'];
+type InboxGraphqlData = z.infer<typeof inboxGraphqlDataSchema>;
 type GhPrNode = z.infer<typeof ghPrNodeSchema>;
 type GhIssueNode = z.infer<typeof ghIssueNodeSchema>;
 
-function buildGraphqlArgs(viewer: string, repositories: readonly string[]): string[] {
+function buildGraphqlVariables(repositories: readonly string[]): Record<string, string> {
   const repoScope = repositories.map((repository) => `repo:${repository}`).join(' ');
   const suffix = repoScope ? ` ${repoScope}` : '';
-  return [
-    'api',
-    'graphql',
-    '-f',
-    `query=${INBOX_GRAPHQL_QUERY}`,
-    '-f',
-    `reviewQuery=is:open is:pr review-requested:${viewer}${suffix}`,
-    '-f',
-    `authoredQuery=is:open is:pr author:${viewer}${suffix}`,
-    '-f',
-    `issueQuery=is:open is:issue assignee:${viewer}${suffix}`,
-  ];
+  return {
+    reviewQuery: `is:open is:pr review-requested:@me${suffix}`,
+    authoredQuery: `is:open is:pr author:@me${suffix}`,
+    issueQuery: `is:open is:issue assignee:@me${suffix}`,
+  };
 }
 
 function normalizePrNode(node: GhPrNode, viewerLogin: string, source: InboxItemSource): InboxItem | null {
   if (!node || !node.url || !node.number || !node.title || !node.createdAt || !node.updatedAt) return null;
+  // Archived repos are read-only — nothing here is ever actionable, so drop it.
+  if (node.repository?.isArchived) return null;
 
   const repository = normalizeRepository(node.repository);
   const isDraft = node.isDraft ?? false;
@@ -349,6 +369,8 @@ function normalizePrNode(node: GhPrNode, viewerLogin: string, source: InboxItemS
 
 function normalizeIssueNode(node: GhIssueNode, _viewerLogin: string): InboxItem | null {
   if (!node || !node.url || !node.number || !node.title || !node.createdAt || !node.updatedAt) return null;
+  // Archived repos are read-only — nothing here is ever actionable, so drop it.
+  if (node.repository?.isArchived) return null;
 
   const repository = normalizeRepository(node.repository);
   return {
@@ -384,7 +406,7 @@ function validateSnapshot(snapshot: InboxSnapshot): Result<InboxSnapshot, InboxE
 }
 
 function matchesFilters(item: InboxItem, filters: InboxFilters): boolean {
-  const { repositories, kinds, includeDrafts = false, includeDependabot = false } = filters;
+  const { repositories, kinds, includeDrafts = false } = filters;
   if (
     repositories &&
     !repositories.includes(`${item.owner}/${item.repository}`) &&
@@ -393,7 +415,6 @@ function matchesFilters(item: InboxItem, filters: InboxFilters): boolean {
     return false;
   if (kinds && !kinds.includes(item.kind)) return false;
   if (!includeDrafts && item.isDraft) return false;
-  if (!includeDependabot && isDependabot(item.author.login)) return false;
   return true;
 }
 
@@ -422,10 +443,6 @@ function compareItems(a: InboxItem, b: InboxItem): number {
 
 function isItem(item: InboxItem | null): item is InboxItem {
   return item !== null;
-}
-
-function isDependabot(login: string): boolean {
-  return login === 'dependabot' || login === 'dependabot[bot]';
 }
 
 type GhActor = z.infer<typeof ghActorSchema>;
@@ -461,15 +478,6 @@ function parseGitHubRemote(remote: string): string | null {
   if (httpsMatch) return httpsMatch[1] ?? null;
   const sshMatch = /^git@github\.com:([^/]+\/[^/.]+)(?:\.git)?$/.exec(remote);
   return sshMatch?.[1] ?? null;
-}
-
-function parseJson<T>(text: string, schema: z.ZodSchema<T>, message: string): Result<T, InboxError> {
-  const parsedJson = Result.fromThrowable(() => JSON.parse(text) as unknown, toError)();
-  if (parsedJson.isErr()) return err({ code: 'invalid_json', message, cause: parsedJson.error });
-  const parsedSchema = schema.safeParse(parsedJson.value);
-  return parsedSchema.success
-    ? ok(parsedSchema.data)
-    : err({ code: 'invalid_data', message, cause: parsedSchema.error });
 }
 
 function commandError(code: InboxErrorCode, message: string, cause: unknown): InboxError {

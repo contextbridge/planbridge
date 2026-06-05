@@ -1,23 +1,23 @@
 import { appTestIds } from '../testIds.ts';
 
 export const headerCopy = {
-  title: 'ContextBridge Inbox',
   refresh: 'Refresh',
   close: 'Press Ctrl+C in your terminal to end the session.',
 } as const;
 
 export interface HeaderProps {
+  readonly title: string;
   readonly viewer: string | null;
   readonly onRefresh: () => void;
 }
 
-export function Header({ viewer, onRefresh }: HeaderProps) {
+export function Header({ title, viewer, onRefresh }: HeaderProps) {
   return (
     <header data-testid={appTestIds.header} className="border-b border-border">
-      <div className="mx-auto max-w-4xl px-6 py-4">
+      <div className="max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
-            <h1 className="font-brand text-lg font-semibold tracking-tight">{headerCopy.title}</h1>
+            <h1 className="font-brand text-lg font-semibold tracking-tight">{title}</h1>
             {viewer && (
               <span data-testid={appTestIds.viewerLogin} className="text-sm text-muted-foreground">
                 {viewer}

@@ -1,4 +1,4 @@
-import type { InboxActionState, InboxItem } from '@contextbridge/shared/inboxSchema';
+import type { InboxActionState, InboxFilters, InboxItem } from '@contextbridge/shared/inboxSchema';
 
 export interface InboxSection {
   readonly key: string;
@@ -19,7 +19,7 @@ const SECTIONS: readonly SectionDef[] = [
   { key: 'needs_my_review', heading: 'Needs My Review', states: ['needs_my_review'] },
   {
     key: 'my_prs',
-    heading: 'My PRs — Action Needed',
+    heading: 'My PRs',
     states: ['changes_requested', 'ci_failing', 'conflicts', 'ready_to_merge'],
   },
   { key: 'assigned_issues', heading: 'Assigned to You', states: ['assigned_issue'] },
@@ -39,6 +39,20 @@ export function groupByActionState(items: readonly InboxItem[]): InboxSection[] 
     heading: section.heading,
     items: section.states.flatMap((state) => byState.get(state) ?? []),
   })).filter((section) => section.items.length > 0);
+}
+
+// Client-side narrowing applied to the full snapshot. Drafts are hidden unless
+// the toggle is on; the repository dropdown narrows to a single repo. Section and
+// kind filtering happens separately via `filterItemsBySection`.
+export function applyInboxFilters(items: readonly InboxItem[], filters: InboxFilters): InboxItem[] {
+  const { repositories, includeDrafts = false } = filters;
+  return items.filter((item) => {
+    if (!includeDrafts && item.isDraft) return false;
+    if (repositories && repositories.length > 0 && !repositories.includes(`${item.owner}/${item.repository}`)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function extractRepositories(items: readonly InboxItem[]): string[] {
