@@ -8,7 +8,7 @@ export interface AnnotationTemplates {
   annotationSection: HandlebarsTemplateDelegate<{
     range: string;
     sourceSlice: string;
-    highlighted: string | undefined;
+    focus: string | undefined;
     comments: string;
   }>;
   generalFeedbackSection: HandlebarsTemplateDelegate<{ comments: string }>;

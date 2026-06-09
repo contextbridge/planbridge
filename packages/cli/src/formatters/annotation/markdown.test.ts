@@ -3,6 +3,7 @@ import {
   annotationAnchor,
   annotationThread,
   commentMessage,
+  elementAnnotationAnchor,
   globalThread,
   reviewer,
 } from '@contextbridge/shared/testFactories';
@@ -209,7 +210,7 @@ describe('formatAgentResponse (annotation engine)', () => {
     expect(result).not.toContain('lines 4-9');
   });
 
-  it('passes a wrapped inline-code string as highlighted for single-line selections', () => {
+  it('describes a single-line text selection as "the highlighted text: <code>"', () => {
     const submission: AnnotationSubmission = {
       status: 'changes_requested',
       threads: [
@@ -236,10 +237,10 @@ describe('formatAgentResponse (annotation engine)', () => {
 
     const result = formatAgentResponse(buildHighlightedTemplates(), submission, 'highlight-me here');
 
-    expect(result).toContain('HIGHLIGHTED<`highlight-me`>');
+    expect(result).toContain('HIGHLIGHTED<the highlighted text: `highlight-me`>');
   });
 
-  it('omits highlighted (empty value) when the exact selection spans multiple lines', () => {
+  it('omits the focus call-out (empty value) when the exact selection spans multiple lines', () => {
     const content = ['first line', 'second line'].join('\n');
     const submission: AnnotationSubmission = {
       status: 'changes_requested',
@@ -269,6 +270,68 @@ describe('formatAgentResponse (annotation engine)', () => {
 
     expect(result).toContain('HIGHLIGHTED<>');
     expect(result).not.toMatch(/HIGHLIGHTED<.+>/);
+  });
+
+  it('describes an element-anchored node by its descriptor and label', () => {
+    const submission: AnnotationSubmission = {
+      status: 'changes_requested',
+      threads: [
+        annotationThread.build({
+          id: 'thr_el_node',
+          subject: { kind: 'annotation', anchor: elementAnnotationAnchor.build() },
+        }),
+      ],
+    };
+
+    expect(formatAgentResponse(buildHighlightedTemplates(), submission, 'unused')).toContain(
+      'HIGHLIGHTED<the diagram node: `Login`>',
+    );
+  });
+
+  it('describes an element-anchored edge by its descriptor and label', () => {
+    const submission: AnnotationSubmission = {
+      status: 'changes_requested',
+      threads: [
+        annotationThread.build({
+          id: 'thr_el_edge',
+          subject: {
+            kind: 'annotation',
+            anchor: elementAnnotationAnchor.build({
+              element: { id: 'edge1', label: 'submits', descriptor: 'diagram edge' },
+            }),
+          },
+        }),
+      ],
+    };
+
+    expect(formatAgentResponse(buildHighlightedTemplates(), submission, 'unused')).toContain(
+      'HIGHLIGHTED<the diagram edge: `submits`>',
+    );
+  });
+
+  it('describes a whole-block element annotation by descriptor alone (no label)', () => {
+    const submission: AnnotationSubmission = {
+      status: 'changes_requested',
+      threads: [
+        annotationThread.build({
+          id: 'thr_el_block',
+          subject: {
+            kind: 'annotation',
+            anchor: {
+              kind: 'element',
+              contentType: 'mermaid',
+              blockTargetId: 'mermaid:5',
+              sourceLines: { start: 5, end: 9 },
+              element: { label: 'diagram', descriptor: 'diagram' },
+            },
+          },
+        }),
+      ],
+    };
+
+    const result = formatAgentResponse(buildHighlightedTemplates(), submission, 'unused');
+    expect(result).toContain('HIGHLIGHTED<the diagram>');
+    expect(result).not.toContain('the diagram:');
   });
 
   it('threads opts.sourcePath into the approved and changesRequested templates as `source`', () => {
@@ -332,7 +395,7 @@ function buildFakeTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED-MARKER', { noEscape: true }),
     changesRequested: Handlebars.compile('CHANGES-MARKER\n{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('ANNOTATION-MARKER {{range}} {{sourceSlice}} {{highlighted}}\n{{comments}}', {
+    annotationSection: Handlebars.compile('ANNOTATION-MARKER {{range}} {{sourceSlice}} {{focus}}\n{{comments}}', {
       noEscape: true,
     }),
     generalFeedbackSection: Handlebars.compile('GLOBAL-MARKER\n{{comments}}', { noEscape: true }),
@@ -361,7 +424,7 @@ function buildHighlightedTemplates(): AnnotationTemplates {
   return {
     approved: Handlebars.compile('APPROVED', { noEscape: true }),
     changesRequested: Handlebars.compile('{{body}}', { noEscape: true }),
-    annotationSection: Handlebars.compile('HIGHLIGHTED<{{highlighted}}>\n{{comments}}', { noEscape: true }),
+    annotationSection: Handlebars.compile('HIGHLIGHTED<{{focus}}>\n{{comments}}', { noEscape: true }),
     generalFeedbackSection: Handlebars.compile('{{comments}}', { noEscape: true }),
   };
 }
