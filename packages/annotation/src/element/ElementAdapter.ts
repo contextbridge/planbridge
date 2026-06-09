@@ -2,6 +2,7 @@ import type { ElementAnnotationAnchor } from '@contextbridge/shared/annotationSc
 import type { ComponentType } from 'react';
 import type { ResolvedAnnotationThread } from '../annotationTypes.ts';
 import type { ElementBlockProps } from './elementBlock.ts';
+import { mermaidAdapter } from './mermaid/mermaidAdapter.ts';
 
 /**
  * Adapts a non-text content type (e.g. a Mermaid diagram) into the annotation engine. Implement
@@ -39,7 +40,7 @@ export interface ElementAdapter {
 }
 
 /** The registered element adapters. Add a new content type here — nothing else changes. */
-export const elementAdapters: ElementAdapter[] = [];
+export const elementAdapters: ElementAdapter[] = [mermaidAdapter];
 
 /** The adapter that renders a given fenced-code language, if any. */
 export function adapterForLang(lang: string): ElementAdapter | undefined {

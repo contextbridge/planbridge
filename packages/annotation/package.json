@@ -17,6 +17,7 @@
     "@contextbridge/ui": "workspace:*",
     "highlight.js": "^11.11.1",
     "lucide-react": "catalog:",
+    "mermaid": "11.15.0",
     "neverthrow": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
