@@ -290,6 +290,97 @@ describe('App', () => {
     expect(submission?.threads[0]?.messages[0]?.body).toBe('Why annotate the heading?');
   });
 
+  it('replaces an empty draft when clicking a different element', async () => {
+    const user = userEvent.setup();
+    const { submitAnnotation } = renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Title\n\nFirst paragraph.\n\nSecond paragraph.' },
+    });
+
+    const heading = await waitForMarkdownElement('h1');
+    await waitFor(() => {
+      expect(heading).toHaveAttribute('data-target-id');
+    });
+    await user.click(heading);
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+
+    const firstParagraph = getMarkdownParagraph(0);
+    await waitFor(() => {
+      expect(firstParagraph).toHaveAttribute('data-target-id');
+    });
+    await user.click(firstParagraph);
+
+    expect(screen.queryByTestId(appTestIds.discardDraftDialog)).not.toBeInTheDocument();
+
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'Comment on the paragraph');
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
+    await user.click(screen.getByTestId(submitBarTestIds.button));
+
+    await waitFor(() => {
+      expect(submitAnnotation).toHaveBeenCalledTimes(1);
+    });
+
+    const submission = submitAnnotation.mock.calls[0]?.[0];
+    expect(submission?.threads).toHaveLength(1);
+    const anchor = submission?.threads[0]?.subject.kind === 'annotation' ? submission.threads[0].subject.anchor : null;
+    expect(anchor?.quote.exact).toBe('First paragraph.');
+  });
+
+  it('prompts to discard a dirty draft when clicking a different element', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Title\n\nFirst paragraph.\n\nSecond paragraph.' },
+    });
+
+    const heading = await waitForMarkdownElement('h1');
+    await waitFor(() => {
+      expect(heading).toHaveAttribute('data-target-id');
+    });
+    await user.click(heading);
+    await user.type(await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea), 'Heading note');
+
+    const firstParagraph = getMarkdownParagraph(0);
+    await waitFor(() => {
+      expect(firstParagraph).toHaveAttribute('data-target-id');
+    });
+    await user.click(firstParagraph);
+
+    expect(await screen.findByTestId(appTestIds.discardDraftDialog)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId(appTestIds.discardDraftDialogCancelButton));
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('Heading note');
+
+    await user.click(firstParagraph);
+    await user.click(await screen.findByTestId(appTestIds.discardDraftDialogActionButton));
+    expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('');
+  });
+
+  it('edits an existing annotation when clicking it while a different empty draft is open', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPayload: { contentKind: 'plan', content: '# Title\n\nFirst paragraph.\n\nSecond paragraph.' },
+    });
+
+    await saveAnnotationOnElement(user, await waitForMarkdownElement('h1'), 'Heading comment');
+
+    const firstParagraph = getMarkdownParagraph(0);
+    await waitFor(() => {
+      expect(firstParagraph).toHaveAttribute('data-target-id');
+    });
+    await user.click(firstParagraph);
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+
+    const heading = getMarkdownElement('h1');
+    const rect = heading.getBoundingClientRect();
+    fireEvent.click(heading, {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea)).toHaveValue('Heading comment');
+    });
+  });
+
   it('uses the generic discard workflow before submitting with an unsaved annotation draft', async () => {
     const user = userEvent.setup();
     const { submitAnnotation } = renderApp({
