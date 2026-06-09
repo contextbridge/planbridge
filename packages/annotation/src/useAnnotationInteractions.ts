@@ -99,7 +99,7 @@ export function useAnnotationInteractions({
   );
 
   useTargetActivation({
-    enabled: activeDraft === null && !submitted,
+    enabled: !submitted,
     container: planContainer,
     index: textIndex,
     suppressNextActivationRef: suppressNextTargetActivationRef,
@@ -155,7 +155,7 @@ export function useAnnotationInteractions({
   }, [draftRange, highlightedAnnotationId, resolvedThreads]);
 
   useEffect(() => {
-    if (!planContainer || submitted || activeDraft !== null) {
+    if (!planContainer || submitted) {
       return;
     }
 
@@ -184,7 +184,7 @@ export function useAnnotationInteractions({
     return () => {
       planContainer.removeEventListener('click', handleClickCapture, true);
     };
-  }, [activeDraft, editAnnotationComment, planContainer, submitted]);
+  }, [editAnnotationComment, planContainer, submitted]);
 
   useHotkeys(
     'escape',
