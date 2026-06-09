@@ -6,7 +6,8 @@ import type {
   CommentAuthor,
   CommentMessage,
   CommentThread,
-  StoredAnnotationAnchor,
+  ElementAnnotationAnchor,
+  TextAnnotationAnchor,
 } from './annotationSchema.ts';
 import type { FrontendConfig } from './frontendConfigSchema.ts';
 
@@ -36,7 +37,8 @@ export const commentMessage = Factory.define<CommentMessage>(() => ({
   createdAt: '2026-04-20T12:34:56.000Z',
 }));
 
-export const annotationAnchor = Factory.define<StoredAnnotationAnchor>(() => ({
+export const annotationAnchor = Factory.define<TextAnnotationAnchor>(() => ({
+  kind: 'text',
   createdFrom: 'drag',
   sourceLines: { start: 3, end: 3 },
   quote: {
@@ -56,6 +58,18 @@ export const annotationAnchor = Factory.define<StoredAnnotationAnchor>(() => ({
   },
   snapshot: {
     targetText: 'Start by refactoring the parser before touching the API',
+  },
+}));
+
+export const elementAnnotationAnchor = Factory.define<ElementAnnotationAnchor>(() => ({
+  kind: 'element',
+  contentType: 'mermaid',
+  blockTargetId: 'mermaid:5',
+  sourceLines: { start: 5, end: 9 },
+  element: {
+    id: 'login',
+    label: 'Login',
+    descriptor: 'diagram node',
   },
 }));
 

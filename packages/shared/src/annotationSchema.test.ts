@@ -8,8 +8,16 @@ import {
   AssetFileExtensionSchema,
   AssetSchema,
   ContentKindSchema,
+  ElementAnnotationAnchorSchema,
 } from './annotationSchema.ts';
-import { annotationAnchor, annotationThread, asset, commentMessage, globalThread } from './testFactories.ts';
+import {
+  annotationAnchor,
+  annotationThread,
+  asset,
+  commentMessage,
+  elementAnnotationAnchor,
+  globalThread,
+} from './testFactories.ts';
 import { Temporal, instantFromString, instantToString } from './time.ts';
 
 describe('AnnotationSubmissionSchema', () => {
@@ -68,6 +76,43 @@ describe('AnnotationSubmissionSchema', () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it('round-trips an element anchor through the discriminated union', () => {
+    const parsed = AnnotationSubmissionSchema.parse({
+      status: 'changes_requested',
+      threads: [annotationThread.build({ subject: { kind: 'annotation', anchor: elementAnnotationAnchor.build() } })],
+    });
+
+    const subject = parsed.threads[0]?.subject;
+    expect(subject?.kind === 'annotation' ? subject.anchor.kind : null).toBe('element');
+  });
+});
+
+describe('ElementAnnotationAnchorSchema', () => {
+  it('parses an element anchor targeting a sub-element', () => {
+    const parsed = ElementAnnotationAnchorSchema.parse(elementAnnotationAnchor.build());
+    expect(parsed).toMatchObject({
+      kind: 'element',
+      contentType: 'mermaid',
+      blockTargetId: 'mermaid:5',
+      element: { id: 'login', label: 'Login', descriptor: 'diagram node' },
+    });
+  });
+
+  it('parses a whole-block element anchor with no element id', () => {
+    const parsed = ElementAnnotationAnchorSchema.parse({
+      kind: 'element',
+      contentType: 'mermaid',
+      blockTargetId: 'mermaid:5',
+      sourceLines: { start: 5, end: 9 },
+      element: { label: 'diagram', descriptor: 'diagram' },
+    });
+    expect(parsed.element.id).toBeUndefined();
+  });
+
+  it('rejects an empty contentType', () => {
+    expect(() => ElementAnnotationAnchorSchema.parse(elementAnnotationAnchor.build({ contentType: '' }))).toThrow();
   });
 });
 
