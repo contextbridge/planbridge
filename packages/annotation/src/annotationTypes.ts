@@ -3,6 +3,7 @@ import type {
   CommentMessage,
   CommentThread,
   StoredAnnotationAnchor,
+  TextAnnotationAnchor,
 } from '@contextbridge/shared/annotationSchema';
 
 export type AnnotationCommentThread = CommentThread & {
@@ -31,11 +32,11 @@ export interface SelectableTextIndex {
   targets: Map<string, AnnotatableTarget>;
   rangeToAnchor(
     range: Range,
-    createdFrom: StoredAnnotationAnchor['createdFrom'],
+    createdFrom: TextAnnotationAnchor['createdFrom'],
     explicitTarget?: HTMLElement,
-  ): StoredAnnotationAnchor;
+  ): TextAnnotationAnchor;
   targetToRange(targetId: string): Range | null;
-  restoreAnchor(anchor: StoredAnnotationAnchor): Range | null;
+  restoreAnchor(anchor: TextAnnotationAnchor): Range | null;
   resolveTarget(targetId: string): AnnotatableTarget | null;
 }
 

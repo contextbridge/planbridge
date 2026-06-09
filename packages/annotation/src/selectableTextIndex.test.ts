@@ -106,6 +106,7 @@ describe('restoreAnchor', () => {
 
     const originalTargetId = [...index.targets.keys()][0]!;
     const anchor = {
+      kind: 'text' as const,
       createdFrom: 'drag' as const,
       sourceLines: { start: 1, end: 1 },
       quote: { exact: 'refactoring the parser', prefix: 'Start by ', suffix: ' before' },
@@ -128,6 +129,7 @@ describe('restoreAnchor', () => {
     const index = buildSelectableTextIndex(container);
 
     const anchor = {
+      kind: 'text' as const,
       createdFrom: 'drag' as const,
       sourceLines: { start: 1, end: 1 },
       quote: { exact: 'not present', prefix: '', suffix: '' },

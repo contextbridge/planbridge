@@ -1,7 +1,7 @@
-import type { StoredAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
+import type { TextAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
 import { truncate } from './utils.ts';
 
-export function findQuoteStart(text: string, quote: StoredAnnotationAnchor['quote']): number | null {
+export function findQuoteStart(text: string, quote: TextAnnotationAnchor['quote']): number | null {
   const matches: number[] = [];
   let searchFrom = 0;
 

@@ -20,7 +20,7 @@ export const resolvedAnnotationThread = Factory.define<ResolvedAnnotationThread>
     range: document.createRange(),
     target: null,
     unresolved: false,
-    quote: seed.subject.anchor.quote.exact,
+    quote: seed.subject.anchor.kind === 'text' ? seed.subject.anchor.quote.exact : seed.subject.anchor.element.label,
     comments: [{ kind: 'saved', threadId: seed.id, message: primaryMessage, isPrimary: true }],
   };
 });
@@ -37,7 +37,7 @@ export const resolvedAnnotationDraftThread = Factory.define<ResolvedAnnotationTh
     range: document.createRange(),
     target: null,
     unresolved: false,
-    quote: seed.subject.anchor.quote.exact,
+    quote: seed.subject.anchor.kind === 'text' ? seed.subject.anchor.quote.exact : seed.subject.anchor.element.label,
     comments: [
       {
         kind: 'draft',

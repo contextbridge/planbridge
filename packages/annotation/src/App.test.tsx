@@ -322,7 +322,7 @@ describe('App', () => {
     const submission = submitAnnotation.mock.calls[0]?.[0];
     expect(submission?.threads).toHaveLength(1);
     const anchor = submission?.threads[0]?.subject.kind === 'annotation' ? submission.threads[0].subject.anchor : null;
-    expect(anchor?.quote.exact).toBe('First paragraph.');
+    expect(anchor?.kind === 'text' ? anchor.quote.exact : null).toBe('First paragraph.');
   });
 
   it('prompts to discard a dirty draft when clicking a different element', async () => {
@@ -535,7 +535,7 @@ describe('App', () => {
     const submission = submitAnnotation.mock.calls[0]?.[0];
     expect(submission?.threads).toHaveLength(1);
     const anchor = submission?.threads[0]?.subject.kind === 'annotation' ? submission.threads[0].subject.anchor : null;
-    expect(anchor?.quote.exact).toBe('"helloWorld"');
+    expect(anchor?.kind === 'text' ? anchor.quote.exact : null).toBe('"helloWorld"');
   });
 
   it('scopes a code-token click to just the token, not the whole block', async () => {
@@ -562,7 +562,7 @@ describe('App', () => {
 
     const submission = submitAnnotation.mock.calls[0]?.[0];
     const anchor = submission?.threads[0]?.subject.kind === 'annotation' ? submission.threads[0].subject.anchor : null;
-    expect(anchor?.quote.exact).toBe('"hello"');
+    expect(anchor?.kind === 'text' ? anchor.quote.exact : null).toBe('"hello"');
   });
 
   it('renders markdown links with target="_blank" and rel="noreferrer"', async () => {

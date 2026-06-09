@@ -33,6 +33,7 @@ const seededThreads = [
     subject: {
       kind: 'annotation' as const,
       anchor: {
+        kind: 'text' as const,
         createdFrom: 'element' as const,
         sourceLines: { start: 14, end: 14 },
         quote: {
