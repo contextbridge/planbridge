@@ -2,9 +2,16 @@ import type { CommentThread } from '@contextbridge/shared/annotationSchema';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { clearAnnotationHighlights, syncAnnotationHighlights } from './annotationHighlights.ts';
-import { getDraftThreadId, getNewThreadDraftId, resolveAnnotationThreads } from './annotationResolvers.ts';
+import {
+  findElementAnchorTarget,
+  getDraftThreadId,
+  getNewThreadDraftId,
+  isElementAnchor,
+  resolveAnnotationThreads,
+} from './annotationResolvers.ts';
 import type { ActiveCommentDraft, ResolvedAnnotationThread, SelectableTextIndex } from './annotationTypes.ts';
 import { snapRangeToTokenBoundaries } from './codeTokenSnap.ts';
+import { useElementTargets } from './element/useElementTargets.ts';
 import { buildSelectableTextIndex } from './selectableTextIndex.ts';
 import type { OpenAnnotationCommentDraftArgs } from './useAnnotationState.ts';
 import { useCommentNavigation } from './useCommentNavigation.ts';
@@ -56,7 +63,9 @@ export function useAnnotationInteractions({
   }, [resolvedThreads]);
 
   const draftAnchor = activeDraft?.anchor ?? null;
-  const draftRange = draftAnchor && textIndex ? textIndex.restoreAnchor(draftAnchor) : null;
+  // Only text anchors resolve to a DOM range; element drafts (e.g. a diagram node) are marked
+  // by their adapter, not range-highlighted, so they have no draft range.
+  const draftRange = draftAnchor?.kind === 'text' && textIndex ? textIndex.restoreAnchor(draftAnchor) : null;
 
   const openAnnotationCommentFromRange = (
     range: Range,
@@ -77,7 +86,8 @@ export function useAnnotationInteractions({
 
   const editAnnotationComment = useCallback(
     (thread: ResolvedAnnotationThread) => {
-      if (submitted || !thread.range || !textIndex) {
+      // Element anchors (no range) are still editable — they're located via their adapter.
+      if (submitted || !textIndex || (!thread.range && !isElementAnchor(thread.anchor))) {
         return;
       }
 
@@ -112,11 +122,11 @@ export function useAnnotationInteractions({
   const activateThread = (thread: ResolvedAnnotationThread) => {
     setHoveredAnnotationId(null);
     setSelectedAnnotationId(thread.id);
-    scrollThreadIntoView(thread);
+    scrollThreadIntoView(thread, planContainer);
   };
 
   const openThreadComment = (thread: ResolvedAnnotationThread) => {
-    scrollThreadIntoView(thread);
+    scrollThreadIntoView(thread, planContainer);
     editAnnotationComment(thread);
   };
 
@@ -153,6 +163,17 @@ export function useAnnotationInteractions({
       clearAnnotationHighlights();
     };
   }, [draftRange, highlightedAnnotationId, resolvedThreads]);
+
+  // The other annotation mechanism: element-anchored content (diagrams, …) routes its clicks and
+  // markers through a per-content-type adapter. Text selection stays the path above.
+  useElementTargets({
+    activeAnnotationId: highlightedAnnotationId,
+    container: planContainer,
+    onOpenAnnotationCommentDraft,
+    onSelectAnnotationId: setSelectedAnnotationId,
+    resolvedThreads,
+    submitted,
+  });
 
   useEffect(() => {
     if (!planContainer || submitted) {
@@ -228,7 +249,7 @@ export function useAnnotationInteractions({
     }
 
     setSelectedAnnotationId(thread.id);
-    scrollThreadIntoView(thread);
+    scrollThreadIntoView(thread, planContainer);
     editAnnotationComment(thread);
   };
 
@@ -251,11 +272,14 @@ export function useAnnotationInteractions({
   };
 }
 
-function scrollThreadIntoView(thread: ResolvedAnnotationThread): void {
-  const focusElement =
+function scrollThreadIntoView(thread: ResolvedAnnotationThread, container: HTMLElement | null): void {
+  const rangeElement =
     thread.range?.startContainer instanceof Element
       ? thread.range.startContainer
       : thread.range?.startContainer.parentElement;
+  const focusElement =
+    rangeElement ??
+    (container && isElementAnchor(thread.anchor) ? findElementAnchorTarget(container, thread.anchor) : null);
   focusElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 

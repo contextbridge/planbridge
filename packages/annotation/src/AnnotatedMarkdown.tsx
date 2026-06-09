@@ -1,10 +1,17 @@
 import type { AnnotationTargetKind, Asset } from '@contextbridge/shared/annotationSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
+import type { Element } from 'hast';
 import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
+import { adapterForLang } from './element/ElementAdapter.ts';
+import {
+  ELEMENT_LANG_PROPERTY,
+  ELEMENT_SOURCE_PROPERTY,
+  rehypeElementSources,
+} from './element/rehypeElementSources.ts';
 
 export const annotatedMarkdownTestIds = {
   container: 'plan-review-markdown-plan',
@@ -40,7 +47,9 @@ export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: 
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true }]]}
+        // rehypeElementSources must run before rehypeHighlight so a claimed block keeps its raw
+        // source instead of being tokenized into highlight spans.
+        rehypePlugins={[rehypeElementSources, [rehypeHighlight, { detect: false, ignoreMissing: true }]]}
         components={components}
       >
         {content}
@@ -146,7 +155,28 @@ const markdownComponents = {
     targetKind: 'block',
     className: 'border-l-4 border-chart-3/60 bg-chart-3/10 px-5 py-3 text-foreground/85 italic',
   }),
-  pre: AnnotatablePre,
+  pre: ({ node, children, ...props }: AnnotatableProps<'pre'>) => {
+    const fallback = (
+      <AnnotatablePre node={node} {...props}>
+        {children}
+      </AnnotatablePre>
+    );
+    const block = elementBlockFromPre(node);
+    const adapter = block ? adapterForLang(block.lang) : undefined;
+    if (!block || !adapter) {
+      return fallback;
+    }
+    const Block = adapter.Block;
+    return (
+      <Block
+        source={block.source}
+        contentType={adapter.contentType}
+        startLine={node?.position?.start.line}
+        endLine={node?.position?.end.line}
+        fallback={fallback}
+      />
+    );
+  },
   tr: annotatable('tr', {
     targetKey: 'tr',
     targetKind: 'table-row',
@@ -181,3 +211,12 @@ const markdownComponents = {
     <AnnotatableAnchor {...rest} rel={rel ?? 'noreferrer'} target={target ?? '_blank'} />
   ),
 };
+
+// Reads the source + language an element adapter stashed on a fenced code block (see
+// rehypeElementSources). Returns undefined for ordinary code blocks, which render normally.
+function elementBlockFromPre(node: Element | undefined): { lang: string; source: string } | undefined {
+  const code = node?.children.find((child): child is Element => child.type === 'element' && child.tagName === 'code');
+  const source = code?.properties[ELEMENT_SOURCE_PROPERTY];
+  const lang = code?.properties[ELEMENT_LANG_PROPERTY];
+  return typeof source === 'string' && typeof lang === 'string' ? { lang, source } : undefined;
+}

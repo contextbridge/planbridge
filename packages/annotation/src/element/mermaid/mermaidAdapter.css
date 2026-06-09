@@ -1,0 +1,69 @@
+/* Mermaid adapter styling — self-contained. Lives next to the adapter (not the shared
+   annotationStyles.css) because every selector targets mermaid's generated SVG structure.
+   Tokens are scoped to the mermaid block container so they don't leak globally; their values
+   mirror the amber (saved/active) + royal (hover) language used by text highlights. */
+[data-element-content-type='mermaid'] {
+  --mermaid-mark: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  --mermaid-mark-active: var(--color-amber-400);
+  --mermaid-mark-border: var(--color-amber-500);
+  --mermaid-mark-text: var(--color-neutral-950);
+  --mermaid-hover-stroke: var(--chart-3);
+  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--color-neutral-900));
+  --mermaid-hover-edge: color-mix(in oklab, var(--chart-3) 35%, transparent);
+}
+
+/* Mermaid injects per-diagram `#mermaid-rN .node rect {…}` rules (ID specificity), so our marker
+   declarations need !important to win the cascade. Mirrors the text-highlight tiers as an SVG
+   fill: a filled "block" rather than a stroke outline, matching how annotated prose reads. The
+   direct-child combinator keeps the fill on the node's shape and off nested label/icon paths. */
+g.cb-mermaid-annotated > :is(rect, circle, ellipse, polygon, path) {
+  fill: var(--mermaid-mark) !important;
+  stroke: var(--mermaid-mark-border) !important;
+}
+
+g.cb-mermaid-annotated-active > :is(rect, circle, ellipse, polygon, path) {
+  fill: var(--mermaid-mark-active) !important;
+}
+
+g.cb-mermaid-annotated :is(.nodeLabel, .label, foreignObject p, foreignObject span) {
+  color: var(--mermaid-mark-text) !important;
+  fill: var(--mermaid-mark-text) !important;
+}
+
+/* A whole-diagram comment marks the block (not a single node). The block already carries
+   `border border-border`, so a border-color swap reads as "selected" without flooding the whole
+   diagram area with a fill. */
+div.cb-mermaid-annotated {
+  border-color: var(--mermaid-mark-active);
+}
+
+div.cb-mermaid-annotated-active {
+  border-color: var(--mermaid-mark-border);
+}
+
+/* Hover preview of the node a click would annotate. !important beats mermaid's injected
+   `#mermaid-rN .node rect` rule. oklab, not oklch: mixing a chromatic color with a near-achromatic
+   one in oklch wraps the hue (royal → magenta); oklab keeps the tint blue. */
+g.node:hover > :is(rect, circle, ellipse, polygon, path) {
+  fill: var(--mermaid-hover-node) !important;
+  stroke: var(--mermaid-hover-stroke) !important;
+}
+
+/* Edge-label markers — mermaid draws the label chip as `g.edgeLabel > … div.labelBkg / <p>`, both
+   background-colored via injected ID rules, so these need !important too. Amber chip + dark label
+   for a saved/active edge, royal for hover — mirroring the node treatment. */
+g.edgeLabel.cb-mermaid-annotated :is(.labelBkg, p) {
+  background-color: var(--mermaid-mark) !important;
+}
+
+g.edgeLabel.cb-mermaid-annotated-active :is(.labelBkg, p) {
+  background-color: var(--mermaid-mark-active) !important;
+}
+
+g.edgeLabel.cb-mermaid-annotated p {
+  color: var(--mermaid-mark-text) !important;
+}
+
+g.edgeLabel:hover :is(.labelBkg, p) {
+  background-color: var(--mermaid-hover-edge) !important;
+}

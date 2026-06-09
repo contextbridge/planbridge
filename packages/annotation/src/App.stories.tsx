@@ -33,6 +33,7 @@ const seededThreads = [
     subject: {
       kind: 'annotation' as const,
       anchor: {
+        kind: 'text' as const,
         createdFrom: 'element' as const,
         sourceLines: { start: 14, end: 14 },
         quote: {
@@ -82,6 +83,21 @@ const seededThreads = [
 ];
 
 const seededGlobalComment = 'The plan never says how rollback works if the verifier swap causes issues.';
+
+const mermaidPlan = [
+  '# Auth flow',
+  '',
+  'The login sequence the middleware should enforce:',
+  '',
+  '```mermaid',
+  'flowchart TD',
+  '  Login[Login form] --> Verify{Verify token}',
+  '  Verify -->|valid| Dashboard[Dashboard]',
+  '  Verify -->|invalid| Login',
+  '```',
+  '',
+  'Click a node or edge above to annotate it, or click empty diagram space to comment on the whole diagram.',
+].join('\n');
 
 const overflowingCommentBodies = [
   'Why does the doc step happen after the verifier swap instead of before it?',
@@ -160,6 +176,26 @@ export const SeededReview: Story = {
     initialGlobalComment: seededGlobalComment,
   },
   decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+};
+
+export const MermaidDiagram: Story = {
+  args: {
+    initialPayload: {
+      contentKind: 'plan',
+      content: mermaidPlan,
+      title: 'Auth flow',
+      metadata: { entrypoint: 'plan_command' },
+    },
+  },
+  decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Renders a Mermaid flowchart through the mermaid ElementAdapter. Click a node, edge, or empty diagram area to annotate it; saved annotations show the amber marker and hover shows the royal preview.',
+      },
+    },
+  },
 };
 
 export const OverflowingComments: Story = {

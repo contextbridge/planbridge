@@ -166,7 +166,7 @@ The comment below applies to the following section of the plan:
 
     expect(output).toContain('## Annotation (line 2)');
     expect(output).toContain('- Item two with `code`.');
-    expect(output).toContain('Within that section, the reviewer specifically highlighted: `code`');
+    expect(output).toContain('Within that section, the reviewer commented on the highlighted text: `code`');
     expect(output).not.toContain('- Item one.');
     expect(output).not.toContain('- Item three.');
   });
@@ -202,6 +202,6 @@ The comment below applies to the following section of the plan:
       planContent,
     );
 
-    expect(output).not.toContain('Within that section, the reviewer specifically highlighted');
+    expect(output).not.toContain('Within that section, the reviewer commented on');
   });
 });

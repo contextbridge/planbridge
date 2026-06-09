@@ -58,7 +58,7 @@ Another paragraph.
     };
     const output = formatAgentResponse(DOCUMENT_TEMPLATES, submission, content);
     expect(output).toContain('## Comment (line 1)');
-    expect(output).toContain('Within that section, the reviewer specifically highlighted: `Heading`');
+    expect(output).toContain('Within that section, the reviewer commented on the highlighted text: `Heading`');
     expect(output).toContain('Title is too generic.');
   });
 
@@ -80,7 +80,7 @@ Another paragraph.
     };
     const output = formatAgentResponse(DOCUMENT_TEMPLATES, submission, content);
     expect(output).toContain('## Comment (lines 3–5)');
-    expect(output).not.toContain('specifically highlighted'); // multi-line skips the inline-code call-out
+    expect(output).not.toContain('commented on'); // multi-line skips the inline-code call-out
     expect(output).toContain('Tighten these two paragraphs.');
   });
 

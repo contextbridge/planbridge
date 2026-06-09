@@ -4,6 +4,7 @@ import type {
   CommentThread,
   CommentThreadSubject,
   SourceLineRange,
+  StoredAnnotationAnchor,
 } from '@contextbridge/shared/annotationSchema';
 import { instantFromString } from '@contextbridge/shared/time';
 import type { Blockquote, Root } from 'mdast';
@@ -34,12 +35,12 @@ export function formatAgentResponse(
   }
 
   for (const thread of annotationThreads) {
-    const { sourceLines, quote } = thread.subject.anchor;
+    const { anchor } = thread.subject;
     sections.push(
       templates.annotationSection({
-        range: formatLineRange(sourceLines),
-        sourceSlice: sliceSource(contentLines, sourceLines),
-        highlighted: formatHighlighted(quote.exact),
+        range: formatLineRange(anchor.sourceLines),
+        sourceSlice: sliceSource(contentLines, anchor.sourceLines),
+        focus: renderAnnotationFocus(anchor),
         comments: renderThreadsAsBlockquotes([thread]),
       }),
     );
@@ -98,6 +99,19 @@ function formatLineRange({ start, end }: SourceLineRange): string {
 function sliceSource(contentLines: string[], { start, end }: SourceLineRange): string {
   // Source lines are 1-indexed; array indices are 0-indexed.
   return contentLines.slice(start - 1, end).join('\n');
+}
+
+function renderAnnotationFocus(anchor: StoredAnnotationAnchor): string | undefined {
+  if (anchor.kind === 'text') {
+    const highlighted = formatHighlighted(anchor.quote.exact);
+    return highlighted ? `the highlighted text: ${highlighted}` : undefined;
+  }
+
+  // Element anchors carry the agent-facing wording the adapter chose at capture time
+  // (descriptor + label), so this stays generic across content types: a whole-block
+  // annotation (no element id) describes itself by descriptor alone.
+  const label = anchor.element.id ? formatHighlighted(anchor.element.label) : undefined;
+  return `the ${anchor.element.descriptor}${label ? `: ${label}` : ''}`;
 }
 
 function formatHighlighted(exact: string): string | undefined {

@@ -1,4 +1,4 @@
-import type { StoredAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
+import type { TextAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
 import type { AnnotatableTarget, SelectableTextIndex } from './annotationTypes.ts';
 import { buildTargetLabel, createShortHash, findQuoteStart, normalizeText } from './textMath.ts';
 
@@ -28,9 +28,9 @@ function rangeToAnchor(args: {
   fullText: string;
   targets: Map<string, AnnotatableTarget>;
   range: Range;
-  createdFrom: StoredAnnotationAnchor['createdFrom'];
+  createdFrom: TextAnnotationAnchor['createdFrom'];
   explicitTarget?: HTMLElement;
-}): StoredAnnotationAnchor {
+}): TextAnnotationAnchor {
   const { container, fullText, targets, range, createdFrom, explicitTarget } = args;
   const selectionText = range.toString();
   if (selectionText.length === 0) {
@@ -56,6 +56,7 @@ function rangeToAnchor(args: {
   const sourceLines = resolveSourceLineRange(range.startContainer, range.endContainer);
 
   return {
+    kind: 'text',
     createdFrom,
     sourceLines,
     quote: {
@@ -95,7 +96,7 @@ function restoreAnchor(args: {
   container: HTMLElement;
   fullText: string;
   targets: Map<string, AnnotatableTarget>;
-  anchor: StoredAnnotationAnchor;
+  anchor: TextAnnotationAnchor;
 }): Range | null {
   const { container, fullText, targets, anchor } = args;
 
@@ -124,7 +125,7 @@ function restoreAnchor(args: {
   return null;
 }
 
-function restoreByEndpoints(targets: Map<string, AnnotatableTarget>, anchor: StoredAnnotationAnchor): Range | null {
+function restoreByEndpoints(targets: Map<string, AnnotatableTarget>, anchor: TextAnnotationAnchor): Range | null {
   const startTarget = targets.get(anchor.endpoints.start.targetId);
   const endTarget = targets.get(anchor.endpoints.end.targetId);
   if (!startTarget || !endTarget) {
@@ -140,7 +141,7 @@ function restoreByEndpoints(targets: Map<string, AnnotatableTarget>, anchor: Sto
   return createRangeFromPoints(startPoint, endPoint);
 }
 
-function resolveSourceLineRange(startNode: Node, endNode: Node): StoredAnnotationAnchor['sourceLines'] {
+function resolveSourceLineRange(startNode: Node, endNode: Node): TextAnnotationAnchor['sourceLines'] {
   const startElement = nearestElementWithSourceLine(startNode, 'start');
   const endElement = nearestElementWithSourceLine(endNode, 'end');
   if (!startElement || !endElement) {
@@ -168,7 +169,7 @@ function nearestElementWithSourceLine(node: Node, boundary: 'start' | 'end'): HT
   return null;
 }
 
-function createRangeFromQuote(root: HTMLElement, text: string, quote: StoredAnnotationAnchor['quote']): Range | null {
+function createRangeFromQuote(root: HTMLElement, text: string, quote: TextAnnotationAnchor['quote']): Range | null {
   const matchStart = findQuoteStart(text, quote);
   if (matchStart === null) {
     return null;
