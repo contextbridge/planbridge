@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/contextbridge/planbridge/compare/v0.8.0...v0.9.0) (2026-06-09)
+
+
+### Features
+
+* add element annotations with a Mermaid diagram adapter ([#215](https://github.com/contextbridge/planbridge/issues/215)) ([5dbd5cc](https://github.com/contextbridge/planbridge/commit/5dbd5cc796c9d38c6929385680d2e9df0360bb37))
+* Keyboard shortcuts for sidebar ([#192](https://github.com/contextbridge/planbridge/issues/192)) ([70cba26](https://github.com/contextbridge/planbridge/commit/70cba26b026f0675c097707f76c1008ecd0ffcce))
+* scaffold contextbridge review subcommand and UI ([#196](https://github.com/contextbridge/planbridge/issues/196)) ([b999c1d](https://github.com/contextbridge/planbridge/commit/b999c1d442bd300d06ce78589a0c289d768780cf))
+
+
+### Bug Fixes
+
+* publish verifiable build provenance for releases ([#207](https://github.com/contextbridge/planbridge/issues/207)) ([3dcd029](https://github.com/contextbridge/planbridge/commit/3dcd029bbe7f28410177d22b942eafba6341a0a5))
+* replace empty annotation draft when clicking another element ([#214](https://github.com/contextbridge/planbridge/issues/214)) ([9edd152](https://github.com/contextbridge/planbridge/commit/9edd152fa39c7c9e175fc352e288111f1ae21084))
+
 ## [0.8.0](https://github.com/contextbridge/planbridge/compare/v0.7.2...v0.8.0) (2026-05-20)
 
 
