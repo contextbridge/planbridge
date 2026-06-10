@@ -7,7 +7,7 @@ import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
-import { type ElementAdapter, adapterForLang, adapterLanguages } from './element/ElementAdapter.ts';
+import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from './element/ElementAdapter.ts';
 
 export const annotatedMarkdownTestIds = {
   container: 'plan-review-markdown-plan',
@@ -44,7 +44,7 @@ export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: 
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         // plainText keeps adapter-claimed blocks as raw text instead of tokenized highlight spans.
-        rehypePlugins={[[rehypeHighlight, { detect: false, plainText: adapterLanguages }]]}
+        rehypePlugins={[[rehypeHighlight, { detect: false, plainText: elementAdapterLanguages }]]}
         components={components}
       >
         {content}
@@ -216,7 +216,7 @@ function elementBlockFromPre(node: Element | undefined): { adapter: ElementAdapt
   const code = node?.children.find((child): child is Element => child.type === 'element' && child.tagName === 'code');
   if (!code) return undefined;
   const lang = languageOf(code);
-  const adapter = lang === undefined ? undefined : adapterForLang(lang);
+  const adapter = lang === undefined ? undefined : elementAdapterForLanguage(lang);
   return adapter ? { adapter, source: hastToString(code) } : undefined;
 }
 

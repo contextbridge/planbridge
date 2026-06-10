@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getNewThreadDraftId } from '../annotationResolvers.ts';
 import type { ResolvedAnnotationThread } from '../annotationTypes.ts';
 import type { OpenAnnotationCommentDraftArgs } from '../useAnnotationState.ts';
-import { adapterForContentType, elementAdapters } from './ElementAdapter.ts';
+import { elementAdapterForContentType, elementAdapters } from './ElementAdapter.ts';
 import { ELEMENT_RENDERED_EVENT, elementBlockAttrs } from './elementBlock.ts';
 
 export interface UseElementTargetsArgs {
@@ -59,7 +59,7 @@ export function useElementTargets({
       const block = event.target.closest<HTMLElement>(`[${elementBlockAttrs.blockId}]`);
       if (!block || !container.contains(block)) return;
 
-      const adapter = adapterForContentType(block.getAttribute(elementBlockAttrs.contentType) ?? '');
+      const adapter = elementAdapterForContentType(block.getAttribute(elementBlockAttrs.contentType) ?? '');
       const anchor = adapter?.buildAnchor(block, event.target);
       if (!anchor) return;
 

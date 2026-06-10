@@ -42,15 +42,15 @@ export interface ElementAdapter {
 /** The registered element adapters. Add a new content type here — nothing else changes. */
 export const elementAdapters: ElementAdapter[] = [mermaidAdapter];
 
-/** Every language a registered adapter renders; passed to rehype-highlight's `plainText` so those blocks are left as raw text. */
-export const adapterLanguages = elementAdapters.flatMap((adapter) => adapter.languages);
+/** Every language a registered element adapter renders; passed to rehype-highlight's `plainText` so those blocks are left as raw text. */
+export const elementAdapterLanguages = elementAdapters.flatMap((adapter) => adapter.languages);
 
-/** The adapter that renders a given fenced-code language, if any. */
-export function adapterForLang(lang: string): ElementAdapter | undefined {
-  return elementAdapters.find((adapter) => adapter.languages.includes(lang));
+/** The element adapter that renders a given fenced-code language, if any. */
+export function elementAdapterForLanguage(language: string): ElementAdapter | undefined {
+  return elementAdapters.find((adapter) => adapter.languages.includes(language));
 }
 
-/** The adapter that owns a given `contentType` (an anchor's `contentType`), if any. */
-export function adapterForContentType(contentType: string): ElementAdapter | undefined {
+/** The element adapter that owns a given `contentType` (an anchor's `contentType`), if any. */
+export function elementAdapterForContentType(contentType: string): ElementAdapter | undefined {
   return elementAdapters.find((adapter) => adapter.contentType === contentType);
 }
