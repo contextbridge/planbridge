@@ -6,7 +6,7 @@ import type {
 import type { ActiveCommentDraft, ResolvedAnnotationThread, SelectableTextIndex } from './annotationTypes.ts';
 import { isAnnotationCommentThread } from './annotationTypes.ts';
 import { getPrimaryMessage } from './commentModel.ts';
-import { adapterForContentType } from './element/ElementAdapter.ts';
+import { elementAdapterForContentType } from './element/ElementAdapter.ts';
 
 export function isElementAnchor(anchor: StoredAnnotationAnchor): anchor is ElementAnnotationAnchor {
   return anchor.kind === 'element';
@@ -16,7 +16,7 @@ export function findElementAnchorTarget(container: HTMLElement, anchor: StoredAn
   if (!isElementAnchor(anchor)) {
     return null;
   }
-  return adapterForContentType(anchor.contentType)?.resolveTarget(container, anchor) ?? null;
+  return elementAdapterForContentType(anchor.contentType)?.resolveTarget(container, anchor) ?? null;
 }
 
 export function resolveAnnotationThreads(
