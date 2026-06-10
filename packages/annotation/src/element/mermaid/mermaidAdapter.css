@@ -8,7 +8,7 @@
   --mermaid-mark-border: var(--color-amber-500);
   --mermaid-mark-text: var(--color-neutral-950);
   --mermaid-hover-stroke: var(--chart-3);
-  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--color-neutral-900));
+  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--muted));
   --mermaid-hover-edge: color-mix(in oklab, var(--chart-3) 35%, transparent);
 }
 
