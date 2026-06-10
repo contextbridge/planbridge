@@ -7,11 +7,6 @@ describe('mermaidAdapter', () => {
     document.body.innerHTML = '';
   });
 
-  it('claims the mermaid language only', () => {
-    expect(mermaidAdapter.claims('mermaid')).toBe(true);
-    expect(mermaidAdapter.claims('graphviz')).toBe(false);
-  });
-
   describe('buildAnchor', () => {
     it('builds a node anchor from a clicked node', () => {
       const { block } = renderBlock();

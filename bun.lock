@@ -31,6 +31,7 @@
         "@contextbridge/instrumentation": "workspace:*",
         "@contextbridge/shared": "workspace:*",
         "@contextbridge/ui": "workspace:*",
+        "hast-util-to-string": "^3.0.1",
         "highlight.js": "^11.11.1",
         "lucide-react": "catalog:",
         "mermaid": "11.15.0",
@@ -41,7 +42,6 @@
         "react-markdown": "^10.1.0",
         "rehype-highlight": "^7.0.2",
         "remark-gfm": "^4.0.1",
-        "unist-util-visit": "^5.1.0",
       },
       "devDependencies": {
         "@storybook/react-vite": "catalog:",

@@ -15,7 +15,7 @@ const ACTIVE_CLASS = 'cb-mermaid-annotated-active';
  */
 export const mermaidAdapter: ElementAdapter = {
   contentType: CONTENT_TYPE,
-  claims: (lang) => lang === CONTENT_TYPE,
+  languages: [CONTENT_TYPE],
   Block: MermaidBlock,
   buildAnchor,
   resolveTarget,
