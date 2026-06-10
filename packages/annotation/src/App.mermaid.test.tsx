@@ -1,7 +1,9 @@
+import '@contextbridge/ui/styles.css';
 import type { AnnotationSubmission, ElementAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent as browserUserEvent } from 'vitest/browser';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { appTestIds } from './App.tsx';
@@ -143,6 +145,26 @@ describe('App — Mermaid diagram annotation', () => {
     expect(expectElementAnchor(submission).element).toMatchObject({ id: 'Dashboard', descriptor: 'diagram node' });
   });
 
+  it('keeps an annotated node styled as annotated while hovered, but still previews un-annotated nodes', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: MERMAID_PLAN.content } });
+
+    // Anchor the assertion below: an un-annotated node swaps to the preview fill on hover, proving
+    // hover styling is live. Without this, the annotated check could pass simply because hover
+    // never fired.
+    const unannotatedNode = await waitForDiagramElement(`[${mermaidAttrs.nodeId}="Dashboard"]`);
+    const unannotated = await fillAroundHover(unannotatedNode);
+    expect(unannotated.hovered).not.toBe(unannotated.resting);
+
+    // A committed annotation's fill must survive hover (the `:not(.cb-mermaid-annotated)` guard in
+    // mermaidAdapter.css); otherwise the dark label sits on the dark hover fill until the cursor
+    // leaves. Mirrors how text hover never clobbers a saved highlight.
+    const annotatedNode = await waitForDiagramElement(`[${mermaidAttrs.nodeId}="Login"]`);
+    await saveAnnotation({ user, target: annotatedNode, body: 'Support SSO?' });
+    const annotated = await fillAroundHover(annotatedNode);
+    expect(annotated.hovered).toBe(annotated.resting);
+  });
+
   it('prompts to discard a dirty diagram draft when clicking a different element', async () => {
     const user = userEvent.setup();
     renderApp({ initialPayload: { contentKind: 'plan', content: MERMAID_PLAN.content } });
@@ -199,6 +221,19 @@ const MULTI_DIAGRAM_PLAN = {
   loginFence: { start: 5, end: 8 },
   logoutFence: { start: 12, end: 15 },
 };
+
+// Hover `node` and report the fill of its shape child (`g.… > rect|polygon|…`, where the marker and
+// hover rules paint) before and after — the comparison that tells stable annotation styling from a
+// hover preview that swaps the fill.
+async function fillAroundHover(node: Element): Promise<{ resting: string; hovered: string }> {
+  const shape = node.querySelector<SVGGraphicsElement>('rect, circle, ellipse, polygon, path');
+  if (!shape) {
+    throw new Error('Diagram node has no shape element to style.');
+  }
+  const resting = getComputedStyle(shape).fill;
+  await browserUserEvent.hover(node);
+  return { resting, hovered: getComputedStyle(shape).fill };
+}
 
 async function waitForDiagramElement(selector: string): Promise<Element> {
   return await waitFor(
