@@ -52,7 +52,7 @@
     "@contextbridge-ai/prettier-config": "^0.0.0",
     "@types/bun": "latest",
     "@types/semver": "^7.7.0",
-    "@typescript-eslint/parser": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.1",
     "astro-eslint-parser": "^1.4.0",
     "eslint": "^10.4.1",
     "eslint-plugin-astro": "^1.7.0",
@@ -63,6 +63,6 @@
     "prettier-plugin-astro": "^0.14.1",
     "semver": "^7.7.4",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.60.0"
+    "typescript-eslint": "^8.60.1"
   }
 }
