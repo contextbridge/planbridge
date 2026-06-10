@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ResolvedAnnotationThread } from '../../annotationTypes.ts';
+import type { ResolvedAnnotationThread } from '#src/annotationTypes.ts';
 import { mermaidAdapter } from './mermaidAdapter.ts';
 
 describe('mermaidAdapter', () => {

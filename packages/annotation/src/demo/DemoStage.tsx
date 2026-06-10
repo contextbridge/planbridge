@@ -1,6 +1,6 @@
 import type { AnnotationPayload } from '@contextbridge/shared/annotationSchema';
 import { type ReactNode, useEffect, useState } from 'react';
-import { App, type AppProps } from '../App.tsx';
+import { App, type AppProps } from '#src/App.tsx';
 import { TerminalWindow } from './TerminalWindow.tsx';
 
 type InputMode = 'plan' | 'accept';
