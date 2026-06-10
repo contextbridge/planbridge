@@ -1,17 +1,13 @@
 import type { AnnotationTargetKind, Asset } from '@contextbridge/shared/annotationSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
 import type { Element } from 'hast';
+import { toString as hastToString } from 'hast-util-to-string';
 import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
-import { adapterForLang } from './element/ElementAdapter.ts';
-import {
-  ELEMENT_LANG_PROPERTY,
-  ELEMENT_SOURCE_PROPERTY,
-  rehypeElementSources,
-} from './element/rehypeElementSources.ts';
+import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from './element/ElementAdapter.ts';
 
 export const annotatedMarkdownTestIds = {
   container: 'plan-review-markdown-plan',
@@ -47,9 +43,8 @@ export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: 
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        // rehypeElementSources must run before rehypeHighlight so a claimed block keeps its raw
-        // source instead of being tokenized into highlight spans.
-        rehypePlugins={[rehypeElementSources, [rehypeHighlight, { detect: false, ignoreMissing: true }]]}
+        // plainText keeps adapter-claimed blocks as raw text instead of tokenized highlight spans.
+        rehypePlugins={[[rehypeHighlight, { detect: false, plainText: elementAdapterLanguages }]]}
         components={components}
       >
         {content}
@@ -162,14 +157,14 @@ const markdownComponents = {
       </AnnotatablePre>
     );
     const block = elementBlockFromPre(node);
-    const adapter = block ? adapterForLang(block.lang) : undefined;
-    if (!block || !adapter) {
+    if (!block) {
       return fallback;
     }
+    const { adapter, source } = block;
     const Block = adapter.Block;
     return (
       <Block
-        source={block.source}
+        source={source}
         contentType={adapter.contentType}
         startLine={node?.position?.start.line}
         endLine={node?.position?.end.line}
@@ -212,11 +207,21 @@ const markdownComponents = {
   ),
 };
 
-// Reads the source + language an element adapter stashed on a fenced code block (see
-// rehypeElementSources). Returns undefined for ordinary code blocks, which render normally.
-function elementBlockFromPre(node: Element | undefined): { lang: string; source: string } | undefined {
+const LANGUAGE_PREFIX = 'language-';
+
+// Reads the adapter + raw source of an adapter-claimed fenced code block. The children are
+// still plain text nodes because rehype-highlight's plainText option skips these languages.
+// Returns undefined for ordinary code blocks, which render normally.
+function elementBlockFromPre(node: Element | undefined): { adapter: ElementAdapter; source: string } | undefined {
   const code = node?.children.find((child): child is Element => child.type === 'element' && child.tagName === 'code');
-  const source = code?.properties[ELEMENT_SOURCE_PROPERTY];
-  const lang = code?.properties[ELEMENT_LANG_PROPERTY];
-  return typeof source === 'string' && typeof lang === 'string' ? { lang, source } : undefined;
+  if (!code) return undefined;
+  const lang = languageOf(code);
+  const adapter = lang === undefined ? undefined : elementAdapterForLanguage(lang);
+  return adapter ? { adapter, source: hastToString(code) } : undefined;
+}
+
+function languageOf(code: Element): string | undefined {
+  const className = code.properties.className;
+  const classes = Array.isArray(className) ? className.map(String) : [];
+  return classes.find((cls) => cls.startsWith(LANGUAGE_PREFIX))?.slice(LANGUAGE_PREFIX.length);
 }

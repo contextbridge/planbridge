@@ -12,7 +12,7 @@ import { mermaidAttrs } from './element/mermaid/MermaidBlock.tsx';
 import { annotateAndSubmit, renderApp, saveAnnotation } from './testHelpers/index.tsx';
 
 // End-to-end through the real `mermaid` dependency: a plan with a fenced mermaid block flows through
-// rehypeElementSources → AnnotatedMarkdown → MermaidBlock (renders the SVG and tags its nodes/edges)
+// AnnotatedMarkdown → MermaidBlock (renders the SVG and tags its nodes/edges)
 // → useElementTargets → the mermaid adapter's buildAnchor → the submitted payload. Rendering with
 // the actual library — not a hand-built SVG — is the point: a mermaid upgrade that changes the
 // rendered structure the adapter keys off (node element ids, edge-label markup) breaks these tests.
