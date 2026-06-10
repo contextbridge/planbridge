@@ -23,7 +23,7 @@ jobs:
       # paths-filter needs a git checkout — it runs `git branch --show-current`
       # before any API fallback, and fails outside a working tree.
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Install uv
         if: steps.changes.outputs.github == 'true'
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
       - name: Run zizmor
         if: steps.changes.outputs.github == 'true'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Upload zizmor SARIF to code scanning
         if: steps.changes.outputs.github == 'true'
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
         with:
           sarif_file: zizmor.sarif
           category: zizmor
