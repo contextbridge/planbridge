@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/contextbridge/planbridge/compare/v0.9.0...v0.9.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* correct mermaid diagram hover and selected-node styling ([#219](https://github.com/contextbridge/planbridge/issues/219)) ([0323e56](https://github.com/contextbridge/planbridge/commit/0323e56d56d6053814ed67407c69ee1451c479e1))
+
 ## [0.9.0](https://github.com/contextbridge/planbridge/compare/v0.8.0...v0.9.0) (2026-06-09)
 
 
