@@ -8,7 +8,7 @@
   --mermaid-mark-border: var(--color-amber-500);
   --mermaid-mark-text: var(--color-neutral-950);
   --mermaid-hover-stroke: var(--chart-3);
-  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--color-neutral-900));
+  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--muted));
   --mermaid-hover-edge: color-mix(in oklab, var(--chart-3) 35%, transparent);
 }
 
@@ -41,10 +41,11 @@ div.cb-mermaid-annotated-active {
   border-color: var(--mermaid-mark-border);
 }
 
-/* Hover preview of the node a click would annotate. !important beats mermaid's injected
-   `#mermaid-rN .node rect` rule. oklab, not oklch: mixing a chromatic color with a near-achromatic
-   one in oklch wraps the hue (royal → magenta); oklab keeps the tint blue. */
-g.node:hover > :is(rect, circle, ellipse, polygon, path) {
+/* Hover preview of the node a click would annotate. Scoped to un-annotated nodes so it never fights
+   a committed annotation: without `:not(...)`, `:hover` ties the marker rules on specificity and,
+   later in the file, wins the cascade. !important beats mermaid's injected `.node rect` rule; oklab
+   (not oklch) keeps the royal tint from wrapping toward magenta. */
+g.node:not(.cb-mermaid-annotated):hover > :is(rect, circle, ellipse, polygon, path) {
   fill: var(--mermaid-hover-node) !important;
   stroke: var(--mermaid-hover-stroke) !important;
 }
@@ -64,6 +65,6 @@ g.edgeLabel.cb-mermaid-annotated p {
   color: var(--mermaid-mark-text) !important;
 }
 
-g.edgeLabel:hover :is(.labelBkg, p) {
+g.edgeLabel:not(.cb-mermaid-annotated):hover :is(.labelBkg, p) {
   background-color: var(--mermaid-hover-edge) !important;
 }
