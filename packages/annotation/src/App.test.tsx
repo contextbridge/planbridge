@@ -20,6 +20,7 @@ import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     cleanup();
   });
 
@@ -536,6 +537,33 @@ describe('App', () => {
     expect(submission?.threads).toHaveLength(1);
     const anchor = submission?.threads[0]?.subject.kind === 'annotation' ? submission.threads[0].subject.anchor : null;
     expect(anchor?.kind === 'text' ? anchor.quote.exact : null).toBe('"helloWorld"');
+  });
+
+  it('does not resync CSS highlights while typing in an open annotation draft', async () => {
+    const user = userEvent.setup();
+    const setHighlight = vi.spyOn(CSS.highlights, 'set');
+    const deleteHighlight = vi.spyOn(CSS.highlights, 'delete');
+    renderApp({
+      initialPayload: {
+        contentKind: 'plan',
+        content: '# Plan\n\nThis paragraph has enough text to select and annotate.',
+      },
+    });
+
+    const paragraph = await waitForMarkdownParagraph(0);
+    drag({ target: paragraph.firstChild as Text, from: 0, to: 'This paragraph'.length });
+    await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
+    await waitFor(() => {
+      expect(setHighlight).toHaveBeenCalled();
+    });
+
+    setHighlight.mockClear();
+    deleteHighlight.mockClear();
+
+    await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'No highlight churn');
+
+    expect(setHighlight).not.toHaveBeenCalled();
+    expect(deleteHighlight).not.toHaveBeenCalled();
   });
 
   it('scopes a code-token click to just the token, not the whole block', async () => {

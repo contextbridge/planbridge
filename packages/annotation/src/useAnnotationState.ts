@@ -96,7 +96,9 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
 
   const removeComment = (threadId: string) => {
     setThreads((current) => current.filter((thread) => thread.id !== threadId));
-    setActiveDraft((current) => (current?.kind === 'edit-comment' && current.threadId === threadId ? null : current));
+    if (activeDraft?.kind === 'edit-comment' && activeDraft.threadId === threadId) {
+      closeDraft();
+    }
   };
 
   const requestRemove = (threadId: string | null) => {

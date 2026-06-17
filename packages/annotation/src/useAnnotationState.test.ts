@@ -354,7 +354,7 @@ describe('useAnnotationState', () => {
       expect(result.current.removal.pendingId).toBeNull();
     });
 
-    it('clears the active draft when the removed thread matches the open draft', () => {
+    it('clears the active draft state when the removed thread matches the open draft', () => {
       const thread = annotationThread.build({ id: 'thr_target' });
       const originalBody = thread.messages[0]?.body ?? '';
       const { result } = renderAnnotationHook(() => useAnnotationState({ initialThreads: [thread] }));
@@ -375,6 +375,7 @@ describe('useAnnotationState', () => {
       });
 
       expect(result.current.draft.active).toBeNull();
+      expect(result.current.draft.body).toBe('');
     });
   });
 
