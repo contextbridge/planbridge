@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/contextbridge/planbridge/compare/v0.9.1...v0.9.2) (2026-06-17)
+
+
+### Bug Fixes
+
+* stop draft typing from resyncing highlights ([#225](https://github.com/contextbridge/planbridge/issues/225)) ([66fa710](https://github.com/contextbridge/planbridge/commit/66fa710d82d496f79440a76763d9042ceff9d2d3))
+
 ## [0.9.1](https://github.com/contextbridge/planbridge/compare/v0.9.0...v0.9.1) (2026-06-11)
 
 
