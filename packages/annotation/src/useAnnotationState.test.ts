@@ -143,7 +143,7 @@ describe('useAnnotationState', () => {
       expectBeforeUnloadGuard(browser);
 
       expect(result.current.closeReview.dialogOpen).toBe(true);
-      expect(result.current.draft.active?.body).toBe('Unsaved draft feedback');
+      expect(result.current.draft.body).toBe('Unsaved draft feedback');
     });
 
     it('keeps reviewing by closing only the custom dialog', () => {
@@ -521,14 +521,14 @@ describe('useAnnotationState', () => {
         });
       });
 
-      expect(result.current.draft.active?.body).toBe('Unsaved original');
+      expect(result.current.draft.body).toBe('Unsaved original');
       expect(result.current.draft.discardDialogOpen).toBe(true);
 
       act(() => {
         result.current.draft.confirmDiscard();
       });
 
-      expect(result.current.draft.active?.body).toBe('replacement');
+      expect(result.current.draft.body).toBe('replacement');
       expect(result.current.draft.active?.anchor).toBe(nextAnchor);
       expect(result.current.draft.discardDialogOpen).toBe(false);
     });
@@ -547,7 +547,7 @@ describe('useAnnotationState', () => {
       });
 
       expect(result.current.removal.pendingId).toBeNull();
-      expect(result.current.draft.active?.body).toBe(originalBody + ' edited');
+      expect(result.current.draft.body).toBe(originalBody + ' edited');
       expect(result.current.draft.discardDialogOpen).toBe(true);
 
       act(() => {

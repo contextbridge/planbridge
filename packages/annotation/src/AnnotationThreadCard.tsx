@@ -15,6 +15,7 @@ export interface AnnotationThreadCardProps {
   isActive: boolean;
   isCurrent: boolean;
   submitted: boolean;
+  draftBody: string;
   onClick: () => void;
   onDraftBodyChange: (body: string) => void;
   onDraftCancel: () => void;
@@ -28,6 +29,7 @@ export function AnnotationThreadCard({
   isActive,
   isCurrent,
   submitted,
+  draftBody,
   onClick,
   onDraftBodyChange,
   onDraftCancel,
@@ -77,6 +79,7 @@ export function AnnotationThreadCard({
           ) : (
             <AnnotationDraftCommentComposer
               draft={comment.draft}
+              body={draftBody}
               key="draft"
               onBodyChange={onDraftBodyChange}
               onCancel={onDraftCancel}

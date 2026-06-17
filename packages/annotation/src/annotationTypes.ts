@@ -40,18 +40,20 @@ export interface SelectableTextIndex {
   resolveTarget(targetId: string): AnnotatableTarget | null;
 }
 
+// The live draft body is tracked separately in useAnnotationState — deliberately not on this
+// descriptor. Editing the body must not change this object's identity, because it flows through
+// resolveAnnotationThreads into the CSS Custom Highlight + element-marker effects; a per-keystroke
+// identity churn there rebuilds the whole highlight range and is pathologically slow in Firefox.
 export type ActiveCommentDraft =
   | {
       kind: 'new-thread';
       anchor: StoredAnnotationAnchor;
-      body: string;
     }
   | {
       kind: 'edit-comment';
       threadId: string;
       messageId: string;
       anchor: StoredAnnotationAnchor;
-      body: string;
     };
 
 export type AnnotationThreadComment =

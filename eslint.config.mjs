@@ -103,6 +103,7 @@ export default defineConfig(
   ...baseConfig,
   {
     ignores: [
+      'claude-tmp/**',
       'dist/**',
       'node_modules/**',
       'coverage/**',

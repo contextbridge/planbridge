@@ -42,7 +42,7 @@ export const resolvedAnnotationDraftThread = Factory.define<ResolvedAnnotationTh
       {
         kind: 'draft',
         mode: 'new-thread',
-        draft: { kind: 'new-thread', anchor: seed.subject.anchor, body: '' },
+        draft: { kind: 'new-thread', anchor: seed.subject.anchor },
       },
     ],
   };
