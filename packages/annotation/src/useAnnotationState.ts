@@ -37,6 +37,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     (initialThreads ?? []).filter(isAnnotationCommentThread),
   );
   const [activeDraft, setActiveDraft] = useState<ActiveCommentDraft | null>(null);
+  const [draftBody, setDraftBody] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -54,11 +55,12 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
 
   const closeDraft = () => {
     setActiveDraft(null);
+    setDraftBody('');
     setPendingDraftAction(null);
   };
 
   const requestDraftAction = (action: PendingDraftAction) => {
-    if (!activeDraft || !getDraftDirty(activeDraft, threads)) {
+    if (!activeDraft || !getDraftDirty(activeDraft, draftBody, threads)) {
       runDraftAction(action);
       return;
     }
@@ -74,16 +76,12 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     requestDraftAction({ kind: 'replace', draft });
   };
 
-  const setDraftBody = (body: string) => {
-    setActiveDraft((current) => (current ? { ...current, body } : current));
-  };
-
   const saveDraft = () => {
     if (submitted || !activeDraft) {
       return;
     }
 
-    const nextBody = activeDraft.body.trim();
+    const nextBody = draftBody.trim();
     if (nextBody.length === 0) {
       return;
     }
@@ -98,7 +96,9 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
 
   const removeComment = (threadId: string) => {
     setThreads((current) => current.filter((thread) => thread.id !== threadId));
-    setActiveDraft((current) => (current?.kind === 'edit-comment' && current.threadId === threadId ? null : current));
+    if (activeDraft?.kind === 'edit-comment' && activeDraft.threadId === threadId) {
+      closeDraft();
+    }
   };
 
   const requestRemove = (threadId: string | null) => {
@@ -110,7 +110,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     if (
       activeDraft?.kind === 'edit-comment' &&
       activeDraft.threadId === threadId &&
-      getDraftDirty(activeDraft, threads)
+      getDraftDirty(activeDraft, draftBody, threads)
     ) {
       setPendingDraftAction({ kind: 'remove', threadId });
       return;
@@ -159,7 +159,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   };
 
   const submit = async () => {
-    if (activeDraft && getDraftDirty(activeDraft, threads)) {
+    if (activeDraft && getDraftDirty(activeDraft, draftBody, threads)) {
       requestCloseDraft();
       return;
     }
@@ -190,11 +190,13 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
         closeDraft();
         return;
       case 'replace':
-        setActiveDraft(normalizeDraft(action.draft));
+        setActiveDraft(toDraftDescriptor(action.draft));
+        setDraftBody(initialDraftBody(action.draft));
         setPendingDraftAction(null);
         return;
       case 'remove':
         setActiveDraft(null);
+        setDraftBody('');
         setPendingDraftAction(null);
         setPendingRemoveId(action.threadId);
         return;
@@ -238,6 +240,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     threads,
     draft: {
       active: activeDraft,
+      body: draftBody,
       open: openAnnotationCommentDraft,
       requestClose: requestCloseDraft,
       setBody: setDraftBody,
@@ -274,16 +277,20 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   };
 }
 
-function normalizeDraft(draft: OpenAnnotationCommentDraftArgs): ActiveCommentDraft {
+function toDraftDescriptor(draft: OpenAnnotationCommentDraftArgs): ActiveCommentDraft {
   if (draft.kind === 'new-thread') {
-    return { ...draft, body: draft.body ?? '' };
+    return { kind: 'new-thread', anchor: draft.anchor };
   }
 
-  return draft;
+  return { kind: 'edit-comment', threadId: draft.threadId, messageId: draft.messageId, anchor: draft.anchor };
 }
 
-function getDraftDirty(draft: ActiveCommentDraft, threads: CommentThread[]): boolean {
-  const nextBody = draft.body.trim();
+function initialDraftBody(draft: OpenAnnotationCommentDraftArgs): string {
+  return draft.kind === 'new-thread' ? (draft.body ?? '') : draft.body;
+}
+
+function getDraftDirty(draft: ActiveCommentDraft, body: string, threads: CommentThread[]): boolean {
+  const nextBody = body.trim();
   if (draft.kind === 'new-thread') {
     return nextBody.length > 0;
   }

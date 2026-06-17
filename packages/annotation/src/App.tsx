@@ -135,6 +135,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                 <CommentsSidebar
                   threads={annotationInteractions.resolvedThreads}
                   currentThreadId={annotationInteractions.currentSidebarThreadId}
+                  draftBody={reviewState.draft.body}
                   globalComment={reviewState.globalComment}
                   highlightedAnnotationId={annotationInteractions.highlightedAnnotationId}
                   navigation={

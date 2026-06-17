@@ -28,6 +28,7 @@ export interface CommentsSidebarProps {
   navigation: SidebarNavigationState | null;
   submission: SubmissionState;
   source?: AnnotationEntrypoint;
+  draftBody: string;
   onThreadClick: (thread: ResolvedAnnotationThread) => void;
   onAnnotationHoverChange: (annotationId: string, hovered: boolean) => void;
   onDraftBodyChange: (body: string) => void;
@@ -44,6 +45,7 @@ export function CommentsSidebar({
   navigation,
   submission,
   source,
+  draftBody,
   onThreadClick,
   onAnnotationHoverChange,
   onDraftBodyChange,
@@ -99,6 +101,7 @@ export function CommentsSidebar({
                       thread={thread}
                       isActive={highlightedAnnotationId === thread.id}
                       isCurrent={isCurrent}
+                      draftBody={draftBody}
                       onClick={() => onThreadClick(thread)}
                       onDraftBodyChange={onDraftBodyChange}
                       onDraftCancel={onDraftCancel}

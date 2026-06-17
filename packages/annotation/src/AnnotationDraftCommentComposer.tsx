@@ -13,6 +13,7 @@ export const annotationDraftCommentComposerTestIds = {
 
 export interface AnnotationDraftCommentComposerProps {
   draft: ActiveCommentDraft;
+  body: string;
   onBodyChange: (body: string) => void;
   onCancel: () => void;
   onSave: () => void;
@@ -20,13 +21,14 @@ export interface AnnotationDraftCommentComposerProps {
 
 export function AnnotationDraftCommentComposer({
   draft,
+  body,
   onBodyChange,
   onCancel,
   onSave,
 }: AnnotationDraftCommentComposerProps) {
   const title = draft.kind === 'edit-comment' ? 'Edit comment' : 'Add comment';
   const handleSubmitKeyDown = useSubmitOnCmdEnter(() => {
-    if (draft.body.trim().length > 0) {
+    if (body.trim().length > 0) {
       onSave();
     }
   });
@@ -64,7 +66,7 @@ export function AnnotationDraftCommentComposer({
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         placeholder="Add a comment."
-        value={draft.body}
+        value={body}
       />
       <div className="mt-3 flex items-center justify-end gap-2">
         <Button
@@ -77,7 +79,7 @@ export function AnnotationDraftCommentComposer({
         </Button>
         <Button
           data-testid={annotationDraftCommentComposerTestIds.saveButton}
-          disabled={draft.body.trim().length === 0}
+          disabled={body.trim().length === 0}
           onClick={onSave}
           type="button"
         >
