@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatToMillis } from 'drizzle-orm/migrator.utils';
@@ -13,9 +13,9 @@ export function loadStorageMigrations(): StorageMigrationEntry[] {
   const here = dirname(fileURLToPath(import.meta.url));
   const drizzleDir = join(here, '..', '..', 'generated', 'drizzle');
 
-  return readdirSync(drizzleDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
+  return Array.from(new Bun.Glob('*/migration.sql').scanSync(drizzleDir))
+    .map((relPath) => relPath.split('/')[0] ?? '')
+    .filter((name) => name.length > 0)
     .sort()
     .map((name) => {
       const timestamp = formatToMillis(name.slice(0, 14));

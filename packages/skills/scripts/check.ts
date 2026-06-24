@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import type { BaseContext } from '@contextbridge/context';
 import { SKILL_RENDERABLE_HARNESSES } from '@contextbridge/harness';
@@ -8,7 +8,7 @@ import { createScriptContext } from './context.ts';
 import { REPO_ROOT, type RenderTarget, SOURCES_DIR, outDirFor, targetsForAll } from './renderTargets.ts';
 
 const safeReadFile = fromThrowable((path: string) => readFileSync(path, 'utf8'));
-const safeReaddir = fromThrowable((dir: string) => readdirSync(dir, { withFileTypes: true }));
+const safeScan = fromThrowable((pattern: string, root: string) => Array.from(new Bun.Glob(pattern).scanSync(root)));
 
 async function main(ctx: BaseContext): Promise<void> {
   const { logger } = ctx;
@@ -51,10 +51,9 @@ function checkDrift({ path, body, harness }: RenderTarget): Result<void, string>
 }
 
 function findOrphans(parent: string, expectedDirs: Set<string>): string[] {
-  return safeReaddir(parent)
+  return safeScan('*/SKILL.md', parent)
     .unwrapOr([])
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => join(parent, entry.name))
+    .map((relPath) => join(parent, dirname(relPath)))
     .filter((dir) => !expectedDirs.has(dir));
 }
 

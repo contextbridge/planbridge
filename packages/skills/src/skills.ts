@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import fm from 'front-matter';
 import { z } from 'zod';
@@ -35,10 +35,11 @@ export function parseSkill(source: string): Skill {
 }
 
 export function loadAllFrom(sourcesDir: string): Skill[] {
-  return readdirSync(sourcesDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((entry) => loadOne(sourcesDir, entry.name));
+  return Array.from(new Bun.Glob('*/SKILL.md').scanSync(sourcesDir))
+    .map((relPath) => relPath.split('/')[0] ?? '')
+    .filter((dirName) => dirName.length > 0 && !dirName.startsWith('_'))
+    .sort((a, b) => a.localeCompare(b))
+    .map((dirName) => loadOne(sourcesDir, dirName));
 }
 
 function loadOne(sourcesDir: string, dirName: string): Skill {
