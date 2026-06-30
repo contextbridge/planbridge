@@ -11,7 +11,7 @@ runs:
 
     - name: Restore asdf cache
       id: asdf-cache-restore
-      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         key: asdf-tools-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.tool-versions') }}
         path: |
@@ -32,7 +32,7 @@ runs:
 
     - name: Save asdf cache
       if: always() && steps.asdf-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         key: ${{ steps.asdf-cache-restore.outputs.cache-primary-key }}
         path: |
@@ -41,7 +41,7 @@ runs:
           ~/.asdf/shims
 
     - name: Restore Bun install cache
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         key: bun-install-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
         path: ~/.bun/install/cache
