@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getNewThreadDraftId } from '../annotationResolvers.ts';
-import type { ResolvedAnnotationThread } from '../annotationTypes.ts';
-import type { OpenAnnotationCommentDraftArgs } from '../useAnnotationState.ts';
+import { getNewThreadDraftId } from '#src/annotationResolvers.ts';
+import type { ResolvedAnnotationThread } from '#src/annotationTypes.ts';
+import type { OpenAnnotationCommentDraftArgs } from '#src/useAnnotationState.ts';
 import { elementAdapterForContentType, elementAdapters } from './ElementAdapter.ts';
 import { ELEMENT_RENDERED_EVENT, elementBlockAttrs } from './elementBlock.ts';
 
