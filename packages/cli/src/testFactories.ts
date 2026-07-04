@@ -1,12 +1,24 @@
 import type { HarnessDescriptor } from '@contextbridge/harness';
 import { Factory } from 'fishery';
 import type { RunAnnotationArgs } from '#src/annotation/runAnnotation.ts';
+import type { ClaudeHookPayload } from '#src/commands/claudeHookSchema.ts';
 import type {
   CodexStopHookPayload,
   CodexTranscriptHookPromptLine,
   CodexTranscriptPlanLine,
 } from '#src/commands/codexHookSchema.ts';
 import type { Environment } from '#src/environment.ts';
+import type { ClaudeExitPlanModeInput } from '#src/formatters/plan/claudeHookResponse.ts';
+
+export const claudeHookPayload = Factory.define<ClaudeHookPayload & { tool_input: ClaudeExitPlanModeInput }>(() => ({
+  session_id: 'sess_123',
+  transcript_path: '/tmp/transcript.json',
+  cwd: '/work',
+  permission_mode: 'plan',
+  hook_event_name: 'PermissionRequest',
+  tool_name: 'ExitPlanMode',
+  tool_input: { plan: '# Plan\n\nStep 1.\n', planFilePath: '/home/user/.claude/plans/sample.md' },
+}));
 
 export const codexStopHookPayload = Factory.define<CodexStopHookPayload>(() => ({
   session_id: 'sess_123',
