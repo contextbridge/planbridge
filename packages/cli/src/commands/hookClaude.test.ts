@@ -9,10 +9,11 @@ import { createAnnotationDependencies, createStubContext, readErrorLogs } from '
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
-  it('emits the approved envelope when the review is approved', async () => {
+  it('emits the approved envelope echoing tool_input when the review is approved', async () => {
     const { context, io } = createStubContext();
     const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const deps = createHookDependencies({ submission });
+    const toolInput = { plan: '# Plan\n\nStep 1.\n', planFilePath: '/home/user/.claude/plans/sample.md' };
     io.stdin.write(
       JSON.stringify({
         session_id: 'sess_123',
@@ -21,14 +22,17 @@ describe('hookClaude handler', () => {
         permission_mode: 'plan',
         hook_event_name: 'PermissionRequest',
         tool_name: 'ExitPlanMode',
-        tool_input: { plan: '# Plan\n\nStep 1.\n' },
+        tool_input: toolInput,
       }),
     );
     io.stdin.end();
 
     await runHookClaude(context, deps);
 
-    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, '# Plan\n\nStep 1.\n'))}\n`);
+    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, toolInput))}\n`);
+    const parsed = JSON.parse(io.stdout.text().trim()) as ReturnType<typeof claudeHookResponse>;
+    if (parsed.hookSpecificOutput.decision.behavior !== 'allow') throw new Error('expected allow');
+    expect(parsed.hookSpecificOutput.decision.updatedInput).toEqual(toolInput);
     expect(deps.calls).toEqual([annotationArgs.build({ content: '# Plan\n\nStep 1.\n', entrypoint: 'hook_claude' })]);
   });
 
@@ -52,7 +56,7 @@ describe('hookClaude handler', () => {
 
     await runHookClaude(context, deps);
 
-    const expected = claudeHookResponse(submission, planContent);
+    const expected = claudeHookResponse(submission, { plan: planContent });
     expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
     const parsed = JSON.parse(io.stdout.text().trim()) as typeof expected;
     expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');

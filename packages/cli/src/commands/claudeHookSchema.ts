@@ -8,8 +8,9 @@ export const ClaudeHookPayloadSchema = z.object({
   permission_mode: z.string().trim().nonempty().optional(),
   hook_event_name: z.string().trim().nonempty(),
   tool_name: z.string().trim().nonempty().optional(),
+  // Loose: the approve envelope echoes tool_input back verbatim, so unmodeled fields must survive parsing.
   tool_input: z
-    .object({
+    .looseObject({
       plan: z.string().refine((value) => value.trim().length > 0, { message: 'plan content must not be empty' }),
     })
     .optional(),
