@@ -1,8 +1,8 @@
 import type { RenderHookOptions, RenderHookResult } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { AnnotationAppContext as AnnotationAppContextValue } from '../useAppContext.ts';
-import { AnnotationAppContext } from '../useAppContext.ts';
+import type { AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
+import { AnnotationAppContext } from '#src/useAppContext.ts';
 import type { FakeAppContextResult } from './createFakeAppContext.ts';
 import { createFakeAppContext } from './createFakeAppContext.ts';
 

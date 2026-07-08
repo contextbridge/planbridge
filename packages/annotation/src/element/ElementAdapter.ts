@@ -1,6 +1,6 @@
 import type { ElementAnnotationAnchor } from '@contextbridge/shared/annotationSchema';
 import type { ComponentType } from 'react';
-import type { ResolvedAnnotationThread } from '../annotationTypes.ts';
+import type { ResolvedAnnotationThread } from '#src/annotationTypes.ts';
 import type { ElementBlockProps } from './elementBlock.ts';
 import { mermaidAdapter } from './mermaid/mermaidAdapter.ts';
 

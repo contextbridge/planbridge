@@ -8,7 +8,7 @@ import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/sha
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
-import type { AnnotationAppContext } from '../useAppContext.ts';
+import type { AnnotationAppContext } from '#src/useAppContext.ts';
 
 export interface FakeAppContextResult {
   context: AnnotationAppContext;
