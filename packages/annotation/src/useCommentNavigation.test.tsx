@@ -1,3 +1,4 @@
+import { elementAnnotationAnchor } from '@contextbridge/shared/testFactories';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -10,17 +11,24 @@ describe('useCommentNavigation', () => {
     cleanup();
   });
 
-  it('excludes unresolved or range-less threads from navigation', () => {
+  it('excludes unresolved threads but keeps resolved range-less element threads navigable', () => {
     renderCommentNavigationHarness({
       threads: [
         resolvedAnnotationThread.build({ id: 'thr_live' }),
         resolvedAnnotationThread.build({ id: 'thr_unresolved', unresolved: true }),
-        resolvedAnnotationThread.build({ id: 'thr_range_less', range: null }),
+        // Anchor replaced wholesale: Fishery deep-merges params, which would blend the factory's
+        // default text anchor into the element anchor.
+        {
+          ...resolvedAnnotationThread.build({ id: 'thr_element' }),
+          anchor: elementAnnotationAnchor.build(),
+          range: null,
+        },
       ],
+      selectedAnnotationId: 'thr_element',
     });
 
-    expect(screen.getByTestId(commentNavigationTestIds.total)).toHaveTextContent('1');
-    expect(screen.getByTestId(commentNavigationTestIds.currentAnnotationId)).toHaveTextContent('thr_live');
+    expect(screen.getByTestId(commentNavigationTestIds.total)).toHaveTextContent('2');
+    expect(screen.getByTestId(commentNavigationTestIds.currentAnnotationId)).toHaveTextContent('thr_element');
   });
 
   it('uses the selected thread as the current thread', () => {
