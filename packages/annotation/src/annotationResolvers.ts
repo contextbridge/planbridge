@@ -124,30 +124,12 @@ function withActiveDraftThread(
   ];
 }
 
+// Source lines are the one position every anchor kind shares — element anchors never resolve to a DOM Range.
 function compareResolvedThreads(left: ResolvedAnnotationThread, right: ResolvedAnnotationThread): number {
-  if (left.range && right.range) {
-    const order = left.range.compareBoundaryPoints(Range.START_TO_START, right.range);
-    if (order !== 0) {
-      return order;
-    }
-  }
-
-  if (left.range && !right.range) {
-    return -1;
-  }
-
-  if (!left.range && right.range) {
-    return 1;
-  }
-
-  // Range-less threads (element anchors) order by source line, which tracks document order,
-  // before falling back to a per-anchor secondary key.
-  const lineOrder = left.anchor.sourceLines.start - right.anchor.sourceLines.start;
-  if (lineOrder !== 0) {
-    return lineOrder;
-  }
-
-  return secondaryOrderKey(left.anchor) - secondaryOrderKey(right.anchor);
+  return (
+    left.anchor.sourceLines.start - right.anchor.sourceLines.start ||
+    secondaryOrderKey(left.anchor) - secondaryOrderKey(right.anchor)
+  );
 }
 
 /**
