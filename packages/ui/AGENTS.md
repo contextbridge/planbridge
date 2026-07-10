@@ -15,7 +15,7 @@ This package holds the styling foundation for every browser UI in cb-cli (`packa
   - **IBM Plex Sans** — prose + chrome (including content headings like `h1–h6`). Loaded via `@fontsource/ibm-plex-sans`. Exposed as `var(--cb-font-sans)`; applied to `html, body` so consumers inherit it automatically.
   - **IBM Plex Mono** — code blocks and inline code. Loaded via `@fontsource/ibm-plex-mono`. Exposed as `var(--cb-font-mono)` and the `.font-mono` utility class. Scope it to `pre`/`code` containers; do not apply to prose.
 - **Headings inherit Plex Sans by default.** Keep ESBuild opt-in through `.font-brand` only.
-- **Dark mode**: `@media (prefers-color-scheme: dark)` only. No `.dark` class, no toggle, no runtime theming JS. Browser UIs are spawned per session, so the OS setting is the contract.
+- **Dark mode and themes**: browser UIs default to `prefers-color-scheme`, while experiences may apply a curated runtime theme by setting semantic CSS custom properties and a `data-theme` attribute on `<html>`. Keep theme selection and persistence behind injected browser-side controllers; shared components consume semantic tokens and must not know theme IDs.
 - **Colors**: OKLCH palette from `contextbridge.github.io`. Brand accents (royal, violet, coral, tangerine, peach) plus the shadcn semantic tokens (primary, secondary, muted, accent, destructive, card, popover, sidebar, chart-1..5).
 - **Tailwind v4**: CSS-based config via `@theme inline` in `styles.css`. **There is no `tailwind.config.{js,ts}` file and there should never be one.**
 
@@ -55,6 +55,6 @@ After cleanup, run `bun run typecheck` here and `just verify` at the root.
 ## What NOT to put in this package
 
 - **Per-experience components** (plan-specific cards, review-specific widgets). Those live in the consuming package. `@contextbridge/ui` holds only generic, cross-experience primitives.
-- **Runtime theming logic** (`useTheme`, ThemeProvider, localStorage persistence). System preference is the contract; no toggles.
+- **Experience-specific theme catalogs or persistence logic.** Keep shared semantic tokens and generic picker primitives here, but theme choices, localStorage behavior, and settings surfaces live in the consuming browser-UI package behind an injected controller.
 - **Marketing-site-only utilities** (`.glass`, `.hero-product-card`, `.section-dark`, MagicUI animations). `contextbridge.github.io` has those — the CLI UIs do not need them.
 - **A `tailwind.config.{js,ts}` file**. Tailwind v4 is configured entirely via CSS (`@theme inline` in `styles.css`).
