@@ -6,10 +6,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent as browserUserEvent } from 'vitest/browser';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
+import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
 import { appTestIds } from './App.tsx';
+import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { elementBlockAttrs } from './element/elementBlock.ts';
 import { mermaidAttrs } from './element/mermaid/MermaidBlock.tsx';
-import { annotateAndSubmit, renderApp, saveAnnotation } from './testHelpers/index.tsx';
+import { annotateAndSubmit, drag, renderApp, saveAnnotation } from './testHelpers/index.tsx';
 
 // End-to-end through the real `mermaid` dependency: a plan with a fenced mermaid block flows through
 // AnnotatedMarkdown → MermaidBlock (renders the SVG and tags its nodes/edges)
@@ -165,6 +167,32 @@ describe('App — Mermaid diagram annotation', () => {
     expect(annotated.hovered).toBe(annotated.resting);
   });
 
+  it('orders the sidebar by document position when a diagram comment precedes a text comment', async () => {
+    const user = userEvent.setup();
+    renderApp({ initialPayload: { contentKind: 'plan', content: MERMAID_PLAN.content } });
+
+    // Comment on the prose below the diagram, then on a node in the diagram above it. The sidebar
+    // must list the diagram comment first — it comes first in the document.
+    const paragraph = await screen.findByText('Annotate a node or edge above.');
+    drag({ target: paragraph.firstChild as Text, from: 0, to: 'Annotate'.length });
+    await user.type(
+      await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea),
+      'Text comment below the diagram',
+    );
+    await user.click(screen.getByTestId(annotationDraftCommentComposerTestIds.saveButton));
+    await waitFor(() => {
+      expect(screen.queryByTestId(annotationDraftCommentComposerTestIds.container)).not.toBeInTheDocument();
+    });
+
+    await saveAnnotation({
+      user,
+      target: await waitForDiagramElement(`[${mermaidAttrs.nodeId}="Login"]`),
+      body: 'Diagram comment above the text',
+    });
+
+    expect(getCommentCardBodies()).toEqual(['Diagram comment above the text', 'Text comment below the diagram']);
+  });
+
   it('prompts to discard a dirty diagram draft when clicking a different element', async () => {
     const user = userEvent.setup();
     renderApp({ initialPayload: { contentKind: 'plan', content: MERMAID_PLAN.content } });
@@ -233,6 +261,18 @@ async function fillAroundHover(node: Element): Promise<{ resting: string; hovere
   const resting = getComputedStyle(shape).fill;
   await browserUserEvent.hover(node);
   return { resting, hovered: getComputedStyle(shape).fill };
+}
+
+/** Saved comment bodies in sidebar render order. */
+function getCommentCardBodies(): string[] {
+  const cardTestIdPrefix = annotationThreadCardTestIds.card('');
+  const commentTestIdPrefix = annotationThreadCardTestIds.comment('');
+  const cards = screen
+    .getByTestId(commentsSidebarTestIds.threadList)
+    .querySelectorAll<HTMLElement>(`[data-testid^="${cardTestIdPrefix}"]`);
+  return Array.from(cards).map(
+    (card) => card.querySelector(`[data-testid^="${commentTestIdPrefix}"]`)?.textContent ?? '',
+  );
 }
 
 async function waitForDiagramElement(selector: string): Promise<Element> {

@@ -101,7 +101,7 @@ export function useCommentNavigation({
 }
 
 function getNavigableThreads(threads: ResolvedAnnotationThread[]): ResolvedAnnotationThread[] {
-  return threads.filter((thread) => !thread.unresolved && thread.range !== null && !isNewThreadDraftOnly(thread));
+  return threads.filter((thread) => !thread.unresolved && !isNewThreadDraftOnly(thread));
 }
 
 function isNewThreadDraftOnly(thread: ResolvedAnnotationThread): boolean {
