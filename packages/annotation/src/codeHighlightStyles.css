@@ -1,13 +1,11 @@
-/* Override highlight.js's github-dark theme for the annotation UI.
-   The wrapping <pre> in AnnotatedMarkdown supplies its own chrome (background,
-   padding, rounded corners), so we flatten the .hljs block-level rules and
-   let the per-token color rules pass through unchanged. */
-.cb-plan-content pre code.hljs {
+/* The wrapping <pre> in AnnotatedMarkdown owns the code-block chrome. Shiki only
+   supplies token spans and their foreground colors. */
+.cb-plan-content pre code.shiki {
+  display: block;
+  overflow-x: visible;
   background: transparent;
   padding: 0;
   color: inherit;
-  display: block;
-  overflow-x: visible;
 }
 
 .cb-plan-content :not(pre) > code {
@@ -19,12 +17,12 @@
   overflow-wrap: anywhere;
 }
 
-.cb-plan-content pre code [class*='hljs-']:hover {
-  background-color: color-mix(in oklch, var(--color-white) 18%, transparent);
+.cb-plan-content pre code .shiki-token:hover {
+  background-color: color-mix(in oklch, var(--annotation-hover) 22%, transparent);
   cursor: pointer;
 }
 
 /* Innermost-only: suppress an ancestor token's glow while a descendant is hovered. */
-.cb-plan-content pre code [class*='hljs-']:has([class*='hljs-']:hover) {
+.cb-plan-content pre code .shiki-token:has(.shiki-token:hover) {
   background-color: transparent;
 }

@@ -1,4 +1,5 @@
 import { CircleHelp, MessageSquare } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { BrandMark } from './BrandMark.tsx';
 import { Button } from './ui/button.tsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
@@ -21,9 +22,10 @@ export interface HeaderProps {
   feedbackHref: string;
   githubRepoHref: string;
   slackHelpHref: string;
+  settings?: ReactNode;
 }
 
-export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackHelpHref }: HeaderProps) {
+export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackHelpHref, settings }: HeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 flex h-11 items-center justify-between border-b border-border bg-background px-4 sm:px-6"
@@ -37,6 +39,7 @@ export function Header({ version, docsHref, feedbackHref, githubRepoHref, slackH
         <span className="text-xs tabular-nums text-muted-foreground" data-testid={headerTestIds.version}>
           v{version}
         </span>
+        {settings}
         <Button asChild data-testid={headerTestIds.feedbackButton} size="xs" variant="default">
           <a href={feedbackHref} rel="noopener noreferrer" target="_blank">
             <MessageSquare className="size-3" />

@@ -19,7 +19,7 @@ export interface ElementAdapter {
   /** Stable id for this content type, stored verbatim on every anchor as `contentType` and used to route resolve/marker/hover calls back here. e.g. `'mermaid'`. */
   readonly contentType: string;
 
-  /** The fenced-code info-string languages this adapter renders, e.g. `['mermaid']`. Also fed to rehype-highlight's `plainText` option so claimed blocks keep their raw text. */
+  /** The fenced-code info-string languages this adapter renders, e.g. `['mermaid']`. Also excluded from Shiki so claimed blocks keep their raw text. */
   readonly languages: string[];
 
   /** React component that renders the source to DOM and tags its annotatable sub-elements. Spreads the shared block-level attrs from `elementBlock.ts` and dispatches `ELEMENT_RENDERED_EVENT` once tagged so markers re-apply. */
@@ -42,7 +42,7 @@ export interface ElementAdapter {
 /** The registered element adapters. Add a new content type here — nothing else changes. */
 export const elementAdapters: ElementAdapter[] = [mermaidAdapter];
 
-/** Every language a registered element adapter renders; passed to rehype-highlight's `plainText` so those blocks are left as raw text. */
+/** Every language a registered element adapter renders; excluded from Shiki so those blocks are left as raw text. */
 export const elementAdapterLanguages = elementAdapters.flatMap((adapter) => adapter.languages);
 
 /** The element adapter that renders a given fenced-code language, if any. */

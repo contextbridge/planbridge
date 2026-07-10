@@ -2,12 +2,14 @@ import type { FrontendContext } from '@contextbridge/context/frontend';
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { createContext, useContext } from 'react';
+import type { ThemeController } from './ThemeController.ts';
 
 export interface AnnotationAppContext extends FrontendContext {
   fetchPayload: () => Promise<AnnotationPayload>;
   fetchUpdateNotice: () => Promise<UpdateNotice | null>;
   submitAnnotation: (submission: AnnotationSubmission) => Promise<void>;
   autoCloseDelaySeconds: number;
+  themeController: ThemeController;
 }
 
 export const AnnotationAppContext = createContext<AnnotationAppContext | null>(null);

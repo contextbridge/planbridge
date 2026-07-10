@@ -12,17 +12,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@contextbridge/ui/components/ui/alert-dialog';
-import 'highlight.js/styles/github-dark.css';
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import './annotationStyles.css';
 import './codeHighlightStyles.css';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
+import { ThemePicker } from './ThemePicker.tsx';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
 import { useAnnotationState } from './useAnnotationState.ts';
 import { useAnnotationAppContext } from './useAppContext.ts';
+import { useTheme } from './useTheme.ts';
 
 export const appTestIds = {
   container: 'plan-review-app',
@@ -49,11 +51,12 @@ export interface AppProps {
 }
 
 export function App({ initialPayload, initialThreads, initialGlobalComment }: AppProps = {}) {
-  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo } = useAnnotationAppContext();
+  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo, themeController } = useAnnotationAppContext();
   const [payload, setPayload] = useState<AnnotationPayload | null>(initialPayload ?? null);
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(null);
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false);
   const reviewState = useAnnotationState({ initialThreads, initialGlobalComment });
+  const themeState = useTheme(themeController);
   const annotationInteractions = useAnnotationInteractions({
     threads: reviewState.threads,
     submitted: reviewState.submission.submitted,
@@ -64,6 +67,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
   const highlightWarning = getAnnotationHighlightWarning();
   const showCommentNavigation = annotationInteractions.navigation.total > 0;
   const commentNavigationDisabled = reviewState.draft.active !== null;
+  const themePicker = <ThemePicker preference={themeState.preference} onSelect={themeState.selectTheme} />;
 
   useEffect(() => {
     if (initialPayload) {
@@ -91,13 +95,14 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     <>
       <title>{documentTitle}</title>
       {!payload ? (
-        <Loading buildInfo={buildInfo} />
+        <Loading buildInfo={buildInfo} settings={themePicker} />
       ) : (
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
           <Header
             docsHref={DOCS_URL}
             feedbackHref={FEEDBACK_URL}
             githubRepoHref={GITHUB_REPO_URL}
+            settings={themePicker}
             slackHelpHref={SLACK_COMMUNITY_URL}
             version={buildInfo.version}
           />
@@ -120,6 +125,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                     content={payload.content}
                     assets={payload.assets}
                     onMouseUp={annotationInteractions.handleSelectionCapture}
+                    themeId={themeState.theme.id}
                   />
                 ) : (
                   <div
@@ -214,15 +220,17 @@ function resolveDocumentTitle(payload: AnnotationPayload | null): string {
 
 interface LoadingProps {
   buildInfo: { readonly version: string };
+  settings: ReactNode;
 }
 
-function Loading({ buildInfo }: LoadingProps) {
+function Loading({ buildInfo, settings }: LoadingProps) {
   return (
     <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
       <Header
         docsHref={DOCS_URL}
         feedbackHref={FEEDBACK_URL}
         githubRepoHref={GITHUB_REPO_URL}
+        settings={settings}
         slackHelpHref={SLACK_COMMUNITY_URL}
         version={buildInfo.version}
       />

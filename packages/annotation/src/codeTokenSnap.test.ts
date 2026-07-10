@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { findTokenSpan, snapRangeToTokenBoundaries } from './codeTokenSnap.ts';
 
 describe('findTokenSpan', () => {
-  it('returns the innermost hljs-* ancestor inside a code-block', () => {
+  it('returns the innermost Shiki token ancestor inside a code-block', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block" data-target-id="code:0:abc"><code class="hljs"><span class="hljs-keyword">const</span> <span class="hljs-variable">foo</span> = <span class="hljs-number">1</span></code></pre>`,
+      `<pre data-target-kind="code-block" data-target-id="code:0:abc"><code class="shiki"><span class="shiki-token keyword">const</span> <span class="shiki-token variable">foo</span> = <span class="shiki-token number">1</span></code></pre>`,
     );
-    const variableSpan = container.querySelector<HTMLElement>('.hljs-variable')!;
+    const variableSpan = container.querySelector<HTMLElement>('.variable')!;
     const textNode = variableSpan.firstChild!;
     expect(findTokenSpan(textNode, container)).toBe(variableSpan);
   });
 
   it('returns the innermost token when tokens are nested', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs"><span class="hljs-string">\`hello <span class="hljs-subst">\${<span class="hljs-variable">who</span>}</span>\`</span></code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki"><span class="shiki-token string">\`hello <span class="shiki-token substitution">\${<span class="shiki-token variable">who</span>}</span>\`</span></code></pre>`,
     );
-    const innerVariable = container.querySelector<HTMLElement>('.hljs-variable')!;
+    const innerVariable = container.querySelector<HTMLElement>('.variable')!;
     expect(findTokenSpan(innerVariable.firstChild!, container)).toBe(innerVariable);
   });
 
@@ -27,7 +27,7 @@ describe('findTokenSpan', () => {
 
   it('returns null for whitespace text nodes between tokens', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs"><span class="hljs-keyword">const</span> foo</code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki"><span class="shiki-token keyword">const</span> foo</code></pre>`,
     );
     const code = container.querySelector('code')!;
     const whitespaceText = code.childNodes[1]!;
@@ -35,8 +35,10 @@ describe('findTokenSpan', () => {
   });
 
   it('returns null for code that is not inside a code-block target', () => {
-    const container = renderContainer(`<div><code class="hljs"><span class="hljs-keyword">const</span></code></div>`);
-    const keyword = container.querySelector('.hljs-keyword')!;
+    const container = renderContainer(
+      `<div><code class="shiki"><span class="shiki-token keyword">const</span></code></div>`,
+    );
+    const keyword = container.querySelector('.keyword')!;
     expect(findTokenSpan(keyword.firstChild!, container)).toBeNull();
   });
 });
@@ -44,9 +46,9 @@ describe('findTokenSpan', () => {
 describe('snapRangeToTokenBoundaries', () => {
   it('widens a selection starting and ending inside the same token', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs">const <span class="hljs-variable">foobar</span></code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki">const <span class="shiki-token variable">foobar</span></code></pre>`,
     );
-    const variable = container.querySelector('.hljs-variable')!;
+    const variable = container.querySelector('.variable')!;
     const text = variable.firstChild as Text;
 
     const range = document.createRange();
@@ -60,10 +62,10 @@ describe('snapRangeToTokenBoundaries', () => {
 
   it('widens both endpoints when a selection spans multiple tokens', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs"><span class="hljs-keyword">const</span> <span class="hljs-variable">foobar</span> = <span class="hljs-number">42</span></code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki"><span class="shiki-token keyword">const</span> <span class="shiki-token variable">foobar</span> = <span class="shiki-token number">42</span></code></pre>`,
     );
-    const keyword = container.querySelector('.hljs-keyword')!;
-    const variable = container.querySelector('.hljs-variable')!;
+    const keyword = container.querySelector('.keyword')!;
+    const variable = container.querySelector('.variable')!;
 
     const range = document.createRange();
     range.setStart(keyword.firstChild as Text, 2);
@@ -87,7 +89,7 @@ describe('snapRangeToTokenBoundaries', () => {
 
   it('returns an identical range when no endpoints are in tokens', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs">plain text with no spans</code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki">plain text with no spans</code></pre>`,
     );
     const code = container.querySelector('code')!;
     const text = code.firstChild as Text;
@@ -101,10 +103,10 @@ describe('snapRangeToTokenBoundaries', () => {
 
   it('only widens the endpoint that sits inside a token when the other does not', () => {
     const container = renderContainer(
-      `<pre data-target-kind="code-block"><code class="hljs">lead <span class="hljs-variable">foobar</span> trail</code></pre>`,
+      `<pre data-target-kind="code-block"><code class="shiki">lead <span class="shiki-token variable">foobar</span> trail</code></pre>`,
     );
     const code = container.querySelector('code')!;
-    const variable = container.querySelector('.hljs-variable')!;
+    const variable = container.querySelector('.variable')!;
     const leadText = code.firstChild as Text;
     const variableText = variable.firstChild as Text;
 

@@ -5,9 +5,11 @@ import { toString as hastToString } from 'hast-util-to-string';
 import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
-import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from './element/ElementAdapter.ts';
+import { rehypeShiki } from './rehypeShiki.ts';
+import { shikiHighlighter } from './shikiHighlighter.ts';
+import type { ThemeId } from './themes.ts';
 
 export const annotatedMarkdownTestIds = {
   container: 'plan-review-markdown-plan',
@@ -18,9 +20,16 @@ export interface AnnotatedMarkdownProps {
   containerRef: Ref<HTMLDivElement>;
   onMouseUp?: () => void;
   assets?: Asset[];
+  themeId?: ThemeId;
 }
 
-export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: AnnotatedMarkdownProps) {
+export function AnnotatedMarkdown({
+  content,
+  containerRef,
+  onMouseUp,
+  assets,
+  themeId = 'github-light-default',
+}: AnnotatedMarkdownProps) {
   const assetsByPath = new Map<string, Asset>();
   for (const asset of assets ?? []) {
     assetsByPath.set(asset.originalPath, asset);
@@ -43,8 +52,9 @@ export function AnnotatedMarkdown({ content, containerRef, onMouseUp, assets }: 
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        // plainText keeps adapter-claimed blocks as raw text instead of tokenized highlight spans.
-        rehypePlugins={[[rehypeHighlight, { detect: false, plainText: elementAdapterLanguages }]]}
+        rehypePlugins={[
+          [rehypeShiki, { highlighter: shikiHighlighter, skipLanguages: elementAdapterLanguages, theme: themeId }],
+        ]}
         components={components}
       >
         {content}
@@ -101,7 +111,7 @@ const AnnotatablePre = annotatable('pre', {
   targetKey: 'code',
   targetKind: 'code-block',
   className:
-    'overflow-x-auto rounded-md border border-border bg-neutral-900 px-4 py-3 text-sm leading-6 text-neutral-50',
+    'overflow-x-auto rounded-md border border-border bg-[var(--code-background)] px-4 py-3 text-sm leading-6 text-[var(--code-foreground)]',
 });
 
 const markdownComponents = {
@@ -210,7 +220,7 @@ const markdownComponents = {
 const LANGUAGE_PREFIX = 'language-';
 
 // Reads the adapter + raw source of an adapter-claimed fenced code block. The children are
-// still plain text nodes because rehype-highlight's plainText option skips these languages.
+// still plain text nodes because adapter languages are not loaded into the Shiki highlighter.
 // Returns undefined for ordinary code blocks, which render normally.
 function elementBlockFromPre(node: Element | undefined): { adapter: ElementAdapter; source: string } | undefined {
   const code = node?.children.find((child): child is Element => child.type === 'element' && child.tagName === 'code');

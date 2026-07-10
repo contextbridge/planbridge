@@ -16,6 +16,7 @@ import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
+import { themePickerTestIds } from './ThemePicker.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -493,19 +494,16 @@ describe('App', () => {
     expect(screen.queryByTestId(submitBarTestIds.codexHandoffNotice)).not.toBeInTheDocument();
   });
 
-  it('syntax-highlights fenced code blocks with hljs token spans', async () => {
+  it('syntax-highlights fenced code blocks with Shiki token spans', async () => {
     renderApp({
       initialPayload: { contentKind: 'plan', content: '# Plan\n\n```ts\nconst greeting = "hello";\n```\n' },
     });
 
     const pre = await waitForMarkdownElement('pre');
 
-    expect(pre.querySelector('code')?.classList.contains('hljs')).toBe(true);
-    const stringToken = pre.querySelector('.hljs-string');
-    expect(stringToken).not.toBeNull();
-    expect(stringToken!.textContent).toBe('"hello"');
-    const keyword = pre.querySelector('.hljs-keyword');
-    expect(keyword?.textContent).toBe('const');
+    expect(pre.querySelector('code')).toHaveClass('shiki');
+    expect(getCodeToken('"hello"')).toBeInTheDocument();
+    expect(getCodeToken('const')).toBeInTheDocument();
   });
 
   it('snaps a drag-selection inside a code token to the full token boundary', async () => {
@@ -515,10 +513,10 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(getMarkdownElement('pre code.hljs .hljs-string')).not.toBeNull();
+      expect(getCodeToken('"helloWorld"')).toBeInTheDocument();
     });
 
-    const stringToken = getMarkdownElement<HTMLElement>('pre code.hljs .hljs-string');
+    const stringToken = getCodeToken('"helloWorld"');
     const text = stringToken.firstChild as Text;
 
     drag({ target: text, from: 3, to: 5 });
@@ -573,10 +571,10 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(getMarkdownElement('pre code.hljs .hljs-string')).not.toBeNull();
+      expect(getCodeToken('"hello"')).toBeInTheDocument();
     });
 
-    const stringToken = getMarkdownElement<HTMLElement>('pre code.hljs .hljs-string');
+    const stringToken = getCodeToken('"hello"');
     await user.click(stringToken);
 
     await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
@@ -999,7 +997,49 @@ Run \`${longCode}\` now.
       expect(feedbackButton).toBeInTheDocument();
     });
   });
+
+  describe('theme picker', () => {
+    it('renders the curated theme grid and persists the selected theme', async () => {
+      const { themeController } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+
+      await user.click(screen.getByTestId(themePickerTestIds.trigger));
+
+      expect(await screen.findByTestId(themePickerTestIds.content)).toBeInTheDocument();
+      expect(screen.getByTestId(themePickerTestIds.option('system'))).toHaveAttribute('aria-pressed', 'true');
+
+      await user.click(screen.getByTestId(themePickerTestIds.option('dracula')));
+
+      expect(themeController.savedPreferences).toEqual(['dracula']);
+      expect(screen.getByTestId(themePickerTestIds.option('dracula'))).toHaveAttribute('aria-pressed', 'true');
+      await waitFor(() => {
+        expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
+      });
+    });
+
+    it('tracks system color-scheme changes while System is selected', async () => {
+      const { themeController } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+
+      act(() => {
+        themeController.setSystemColorScheme('dark');
+      });
+
+      await waitFor(() => {
+        expect(themeController.appliedThemes.at(-1)?.id).toBe('github-dark-default');
+      });
+    });
+  });
 });
+
+function getCodeToken(text: string): HTMLElement {
+  const token = Array.from(
+    screen.getByTestId(annotatedMarkdownTestIds.container).querySelectorAll<HTMLElement>('.shiki-token'),
+  ).find((candidate) => candidate.textContent === text);
+  if (!token) {
+    throw new Error(`Could not find Shiki token containing ${text}`);
+  }
+  return token;
+}
 
 /** Assert that `child`'s right edge does not extend beyond `parent`'s right border. */
 function expectWithinRightBorder(child: Element, parent: Element): void {
