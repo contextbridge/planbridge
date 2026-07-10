@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.3](https://github.com/contextbridge/planbridge/compare/v0.9.2...v0.9.3) (2026-07-10)
+
+
+### Bug Fixes
+
+* order mermaid diagram comments by document position ([#239](https://github.com/contextbridge/planbridge/issues/239)) ([a4487d7](https://github.com/contextbridge/planbridge/commit/a4487d74aee330ed88a54a49aa3ece6c7e42bdd9))
+* restore automatic plan approval on Claude Code 2.1.199+ ([#235](https://github.com/contextbridge/planbridge/issues/235)) ([9fe93d8](https://github.com/contextbridge/planbridge/commit/9fe93d872ef7c53b7b770f77ec178ff344f9bbc9))
+
 ## [0.9.2](https://github.com/contextbridge/planbridge/compare/v0.9.1...v0.9.2) (2026-06-17)
 
 
