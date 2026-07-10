@@ -104,7 +104,7 @@ async function handleExitPlanMode(
     abort(ctx, 'runtime', getErrorMessage(err));
   }
 
-  return claudeHookResponse(submission, planContent);
+  return claudeHookResponse(submission, payload.tool_input);
 }
 
 function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {

@@ -4,55 +4,39 @@ import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
 import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
-import { annotationArgs } from '#src/testFactories.ts';
+import { annotationArgs, claudeHookPayload } from '#src/testFactories.ts';
 import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
-  it('emits the approved envelope when the review is approved', async () => {
+  it('emits the approved envelope echoing tool_input when the review is approved', async () => {
     const { context, io } = createStubContext();
     const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const deps = createHookDependencies({ submission });
-    io.stdin.write(
-      JSON.stringify({
-        session_id: 'sess_123',
-        transcript_path: '/tmp/transcript.json',
-        cwd: '/work',
-        permission_mode: 'plan',
-        hook_event_name: 'PermissionRequest',
-        tool_name: 'ExitPlanMode',
-        tool_input: { plan: '# Plan\n\nStep 1.\n' },
-      }),
-    );
+    const payload = claudeHookPayload.build();
+    io.stdin.write(JSON.stringify(payload));
     io.stdin.end();
 
     await runHookClaude(context, deps);
 
-    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, '# Plan\n\nStep 1.\n'))}\n`);
-    expect(deps.calls).toEqual([annotationArgs.build({ content: '# Plan\n\nStep 1.\n', entrypoint: 'hook_claude' })]);
+    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, payload.tool_input))}\n`);
+    const parsed = JSON.parse(io.stdout.text().trim()) as ReturnType<typeof claudeHookResponse>;
+    if (parsed.hookSpecificOutput.decision.behavior !== 'allow') throw new Error('expected allow');
+    expect(parsed.hookSpecificOutput.decision.updatedInput).toEqual(payload.tool_input);
+    expect(deps.calls).toEqual([annotationArgs.build({ content: payload.tool_input.plan, entrypoint: 'hook_claude' })]);
   });
 
   it('emits a deny envelope with the markdown feedback when changes are requested', async () => {
     const { context, io } = createStubContext();
     const submission = annotationSubmission.build();
     const deps = createHookDependencies({ submission });
-    const planContent = '# Plan\n\nStep 1.\n';
-    io.stdin.write(
-      JSON.stringify({
-        session_id: 'sess_123',
-        transcript_path: '/tmp/transcript.json',
-        cwd: '/work',
-        permission_mode: 'plan',
-        hook_event_name: 'PermissionRequest',
-        tool_name: 'ExitPlanMode',
-        tool_input: { plan: planContent },
-      }),
-    );
+    const payload = claudeHookPayload.build();
+    io.stdin.write(JSON.stringify(payload));
     io.stdin.end();
 
     await runHookClaude(context, deps);
 
-    const expected = claudeHookResponse(submission, planContent);
+    const expected = claudeHookResponse(submission, payload.tool_input);
     expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
     const parsed = JSON.parse(io.stdout.text().trim()) as typeof expected;
     expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');
@@ -66,17 +50,7 @@ describe('hookClaude handler', () => {
     const deps: HookClaudeDependencies = {
       runReview: (reviewCtx, args) => runAnnotation(reviewCtx, args, createAnnotationDependencies({ submission })),
     };
-    io.stdin.write(
-      JSON.stringify({
-        session_id: 'sess_123',
-        transcript_path: '/tmp/transcript.json',
-        cwd: '/work',
-        permission_mode: 'plan',
-        hook_event_name: 'PermissionRequest',
-        tool_name: 'ExitPlanMode',
-        tool_input: { plan: '# Plan\n\nStep 1.\n' },
-      }),
-    );
+    io.stdin.write(JSON.stringify(claudeHookPayload.build()));
     io.stdin.end();
 
     await runHookClaude(context, deps);
@@ -95,16 +69,7 @@ describe('hookClaude handler', () => {
   it('aborts when hook_event_name is unsupported', () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
-    io.stdin.write(
-      JSON.stringify({
-        session_id: 'sess_123',
-        transcript_path: '/tmp/transcript.json',
-        cwd: '/work',
-        hook_event_name: 'PreToolUse',
-        tool_name: 'ExitPlanMode',
-        tool_input: { plan: '# x' },
-      }),
-    );
+    io.stdin.write(JSON.stringify(claudeHookPayload.build({ hook_event_name: 'PreToolUse' })));
     io.stdin.end();
 
     expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
@@ -116,16 +81,7 @@ describe('hookClaude handler', () => {
   it('aborts when PermissionRequest arrives for a tool other than ExitPlanMode', () => {
     const { context, io, logs } = createStubContext();
     const deps = createHookDependencies();
-    io.stdin.write(
-      JSON.stringify({
-        session_id: 'sess_123',
-        transcript_path: '/tmp/transcript.json',
-        cwd: '/work',
-        hook_event_name: 'PermissionRequest',
-        tool_name: 'Bash',
-        tool_input: { plan: 'unused' },
-      }),
-    );
+    io.stdin.write(JSON.stringify(claudeHookPayload.build({ tool_name: 'Bash' })));
     io.stdin.end();
 
     expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
