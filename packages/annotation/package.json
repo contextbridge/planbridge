@@ -15,8 +15,9 @@
     "@contextbridge/instrumentation": "workspace:*",
     "@contextbridge/shared": "workspace:*",
     "@contextbridge/ui": "workspace:*",
+    "@shikijs/langs": "^4.3.1",
+    "@shikijs/themes": "^4.3.1",
     "hast-util-to-string": "^3.0.1",
-    "highlight.js": "^11.11.1",
     "lucide-react": "catalog:",
     "mermaid": "11.15.0",
     "neverthrow": "catalog:",
@@ -24,8 +25,8 @@
     "react-dom": "catalog:",
     "react-hotkeys-hook": "^5.3.2",
     "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.3.1"
   },
   "devDependencies": {
     "@storybook/react-vite": "catalog:",

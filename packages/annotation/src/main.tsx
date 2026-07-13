@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
+import { ThemeControllerImpl, applyInitialTheme } from './ThemeController.ts';
 import type { AnnotationAppContext as AnnotationAppContextValue } from './useAppContext.ts';
 import { AnnotationAppContext } from './useAppContext.ts';
 
@@ -21,6 +22,9 @@ if (!rootElement) throw new Error('#root not found');
 void bootstrap(rootElement);
 
 async function bootstrap(target: HTMLElement): Promise<void> {
+  const themeController = new ThemeControllerImpl();
+  applyInitialTheme(themeController);
+
   const config = (await fetchConfig()) ?? FALLBACK_CONFIG;
 
   const base = createFrontendContext({
@@ -34,6 +38,7 @@ async function bootstrap(target: HTMLElement): Promise<void> {
     fetchUpdateNotice: () => fetchUpdateNotice(base.fetcher),
     submitAnnotation,
     autoCloseDelaySeconds: 3,
+    themeController,
   };
 
   const { ErrorBoundary } = context.telemetry;

@@ -19,6 +19,9 @@
 @import '@fontsource/ibm-plex-mono/600.css';
 @import '@fontsource/ibm-plex-mono/700.css';
 
+/* Runtime browser themes set this class from their injected theme controller. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tailwind auto-detection skips workspace packages resolved through node_modules.
    Explicitly register this package's components so shadcn utility classes are emitted. */
 @source "./components/**/*.{ts,tsx}";
@@ -203,10 +206,18 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--color-neutral-200);
   --sidebar-ring: var(--color-neutral-400);
+
+  --annotation-background: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  --annotation-active-background: var(--color-amber-400);
+  --annotation-foreground: var(--color-neutral-950);
+  --annotation-border: var(--color-amber-500);
+  --annotation-hover: var(--royal);
+  --code-background: var(--color-neutral-900);
+  --code-foreground: var(--color-neutral-50);
 }
 
-/* Dark mode follows system preference. No toggle, no .dark class.
-   The browser UI is short-lived (one review per spawn), so system pref is the contract. */
+/* System preference is the default. Experience-specific theme controllers can override
+   these semantic properties inline when a user selects a curated theme. */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: var(--color-neutral-990);
@@ -237,6 +248,8 @@
     --sidebar-accent-foreground: var(--foreground);
     --sidebar-border: var(--color-neutral-800);
     --sidebar-ring: var(--color-neutral-600);
+
+    --annotation-hover: var(--royal-light);
   }
 }
 

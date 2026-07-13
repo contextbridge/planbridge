@@ -1,5 +1,5 @@
 const CODE_BLOCK_SELECTOR = '[data-target-kind="code-block"]';
-const TOKEN_SELECTOR = '[class*="hljs-"]';
+const TOKEN_SELECTOR = '.shiki-token';
 
 export function snapRangeToTokenBoundaries(range: Range, container: HTMLElement): Range {
   const startToken = findTokenSpan(range.startContainer, container);

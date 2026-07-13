@@ -1,15 +1,15 @@
 /* Mermaid adapter styling — self-contained. Lives next to the adapter (not the shared
    annotationStyles.css) because every selector targets mermaid's generated SVG structure.
    Tokens are scoped to the mermaid block container so they don't leak globally; their values
-   mirror the amber (saved/active) + royal (hover) language used by text highlights. */
+   semantic annotation + hover tokens used by text highlights. */
 [data-element-content-type='mermaid'] {
-  --mermaid-mark: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
-  --mermaid-mark-active: var(--color-amber-400);
-  --mermaid-mark-border: var(--color-amber-500);
-  --mermaid-mark-text: var(--color-neutral-950);
-  --mermaid-hover-stroke: var(--chart-3);
-  --mermaid-hover-node: color-mix(in oklab, var(--chart-3) 22%, var(--muted));
-  --mermaid-hover-edge: color-mix(in oklab, var(--chart-3) 35%, transparent);
+  --mermaid-mark: var(--annotation-background);
+  --mermaid-mark-active: var(--annotation-active-background);
+  --mermaid-mark-border: var(--annotation-border);
+  --mermaid-mark-text: var(--annotation-foreground);
+  --mermaid-hover-stroke: var(--annotation-hover);
+  --mermaid-hover-node: color-mix(in oklab, var(--annotation-hover) 22%, var(--muted));
+  --mermaid-hover-edge: color-mix(in oklab, var(--annotation-hover) 35%, transparent);
 }
 
 /* Mermaid injects per-diagram `#mermaid-rN .node rect {…}` rules (ID specificity), so our marker
@@ -51,8 +51,8 @@ g.node:not(.cb-mermaid-annotated):hover > :is(rect, circle, ellipse, polygon, pa
 }
 
 /* Edge-label markers — mermaid draws the label chip as `g.edgeLabel > … div.labelBkg / <p>`, both
-   background-colored via injected ID rules, so these need !important too. Amber chip + dark label
-   for a saved/active edge, royal for hover — mirroring the node treatment. */
+   background-colored via injected ID rules, so these need !important too. Annotation chip + themed label
+   for a saved/active edge, hover accent for preview — mirroring the node treatment. */
 g.edgeLabel.cb-mermaid-annotated :is(.labelBkg, p) {
   background-color: var(--mermaid-mark) !important;
 }
