@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/contextbridge/planbridge/compare/v0.9.3...v0.10.0) (2026-07-13)
+
+
+### Features
+
+* add selectable Shiki themes ([#242](https://github.com/contextbridge/planbridge/issues/242)) ([fa0ac48](https://github.com/contextbridge/planbridge/commit/fa0ac487b0e8f750f3ce1f7c8b59806b9cc29bb7))
+
 ## [0.9.3](https://github.com/contextbridge/planbridge/compare/v0.9.2...v0.9.3) (2026-07-10)
 
 
