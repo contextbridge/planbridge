@@ -1,4 +1,4 @@
-import type { Element, ElementContent, Root, RootContent } from 'hast';
+import type { Element, Root, RootContent } from 'hast';
 import { toString as hastToString } from 'hast-util-to-string';
 import type { HighlighterCore, ShikiTransformer } from 'shiki/types';
 
@@ -26,6 +26,7 @@ export function rehypeShiki({ highlighter, theme, skipLanguages = [] }: RehypeSh
       const source = hastToString(code).replace(/\n$/, '');
       const highlighted = highlighter.codeToHast(source, {
         lang: language,
+        mergeWhitespaces: 'never',
         theme,
         transformers: [tokenClassTransformer],
       });
@@ -33,7 +34,6 @@ export function rehypeShiki({ highlighter, theme, skipLanguages = [] }: RehypeSh
       const highlightedCode = highlightedPre?.children.find(isCodeElement);
       if (!highlightedCode) return;
 
-      splitTokenWhitespace(highlightedCode);
       code.children = highlightedCode.children;
       code.properties = {
         ...code.properties,
@@ -46,39 +46,12 @@ export function rehypeShiki({ highlighter, theme, skipLanguages = [] }: RehypeSh
 
 const tokenClassTransformer: ShikiTransformer = {
   name: 'contextbridge-token-class',
-  span(node: Element) {
-    this.addClassToHast(node, 'shiki-token');
+  span(node, _line, _column, _lineElement, token) {
+    if (token.content.trim().length > 0) {
+      this.addClassToHast(node, 'shiki-token');
+    }
   },
 };
-
-function splitTokenWhitespace(element: Element): void {
-  const children: ElementContent[] = [];
-  for (const child of element.children) {
-    if (child.type !== 'element') {
-      children.push(child);
-      continue;
-    }
-
-    if (classesOf(child).includes('shiki-token') && child.children.length === 1 && child.children[0]?.type === 'text') {
-      const value = child.children[0].value;
-      if (value.trim().length === 0) {
-        children.push({ type: 'text', value });
-        continue;
-      }
-      const leading = value.match(/^\s*/)?.[0] ?? '';
-      const trailing = value.match(/\s*$/)?.[0] ?? '';
-      const token = value.slice(leading.length, value.length - trailing.length);
-      if (leading) children.push({ type: 'text', value: leading });
-      if (token) children.push({ ...child, children: [{ type: 'text', value: token }] });
-      if (trailing) children.push({ type: 'text', value: trailing });
-      continue;
-    }
-
-    splitTokenWhitespace(child);
-    children.push(child);
-  }
-  element.children = children;
-}
 
 function visitElements(node: Root | Element, visitor: (element: Element) => void): void {
   for (const child of node.children) {

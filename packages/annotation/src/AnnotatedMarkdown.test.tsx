@@ -56,8 +56,11 @@ describe('AnnotatedMarkdown syntax highlighting', () => {
     const tokens = container.querySelectorAll('.shiki-token');
 
     expect(pre).toHaveAttribute('data-target-kind', 'code-block');
+    expect(pre).toHaveAttribute('data-src-start-line', '1');
+    expect(pre).toHaveAttribute('data-src-end-line', '3');
     expect(pre).toHaveClass('bg-[var(--code-background)]');
     expect(tokens.length).toBeGreaterThan(0);
+    expect(Array.from(tokens).every((token) => token.textContent === token.textContent?.trim())).toBe(true);
     expect((tokens[0] as HTMLElement).style.color).not.toBe('');
   });
 
