@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { ElementBlockProps } from '../elementBlock.ts';
-import { dispatchElementRendered, elementBlockContainerProps } from '../elementBlock.ts';
+import type { ElementBlockProps } from '#src/element/elementBlock.ts';
+import { dispatchElementRendered, elementBlockContainerProps } from '#src/element/elementBlock.ts';
 import './mermaidAdapter.css';
 import { currentMermaidTheme, renderMermaid } from './renderer.ts';
 
