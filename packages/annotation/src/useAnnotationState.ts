@@ -141,6 +141,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
     const submission: AnnotationSubmission = {
       status: getSubmitStatus(nextThreads, trimmedGlobal),
       threads: submissionThreads,
+      approvalMode: 'acceptEdits',
     };
 
     setSubmitError(null);

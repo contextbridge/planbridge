@@ -87,6 +87,20 @@ describe('AnnotationSubmissionSchema', () => {
     const subject = parsed.threads[0]?.subject;
     expect(subject?.kind === 'annotation' ? subject.anchor.kind : null).toBe('element');
   });
+
+  it('defaults approvalMode to acceptEdits when absent', () => {
+    const parsed = AnnotationSubmissionSchema.parse({ status: 'approved' });
+    expect(parsed.approvalMode).toBe('acceptEdits');
+  });
+
+  it('accepts approvalMode: auto', () => {
+    const parsed = AnnotationSubmissionSchema.parse({ status: 'approved', approvalMode: 'auto' });
+    expect(parsed.approvalMode).toBe('auto');
+  });
+
+  it('rejects an invalid approvalMode', () => {
+    expect(() => AnnotationSubmissionSchema.parse({ status: 'approved', approvalMode: 'bypassPermissions' })).toThrow();
+  });
 });
 
 describe('ElementAnnotationAnchorSchema', () => {

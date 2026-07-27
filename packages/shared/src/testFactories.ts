@@ -96,6 +96,7 @@ export const globalThread = Factory.define<CommentThread>(() => {
 export const annotationSubmission = Factory.define<AnnotationSubmission>(() => ({
   status: 'changes_requested',
   threads: [globalThread.build(), annotationThread.build()],
+  approvalMode: 'acceptEdits',
 }));
 
 export const annotationPayload = Factory.define<AnnotationPayload>(() => ({

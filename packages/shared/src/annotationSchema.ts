@@ -7,6 +7,10 @@ export type ContentKind = z.infer<typeof ContentKindSchema>;
 export const AnnotationStatusSchema = z.enum(['approved', 'changes_requested']);
 export type AnnotationStatus = z.infer<typeof AnnotationStatusSchema>;
 
+// Must stay a subset of PermissionMode from @anthropic-ai/claude-agent-sdk.
+export const ApprovalModeSchema = z.enum(['acceptEdits', 'auto']);
+export type ApprovalMode = z.infer<typeof ApprovalModeSchema>;
+
 export const TextQuoteSelectorSchema = z.object({
   exact: z.string().nonempty(),
   prefix: z.string(),
@@ -166,6 +170,7 @@ export type CommentThread = z.infer<typeof CommentThreadSchema>;
 export const AnnotationSubmissionSchema = z.object({
   status: AnnotationStatusSchema,
   threads: z.array(CommentThreadSchema).default([]),
+  approvalMode: ApprovalModeSchema.default('acceptEdits'),
 });
 export type AnnotationSubmission = z.infer<typeof AnnotationSubmissionSchema>;
 

@@ -11,6 +11,7 @@ describe('POST /submit', () => {
       const submission = {
         status: 'changes_requested' as const,
         threads: [annotationThread.build(), globalThread.build()],
+        approvalMode: 'acceptEdits' as const,
       };
 
       const res = await fetch(`${running.url}/submit`, {
