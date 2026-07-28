@@ -26,6 +26,25 @@ describe('POST /submit', () => {
     });
   });
 
+  it('round-trips approvalMode: auto unchanged through /submit', async () => {
+    await withServer(ctx, async (running) => {
+      const submission = {
+        status: 'changes_requested' as const,
+        threads: [annotationThread.build(), globalThread.build()],
+        approvalMode: 'auto' as const,
+      };
+
+      const res = await fetch(`${running.url}/submit`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(submission),
+      });
+
+      expect(res.status).toBe(204);
+      expect(await running.result).toEqual(submission);
+    });
+  });
+
   it('returns 400 when the submission fails schema validation', async () => {
     await withServer(ctx, async (running) => {
       const res = await fetch(`${running.url}/submit`, {

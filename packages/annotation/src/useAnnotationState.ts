@@ -1,6 +1,7 @@
 import type {
   AnnotationStatus,
   AnnotationSubmission,
+  ApprovalMode,
   CommentThread,
   StoredAnnotationAnchor,
 } from '@contextbridge/shared/annotationSchema';
@@ -42,6 +43,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [globalCommentBody, setGlobalCommentBody] = useState(initialGlobalComment ?? '');
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>('acceptEdits');
   const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
   const [closeCountdownSeconds, setCloseCountdownSeconds] = useState<number | null>(null);
   const [closeReviewDialogOpen, setCloseReviewDialogOpen] = useState(false);
@@ -49,7 +51,11 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   const trimmedGlobal = globalCommentBody.trim();
   const feedbackCount = getFeedbackCount(threads, trimmedGlobal);
   const closeReviewDialogContent = getCloseReviewDialogContent(feedbackCount);
-  const submitLabel = submitted ? 'Submitted' : feedbackCount === 0 ? 'Approve Plan' : 'Submit Feedback';
+  const submitLabel = submitted
+    ? submitBarCopy.submitted
+    : feedbackCount === 0
+      ? submitBarCopy.approve
+      : submitBarCopy.feedback;
 
   const [pendingDraftAction, setPendingDraftAction] = useState<PendingDraftAction | null>(null);
 
@@ -138,10 +144,11 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
       submissionThreads.push(createGlobalCommentThread(trimmedGlobal));
     }
 
+    const status = getSubmitStatus(nextThreads, trimmedGlobal);
     const submission: AnnotationSubmission = {
-      status: getSubmitStatus(nextThreads, trimmedGlobal),
+      status,
       threads: submissionThreads,
-      approvalMode: 'acceptEdits',
+      approvalMode: status === 'approved' ? approvalMode : 'acceptEdits',
     };
 
     setSubmitError(null);
@@ -262,6 +269,8 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
       closeCountdownSeconds,
       label: submitLabel,
       feedbackCount,
+      approvalMode,
+      setApprovalMode,
     },
     closeReview: {
       dialogOpen: closeReviewDialogOpen,
@@ -306,19 +315,35 @@ function getFeedbackCount(threads: CommentThread[], trimmedGlobal: string): numb
   return threads.length + (trimmedGlobal.length > 0 ? 1 : 0);
 }
 
+export const approvalModeCopy = {
+  acceptEdits: 'Accept Edits',
+  auto: 'Auto',
+} as const;
+
+export function withApprovalMode(label: string, mode: ApprovalMode): string {
+  return `${label} (${approvalModeCopy[mode]})`;
+}
+
+export const submitBarCopy = {
+  approve: 'Approve Plan',
+  feedback: 'Submit Feedback',
+  submitted: 'Submitted',
+  submitting: 'Submitting…',
+} as const;
+
 export const closeReviewDialogCopy = {
   cancelLabel: 'Keep Reviewing',
   empty: {
     title: 'Approve plan before closing?',
     description:
       'No comments have been added. Select Approve Plan to tell the agent to proceed with the plan as written.',
-    primaryActionLabel: 'Approve Plan',
+    primaryActionLabel: submitBarCopy.approve,
   },
   feedback: {
     title: 'Submit feedback before closing?',
     description:
       'You have unsent feedback. Select Submit Feedback before closing, otherwise your comments will be lost.',
-    primaryActionLabel: 'Submit Feedback',
+    primaryActionLabel: submitBarCopy.feedback,
   },
 } as const;
 

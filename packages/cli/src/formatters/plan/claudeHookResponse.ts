@@ -20,16 +20,17 @@ export function claudeHookResponse(
     // Claude Code >=2.1.199 discards an ExitPlanMode allow without updatedInput, so echo the
     // input verbatim: https://github.com/anthropics/claude-code/issues/74256
     //
-    // setMode → acceptEdits is what actually exits plan mode for the session.
-    // Without it, the allow only grants this ExitPlanMode call — the session
-    // stays in `plan` and the agent can't touch the filesystem on its next turn.
+    // setMode is what actually exits plan mode for the session. Without it, the allow only
+    // grants this ExitPlanMode call — the session stays in `plan` and the agent can't touch
+    // the filesystem on its next turn. The mode itself comes from the reviewer's choice in
+    // the browser (acceptEdits by default, or auto).
     return {
       hookSpecificOutput: {
         hookEventName: 'PermissionRequest',
         decision: {
           behavior: 'allow',
           updatedInput: toolInput,
-          updatedPermissions: [{ type: 'setMode', mode: 'acceptEdits', destination: 'session' }],
+          updatedPermissions: [{ type: 'setMode', mode: submission.approvalMode, destination: 'session' }],
         },
       },
     };

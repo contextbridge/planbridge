@@ -164,6 +164,28 @@ export const Default: Story = {
   decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
 };
 
+export const ApprovalModeSelector: Story = {
+  args: {
+    source: 'hook_claude',
+    initialPayload: {
+      contentKind: 'plan',
+      content: samplePlan,
+      title: 'Refactor auth middleware',
+      metadata: { entrypoint: 'hook_claude' },
+    },
+  },
+  render: Default.render,
+  decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Zero-feedback review from a Claude Code hook: the compound submit control (primary Approve Plan button + chevron trigger opening the approval-mode radio menu) is visible for visual review.',
+      },
+    },
+  },
+};
+
 export const SeededReview: Story = {
   args: {
     initialPayload: {

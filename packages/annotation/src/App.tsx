@@ -19,10 +19,11 @@ import './codeHighlightStyles.css';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
+import { shouldSuffixApprovalMode } from './SubmitBar.tsx';
 import { ThemePicker } from './ThemePicker.tsx';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
-import { useAnnotationState } from './useAnnotationState.ts';
+import { useAnnotationState, withApprovalMode } from './useAnnotationState.ts';
 import { useAnnotationAppContext } from './useAppContext.ts';
 import { useTheme } from './useTheme.ts';
 
@@ -195,7 +196,11 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
                 }
               }}
               open={reviewState.closeReview.dialogOpen}
-              primaryActionLabel={reviewState.closeReview.primaryActionLabel}
+              primaryActionLabel={
+                shouldSuffixApprovalMode(payload.metadata?.entrypoint, reviewState.submission)
+                  ? withApprovalMode(reviewState.closeReview.primaryActionLabel, reviewState.submission.approvalMode)
+                  : reviewState.closeReview.primaryActionLabel
+              }
               title={reviewState.closeReview.title}
             />
           </div>

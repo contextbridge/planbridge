@@ -18,6 +18,7 @@ import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
 import { themePickerTestIds } from './ThemePicker.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
+import { approvalModeCopy, closeReviewDialogCopy, submitBarCopy, withApprovalMode } from './useAnnotationState.ts';
 
 describe('App', () => {
   afterEach(() => {
@@ -974,6 +975,186 @@ Run \`${longCode}\` now.
 
     await waitFor(() => {
       expectWithinRightBorder(code, container);
+    });
+  });
+
+  describe('approval mode selector', () => {
+    it('shows the mode trigger for hook_claude with zero feedback before submitting', () => {
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      expect(screen.getByTestId(submitBarTestIds.modeTrigger)).toBeInTheDocument();
+    });
+
+    it('hides the mode trigger for other entrypoints', () => {
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_codex' } },
+      });
+
+      expect(screen.queryByTestId(submitBarTestIds.modeTrigger)).not.toBeInTheDocument();
+    });
+
+    it('hides the mode trigger once feedback exists', async () => {
+      const user = userEvent.setup();
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs work');
+
+      expect(screen.getByTestId(submitBarTestIds.button)).toHaveTextContent(submitBarCopy.feedback);
+      expect(screen.queryByTestId(submitBarTestIds.modeTrigger)).not.toBeInTheDocument();
+    });
+
+    it('hides the mode trigger after submit', async () => {
+      const user = userEvent.setup();
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.button));
+
+      await screen.findByTestId(submitBarTestIds.countdown);
+      expect(screen.queryByTestId(submitBarTestIds.modeTrigger)).not.toBeInTheDocument();
+    });
+
+    it('submits approvalMode "auto" when Auto is selected before approving', async () => {
+      const user = userEvent.setup();
+      const { submitAnnotation } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+      await user.click(await screen.findByTestId(submitBarTestIds.modeOption('auto')));
+      await user.click(screen.getByTestId(submitBarTestIds.button));
+
+      await waitFor(() => {
+        expect(submitAnnotation).toHaveBeenCalledTimes(1);
+      });
+      expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({ status: 'approved', approvalMode: 'auto' });
+    });
+
+    it('reflects the selected non-default mode in the submit button label', async () => {
+      const user = userEvent.setup();
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+      await user.click(await screen.findByTestId(submitBarTestIds.modeOption('auto')));
+
+      expect(screen.getByTestId(submitBarTestIds.button)).toHaveTextContent(
+        withApprovalMode(submitBarCopy.approve, 'auto'),
+      );
+    });
+
+    it('keeps the default label when acceptEdits is selected', () => {
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      expect(screen.getByTestId(submitBarTestIds.button)).toHaveTextContent(submitBarCopy.approve);
+      expect(screen.getByTestId(submitBarTestIds.button)).not.toHaveTextContent('(');
+    });
+
+    it('disables the mode trigger while submitting', async () => {
+      const user = userEvent.setup();
+      const pendingSubmission = createDeferred<void>();
+      const submitAnnotation = vi
+        .fn<(submission: AnnotationSubmission) => Promise<void>>()
+        .mockReturnValue(pendingSubmission.promise);
+      renderApp(
+        { initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } } },
+        { submitAnnotation },
+      );
+
+      await user.click(screen.getByTestId(submitBarTestIds.button));
+
+      await waitFor(() => {
+        expect(screen.getByTestId(submitBarTestIds.modeTrigger)).toBeDisabled();
+      });
+
+      pendingSubmission.resolve();
+      await screen.findByTestId(submitBarTestIds.countdown);
+    });
+
+    it('reflects the controlled approvalMode in the radio group checked state', async () => {
+      const user = userEvent.setup();
+      renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+
+      expect(await screen.findByTestId(submitBarTestIds.modeOption('acceptEdits'))).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      expect(screen.getByTestId(submitBarTestIds.modeOption('auto'))).toHaveAttribute('aria-checked', 'false');
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeOption('auto')));
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+
+      expect(await screen.findByTestId(submitBarTestIds.modeOption('auto'))).toHaveAttribute('aria-checked', 'true');
+      expect(screen.getByTestId(submitBarTestIds.modeOption('acceptEdits'))).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('suffixes the close-review dialog primary action with the selected mode for hook_claude with no feedback', async () => {
+      const user = userEvent.setup();
+      const { browser } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+      await user.click(await screen.findByTestId(submitBarTestIds.modeOption('auto')));
+
+      await act(async () => {
+        browser.triggerBeforeUnload();
+        await Promise.resolve();
+      });
+
+      expect(await screen.findByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+        withApprovalMode(submitBarCopy.approve, 'auto'),
+      );
+    });
+
+    it('does not suffix the close-review dialog primary action once feedback exists', async () => {
+      const user = userEvent.setup();
+      const { browser } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await user.click(screen.getByTestId(submitBarTestIds.modeTrigger));
+      await user.click(await screen.findByTestId(submitBarTestIds.modeOption('auto')));
+
+      await user.type(screen.getByTestId(globalCommentComposerTestIds.textarea), 'Needs work');
+
+      await act(async () => {
+        browser.triggerBeforeUnload();
+        await Promise.resolve();
+      });
+
+      expect(await screen.findByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+        closeReviewDialogCopy.feedback.primaryActionLabel,
+      );
+      expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).not.toHaveTextContent(approvalModeCopy.auto);
+    });
+
+    it('does not suffix the close-review dialog primary action for the default state', async () => {
+      const { browser } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ship it', metadata: { entrypoint: 'hook_claude' } },
+      });
+
+      await act(async () => {
+        browser.triggerBeforeUnload();
+        await Promise.resolve();
+      });
+
+      expect(await screen.findByTestId(appTestIds.closeReviewDialogActionButton)).toHaveTextContent(
+        closeReviewDialogCopy.empty.primaryActionLabel,
+      );
+      expect(screen.getByTestId(appTestIds.closeReviewDialogActionButton)).not.toHaveTextContent('(');
     });
   });
 

@@ -33,6 +33,27 @@ describe('claudeHookResponse', () => {
     });
   });
 
+  it('switches the session to auto when the submission requests auto approval mode', () => {
+    const submission = annotationSubmission.build({ status: 'approved', threads: [], approvalMode: 'auto' });
+    const toolInput = {
+      plan: '# ignored by approved template\n',
+      planFilePath: '/home/user/.claude/plans/sample.md',
+    };
+
+    const response = claudeHookResponse(submission, toolInput);
+
+    expect(response).toEqual({
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision: {
+          behavior: 'allow',
+          updatedInput: toolInput,
+          updatedPermissions: [{ type: 'setMode', mode: 'auto', destination: 'session' }],
+        },
+      },
+    });
+  });
+
   it('returns a deny envelope whose message matches formatAgentResponse for changes-requested submissions', () => {
     const planContent = ['# Plan', '', '## Step one', '', '- do the thing', '- then the next thing'].join('\n');
     const submission = annotationSubmission.build({

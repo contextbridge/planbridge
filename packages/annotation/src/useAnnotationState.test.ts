@@ -221,6 +221,45 @@ describe('useAnnotationState', () => {
       expect(submitAnnotation.mock.calls[0]?.[0]?.status).toBe('changes_requested');
     });
 
+    it('defaults approvalMode to acceptEdits', () => {
+      const { result } = renderAnnotationHook(() => useAnnotationState({}));
+
+      expect(result.current.submission.approvalMode).toBe('acceptEdits');
+    });
+
+    it('sends the selected approvalMode when submitting with no feedback', async () => {
+      const { result, submitAnnotation } = renderAnnotationHook(() => useAnnotationState({}));
+
+      act(() => {
+        result.current.submission.setApprovalMode('auto');
+      });
+
+      await act(async () => {
+        await result.current.submission.submit();
+      });
+
+      expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({ status: 'approved', approvalMode: 'auto' });
+    });
+
+    it('forces approvalMode back to acceptEdits when submitting with feedback', async () => {
+      const { result, submitAnnotation } = renderAnnotationHook(() =>
+        useAnnotationState({ initialThreads: [annotationThread.build({ id: 'thr_02' })] }),
+      );
+
+      act(() => {
+        result.current.submission.setApprovalMode('auto');
+      });
+
+      await act(async () => {
+        await result.current.submission.submit();
+      });
+
+      expect(submitAnnotation.mock.calls[0]?.[0]).toMatchObject({
+        status: 'changes_requested',
+        approvalMode: 'acceptEdits',
+      });
+    });
+
     it('bundles a non-empty global comment into the submission as a global thread', async () => {
       const { result, submitAnnotation } = renderAnnotationHook(() => useAnnotationState({}));
 

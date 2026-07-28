@@ -19,6 +19,17 @@ If you have the PlanBridge Claude Code plugin installed (via `contextbridge inst
 
 If you have no feedback on a plan and you want Claude to start implementing, click "Approve Plan". This will tell Claude to start implementing.
 
+### Choosing an approval mode
+
+Next to "Approve Plan" is a mode selector with two options: Accept Edits (the default) and Auto. These map directly to Claude Code's `acceptEdits` and `auto` permission modes.
+
+- Accept Edits exits plan mode into Claude Code's `acceptEdits` permission mode: file edits are auto-accepted, but other tools still prompt if not pre-approved in configuration.
+- Auto exits into Claude Code's `auto` permission mode, where a model classifier approves or denies permission prompts.
+
+The selection is not remembered: every review starts back at Accept Edits. If you choose Auto, the primary button's label changes to "Approve Plan (Auto)" so you can confirm the choice before submitting.
+
+The selector only appears for Claude Code plan reviews, not for `contextbridge plan`, `contextbridge open`, or Codex. It also only appears while you have no comments on the plan. Once you have feedback to send, the button becomes "Submit Feedback" and the mode no longer applies.
+
 ## Iterating on a Plan
 
 If you have feedback on a plan, select the relevant text and comment. When you click "Request Changes", Claude will adjust the plan per your feedback. Once the changes are made, you'll be re-presented the updated plan.
