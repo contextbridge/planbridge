@@ -58,14 +58,13 @@ export class UpdaterImpl {
   constructor(private readonly deps: UpdaterImplDeps) {}
 
   async checkForUpdate(options: CheckForUpdateOptions = {}): Promise<UpdateNotice | null> {
-    const { buildInfo, env, clock, logger } = this.deps;
+    const { buildInfo, env, clock, logger, ttl = Temporal.Duration.from({ hours: DEFAULT_TTL_HOURS }) } = this.deps;
     const { forceRefresh = false } = options;
 
     if (buildInfo.version === DEV_BUILD_VERSION) return null;
     if (env.CONTEXTBRIDGE_UPDATE_CHECK_DISABLED) return null;
 
     const now = clock();
-    const ttl = this.deps.ttl ?? Temporal.Duration.from({ hours: DEFAULT_TTL_HOURS });
 
     if (!forceRefresh) {
       const cached = this.readCache(buildInfo.channel, now, ttl);
