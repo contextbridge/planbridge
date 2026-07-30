@@ -50,10 +50,11 @@ function buildKeyEvent(init: {
   ctrlKey?: boolean;
   preventDefault?: () => void;
 }): KeyboardEvent<HTMLTextAreaElement> {
+  const { key, metaKey = false, ctrlKey = false, preventDefault = () => {} } = init;
   return {
-    key: init.key,
-    metaKey: init.metaKey ?? false,
-    ctrlKey: init.ctrlKey ?? false,
-    preventDefault: init.preventDefault ?? (() => {}),
+    key,
+    metaKey,
+    ctrlKey,
+    preventDefault,
   } as unknown as KeyboardEvent<HTMLTextAreaElement>;
 }

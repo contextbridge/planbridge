@@ -33,8 +33,8 @@ export function createAnnotationDependencies(
     result?: Promise<AnnotationSubmission>;
   } = {},
 ): TrackedAnnotationDependencies {
+  const { submission = annotationSubmission.build(), result = Promise.resolve(submission) } = options;
   const payloads: AnnotationPayload[] = [];
-  const submission = options.submission ?? annotationSubmission.build();
   const sigintRegistration = createDeferred<void>();
   let closeCount = 0;
   let observedPort: number | undefined;
@@ -71,7 +71,7 @@ export function createAnnotationDependencies(
       return {
         port: 4312,
         url: 'http://localhost:4312',
-        result: options.result ?? Promise.resolve(submission),
+        result,
         close: () => {
           closeCount += 1;
           return Promise.resolve();
