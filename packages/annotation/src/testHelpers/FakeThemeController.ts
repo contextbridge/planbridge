@@ -1,5 +1,5 @@
-import type { ThemeController } from '../ThemeController.ts';
-import type { ColorScheme, ThemeDefinition, ThemePreference } from '../themes.ts';
+import type { ThemeController } from '#src/ThemeController.ts';
+import type { ColorScheme, ThemeDefinition, ThemePreference } from '#src/themes.ts';
 
 export class FakeThemeController implements ThemeController {
   readonly appliedThemes: ThemeDefinition[] = [];
