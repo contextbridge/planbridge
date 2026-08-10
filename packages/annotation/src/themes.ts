@@ -61,10 +61,6 @@ export function resolveTheme(preference: ThemePreference, systemColorScheme: Col
   return themeById.get(id) ?? themeById.get(systemThemeIds[systemColorScheme])!;
 }
 
-export function isThemePreference(value: string | null): value is ThemePreference {
-  return value === 'system' || (value !== null && themeById.has(value as ThemeId));
-}
-
 function createThemeDefinition(id: ThemeId, label: string, shikiTheme: ThemeRegistrationAny): ThemeDefinition {
   const colors = shikiTheme.colors ?? {};
   const colorScheme: ColorScheme = shikiTheme.type === 'light' ? 'light' : 'dark';

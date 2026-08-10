@@ -1,47 +1,27 @@
-import { fromThrowable } from 'neverthrow';
 import type { ColorScheme, ThemeDefinition, ThemePreference } from './themes.ts';
-import { isThemePreference, resolveTheme } from './themes.ts';
+import { resolveTheme } from './themes.ts';
 
-const THEME_STORAGE_KEY = 'contextbridge.theme';
 const SYSTEM_DARK_QUERY = '(prefers-color-scheme: dark)';
 
 export interface ThemeController {
-  loadPreference(): ThemePreference;
-  savePreference(preference: ThemePreference): void;
   getSystemColorScheme(): ColorScheme;
   subscribeToSystemColorScheme(listener: (colorScheme: ColorScheme) => void): () => void;
   applyTheme(theme: ThemeDefinition): void;
 }
 
 export interface ThemeControllerImplOptions {
-  readonly storage?: Storage;
   readonly root?: HTMLElement;
   readonly systemThemeQuery?: MediaQueryList;
 }
 
 export class ThemeControllerImpl implements ThemeController {
-  readonly #storage: Storage;
   readonly #root: HTMLElement;
   readonly #systemThemeQuery: MediaQueryList;
 
   constructor(options: ThemeControllerImplOptions = {}) {
-    const {
-      storage = window.localStorage,
-      root = document.documentElement,
-      systemThemeQuery = window.matchMedia(SYSTEM_DARK_QUERY),
-    } = options;
-    this.#storage = storage;
+    const { root = document.documentElement, systemThemeQuery = window.matchMedia(SYSTEM_DARK_QUERY) } = options;
     this.#root = root;
     this.#systemThemeQuery = systemThemeQuery;
-  }
-
-  loadPreference(): ThemePreference {
-    const stored = readStoredPreference(this.#storage).unwrapOr(null);
-    return isThemePreference(stored) ? stored : 'system';
-  }
-
-  savePreference(preference: ThemePreference): void {
-    writeStoredPreference(this.#storage, preference);
   }
 
   getSystemColorScheme(): ColorScheme {
@@ -68,12 +48,6 @@ export class ThemeControllerImpl implements ThemeController {
   }
 }
 
-export function applyInitialTheme(controller: ThemeController): void {
-  const preference = controller.loadPreference();
+export function applyInitialTheme(controller: ThemeController, preference: ThemePreference): void {
   controller.applyTheme(resolveTheme(preference, controller.getSystemColorScheme()));
 }
-
-const readStoredPreference = fromThrowable((storage: Storage) => storage.getItem(THEME_STORAGE_KEY));
-const writeStoredPreference = fromThrowable((storage: Storage, preference: ThemePreference) => {
-  storage.setItem(THEME_STORAGE_KEY, preference);
-});

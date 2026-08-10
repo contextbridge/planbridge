@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
 import { ThemeControllerImpl, applyInitialTheme } from './ThemeController.ts';
+import { createUpdateSettings } from './updateSettings.ts';
 import type { AnnotationAppContext as AnnotationAppContextValue } from './useAppContext.ts';
 import { AnnotationAppContext } from './useAppContext.ts';
 
@@ -24,10 +25,10 @@ if (!rootElement) throw new Error('#root not found');
 void bootstrap(rootElement);
 
 async function bootstrap(target: HTMLElement): Promise<void> {
-  const themeController = new ThemeControllerImpl();
-  applyInitialTheme(themeController);
-
   const config = (await fetchConfig()) ?? FALLBACK_CONFIG;
+
+  const themeController = new ThemeControllerImpl();
+  applyInitialTheme(themeController, config.settings.ui.theme);
 
   const base = createFrontendContext({
     config,
@@ -39,6 +40,8 @@ async function bootstrap(target: HTMLElement): Promise<void> {
     fetchPayload,
     fetchUpdateNotice: () => fetchUpdateNotice(base.fetcher),
     submitAnnotation,
+    settings: config.settings,
+    updateSettings: createUpdateSettings({ logger: base.logger }),
     autoCloseDelaySeconds: 3,
     themeController,
   };

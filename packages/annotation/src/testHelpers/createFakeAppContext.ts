@@ -5,6 +5,8 @@ import {
   fakeFrontendContext,
 } from '@contextbridge/context/testHelpers';
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import type { SettingsPatch } from '@contextbridge/shared/settingsSchema';
+import { settings } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
@@ -17,6 +19,7 @@ export interface FakeAppContextResult {
   submitAnnotation: Mock<(submission: AnnotationSubmission) => Promise<void>>;
   fetchPayload: Mock<() => Promise<AnnotationPayload>>;
   fetchUpdateNotice: Mock<() => Promise<UpdateNotice | null>>;
+  updateSettings: Mock<(patch: SettingsPatch) => Promise<boolean>>;
   analytics: FakeAnalytics;
   telemetry: FakeFrontendTelemetry;
   themeController: FakeThemeController;
@@ -29,6 +32,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     .fn<() => Promise<AnnotationPayload>>()
     .mockResolvedValue({ content: '', contentKind: 'plan' });
   const fetchUpdateNotice = vi.fn<() => Promise<UpdateNotice | null>>().mockResolvedValue(null);
+  const updateSettings = vi.fn<(patch: SettingsPatch) => Promise<boolean>>().mockResolvedValue(true);
   const themeController = new FakeThemeController();
   const context: AnnotationAppContext = {
     ...fakeFrontendContext({
@@ -37,6 +41,8 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     fetchPayload,
     fetchUpdateNotice,
     submitAnnotation,
+    settings: settings.build(),
+    updateSettings,
     autoCloseDelaySeconds: 3,
     themeController,
     ...overrides,
@@ -47,6 +53,7 @@ export function createFakeAppContext(overrides?: Partial<AnnotationAppContext>):
     submitAnnotation,
     fetchPayload,
     fetchUpdateNotice,
+    updateSettings,
     analytics: context.analytics as FakeAnalytics,
     telemetry: context.telemetry as FakeFrontendTelemetry,
     themeController,
