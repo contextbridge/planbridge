@@ -1,0 +1,19 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`settings schema parses and resolves every frozen v1 fixture: v1.full.json 1`] = `
+{
+  "harnesses": {},
+  "ui": {
+    "theme": "dracula",
+  },
+}
+`;
+
+exports[`settings schema parses and resolves every frozen v1 fixture: v1.minimal.json 1`] = `
+{
+  "harnesses": {},
+  "ui": {
+    "theme": "system",
+  },
+}
+`;
