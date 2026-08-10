@@ -5,6 +5,7 @@ import { handleAsset } from './routes/assets.ts';
 import { handleConfig } from './routes/config.ts';
 import { handleHtml } from './routes/html.ts';
 import { handlePayload } from './routes/payload.ts';
+import { type UpdateSettings, handleSettings } from './routes/settings.ts';
 import { handleSubmit } from './routes/submit.ts';
 import { type CheckForUpdate, handleUpdateNotice } from './routes/updateNotice.ts';
 
@@ -15,6 +16,7 @@ export interface StartServerOptions {
   readonly config: FrontendConfig;
   readonly port?: number;
   readonly checkForUpdate?: CheckForUpdate;
+  readonly updateSettings: UpdateSettings;
 }
 
 export interface RunningServer {
@@ -26,22 +28,32 @@ export interface RunningServer {
 
 export function startServer(ctx: ServerContext, opts: StartServerOptions): RunningServer {
   const { logger } = ctx;
-  const { html, payload, config, checkForUpdate } = opts;
+  const { html, payload, config, checkForUpdate, updateSettings } = opts;
 
   let resolveResult!: (r: AnnotationSubmission) => void;
   const result = new Promise<AnnotationSubmission>((resolve) => {
     resolveResult = resolve;
   });
 
+  // Successful patches fold into the served config so a page load after a
+  // save sees the saved settings, not the ones from server start.
+  let currentConfig = config;
+  const applySettingsPatch: UpdateSettings = async (patch) => {
+    const patched = await updateSettings(patch);
+    if (patched.isOk()) currentConfig = { ...currentConfig, settings: patched.value };
+    return patched;
+  };
+
   const server = Bun.serve({
     port: resolveListenPort(opts),
     routes: {
       '/': { GET: () => handleHtml(ctx, html) },
       '/assets/:id': { GET: (req) => handleAsset(payload, req.params.id) },
-      '/config': { GET: () => handleConfig(config) },
+      '/config': { GET: () => handleConfig(currentConfig) },
       '/payload': { GET: () => handlePayload(payload) },
       '/update-notice': { GET: () => handleUpdateNotice(checkForUpdate) },
       '/submit': { POST: (req) => handleSubmit(ctx, req, resolveResult) },
+      '/settings': { POST: (req) => handleSettings(req, applySettingsPatch) },
     },
     fetch: () => new Response('not found', { status: 404 }),
   });

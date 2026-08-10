@@ -1,4 +1,5 @@
 import { annotationPayload, frontendConfig } from '@contextbridge/shared/testFactories';
+import { ok } from 'neverthrow';
 import { type RunningServer, type StartServerOptions, startServer } from '#src/annotation.ts';
 import type { ServerContext } from '#src/context.ts';
 
@@ -21,6 +22,7 @@ export async function withServer<T = void>(
     html: Promise.resolve(DEFAULT_HTML),
     payload: annotationPayload.build(),
     config: frontendConfig.build(),
+    updateSettings: () => Promise.resolve(ok(frontendConfig.build().settings)),
     ...opts,
   });
   try {

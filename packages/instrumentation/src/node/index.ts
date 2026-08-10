@@ -4,6 +4,7 @@ import { createPostHogAnalytics } from './postHogAnalytics.ts';
 import { createSentryTelemetry } from './sentryTelemetry.ts';
 
 export { type AnonymousIdEnv, getOrCreateAnonymousId } from './anonymousId.ts';
+export { type ConfigDirEnv, configDir } from './configDir.ts';
 export {
   reportHarnessDiscovery,
   type HarnessDiscoveryEnv,

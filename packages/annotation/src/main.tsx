@@ -3,6 +3,7 @@ import '@contextbridge/shared/time';
 import { createFrontendContext } from '@contextbridge/context/frontend';
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { type FrontendConfig, FrontendConfigSchema } from '@contextbridge/shared/frontendConfigSchema';
+import { resolveSettings } from '@contextbridge/shared/settingsSchema';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
@@ -14,6 +15,7 @@ import { AnnotationAppContext } from './useAppContext.ts';
 const FALLBACK_CONFIG: FrontendConfig = {
   distinctId: 'local-development',
   telemetryDisabled: true,
+  settings: resolveSettings(),
 };
 
 const rootElement = document.getElementById('root');

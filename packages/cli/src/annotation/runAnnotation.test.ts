@@ -5,7 +5,7 @@ import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchem
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
 import { annotationArgs, environment } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext } from '#src/testHelpers/index.ts';
+import { FakeSettingsStore, createAnnotationDependencies, createStubContext } from '#src/testHelpers/index.ts';
 import { AnnotationEnvironmentError, runAnnotation } from './runAnnotation.ts';
 
 describe('runAnnotation', () => {
@@ -42,6 +42,20 @@ describe('runAnnotation', () => {
     await runAnnotation(context, annotationArgs.build({ port: 3000 }), deps);
 
     expect(deps.port).toBe(3000);
+  });
+
+  it('reads fresh settings for each session', async () => {
+    const settingsStore = new FakeSettingsStore();
+    const { context } = createStubContext({ settingsStore });
+    const first = createAnnotationDependencies();
+    await runAnnotation(context, annotationArgs.build(), first);
+
+    settingsStore.settings = { ui: { theme: 'nord' }, harnesses: {} };
+    const second = createAnnotationDependencies();
+    await runAnnotation(context, annotationArgs.build(), second);
+
+    expect(first.configs[0]?.settings).toEqual({ ui: { theme: 'system' }, harnesses: {} });
+    expect(second.configs[0]?.settings).toEqual({ ui: { theme: 'nord' }, harnesses: {} });
   });
 
   it('captures plan-review lifecycle analytics around a successful review', async () => {
