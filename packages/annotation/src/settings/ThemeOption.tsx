@@ -1,6 +1,6 @@
 import { cn } from '@contextbridge/ui/lib/utils';
 import { Check } from 'lucide-react';
-import type { ThemePreference } from './themes.ts';
+import type { ThemePreference } from '#src/themes.ts';
 
 export interface ThemeOptionProps {
   readonly colors: readonly string[];

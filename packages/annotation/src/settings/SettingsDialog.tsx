@@ -19,8 +19,8 @@ import {
 } from '@contextbridge/ui/components/ui/dialog';
 import { Settings } from 'lucide-react';
 import { useState } from 'react';
+import type { ThemePreference } from '#src/themes.ts';
 import { SettingsNavItem } from './SettingsNavItem.tsx';
-import type { ThemePreference } from './themes.ts';
 import { ThemeSection } from './ThemeSection.tsx';
 
 export const settingsDialogTestIds = {

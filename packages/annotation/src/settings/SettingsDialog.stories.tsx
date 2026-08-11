@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import type { ThemePreference } from '#src/themes.ts';
 import { SettingsDialog, settingsDialogTestIds } from './SettingsDialog.tsx';
-import type { ThemePreference } from './themes.ts';
 import { themeSectionTestIds } from './ThemeSection.tsx';
 
 const meta = {

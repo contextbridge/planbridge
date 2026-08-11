@@ -1,8 +1,8 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ThemePreference } from '#src/themes.ts';
 import { SettingsDialog, settingsDialogCopy, settingsDialogTestIds } from './SettingsDialog.tsx';
-import type { ThemePreference } from './themes.ts';
 import { themeSectionTestIds } from './ThemeSection.tsx';
 
 describe('SettingsDialog', () => {

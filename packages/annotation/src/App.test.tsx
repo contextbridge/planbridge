@@ -7,6 +7,8 @@ import { headerTestIds } from '@contextbridge/ui/components/Header';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { settingsDialogCopy, settingsDialogTestIds } from '#src/settings/SettingsDialog.tsx';
+import { themeSectionTestIds } from '#src/settings/ThemeSection.tsx';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
@@ -14,10 +16,8 @@ import { appCopy, appTestIds } from './App.tsx';
 import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
-import { settingsDialogCopy, settingsDialogTestIds } from './SettingsDialog.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
-import { themeSectionTestIds } from './ThemeSection.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
