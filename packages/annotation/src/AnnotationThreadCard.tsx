@@ -70,7 +70,7 @@ export function AnnotationThreadCard({
         {thread.comments.map((comment) =>
           comment.kind === 'saved' ? (
             <p
-              className="mt-3 text-sm leading-6 text-foreground/80"
+              className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/80"
               data-testid={annotationThreadCardTestIds.comment(comment.message.id)}
               key={comment.message.id}
             >

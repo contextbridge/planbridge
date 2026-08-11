@@ -84,6 +84,28 @@ const seededThreads = [
 
 const seededGlobalComment = 'The plan never says how rollback works if the verifier swap causes issues.';
 
+const multiLineCommentBody = [
+  'Three things worry me about this ordering.',
+  '',
+  'The verifier swap lands before anything documents the migration, so downstream callers get no lead time.',
+  '',
+  'And rollback is undefined once the flag flips.',
+].join('\n');
+
+const multiLineThreads = [
+  {
+    ...seededThreads[0]!,
+    id: 'thr_multiline_01',
+    messages: [
+      {
+        ...seededThreads[0]!.messages[0]!,
+        id: 'msg_multiline_01',
+        body: multiLineCommentBody,
+      },
+    ],
+  },
+];
+
 const mermaidPlan = [
   '# Auth flow',
   '',
@@ -176,6 +198,27 @@ export const SeededReview: Story = {
     initialGlobalComment: seededGlobalComment,
   },
   decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+};
+
+export const MultiLineComment: Story = {
+  args: {
+    initialPayload: {
+      contentKind: 'plan',
+      content: samplePlan,
+      title: 'Refactor auth middleware',
+      metadata: { entrypoint: 'plan_command' },
+    },
+    initialThreads: multiLineThreads,
+  },
+  decorators: [withAppContext({ submitAnnotation: delayedSubmit })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Reproduces #252. The saved thread card must keep the line breaks the author typed rather than collapsing the body onto one line.',
+      },
+    },
+  },
 };
 
 export const MermaidDiagram: Story = {
