@@ -14,9 +14,10 @@ import { appCopy, appTestIds } from './App.tsx';
 import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
+import { settingsDialogCopy, settingsDialogTestIds } from './SettingsDialog.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
-import { themePickerTestIds } from './ThemePicker.tsx';
+import { themeSectionTestIds } from './ThemeSection.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -998,25 +999,108 @@ Run \`${longCode}\` now.
     });
   });
 
-  describe('theme picker', () => {
-    it('renders the curated theme grid and persists the selected theme through settings', async () => {
+  describe('settings dialog', () => {
+    it('previews a theme immediately and only persists it once Save is pressed', async () => {
       const { themeController, updateSettings } = renderApp({
         initialPayload: { contentKind: 'plan', content: '# Ready' },
       });
       const user = userEvent.setup();
 
-      await user.click(screen.getByTestId(themePickerTestIds.trigger));
+      await openSettingsDialog(user);
 
-      expect(await screen.findByTestId(themePickerTestIds.content)).toBeInTheDocument();
-      expect(screen.getByTestId(themePickerTestIds.option('system'))).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId(themeSectionTestIds.option('system'))).toHaveAttribute('aria-pressed', 'true');
 
-      await user.click(screen.getByTestId(themePickerTestIds.option('dracula')));
+      await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
 
-      expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ ui: { theme: 'dracula' } });
-      expect(screen.getByTestId(themePickerTestIds.option('dracula'))).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId(themeSectionTestIds.option('dracula'))).toHaveAttribute('aria-pressed', 'true');
       await waitFor(() => {
         expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
       });
+      expect(updateSettings).not.toHaveBeenCalled();
+
+      await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
+
+      expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ ui: { theme: 'dracula' } });
+      await waitForSettingsDialogToClose();
+      expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
+    });
+
+    it('disables Save until a setting changes', async () => {
+      renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+
+      expect(screen.getByTestId(settingsDialogTestIds.saveButton)).toBeDisabled();
+
+      await user.click(screen.getByTestId(themeSectionTestIds.option('nord')));
+
+      expect(screen.getByTestId(settingsDialogTestIds.saveButton)).toBeEnabled();
+    });
+
+    it('reverts the previewed theme when Cancel is pressed', async () => {
+      const { themeController, updateSettings } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ready' },
+      });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      const savedThemeId = themeController.appliedThemes.at(-1)?.id;
+
+      await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
+      await waitFor(() => {
+        expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
+      });
+
+      await user.click(screen.getByTestId(settingsDialogTestIds.cancelButton));
+
+      await waitForSettingsDialogToClose();
+      expect(themeController.appliedThemes.at(-1)?.id).toBe(savedThemeId);
+      expect(updateSettings).not.toHaveBeenCalled();
+    });
+
+    it('warns before dismissing with unsaved changes and discards the preview on confirm', async () => {
+      const { themeController, updateSettings } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ready' },
+      });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      const savedThemeId = themeController.appliedThemes.at(-1)?.id;
+
+      await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
+      await user.keyboard('{Escape}');
+
+      const discardDialog = await screen.findByTestId(settingsDialogTestIds.discardDialog);
+      expect(discardDialog).toHaveTextContent(settingsDialogCopy.discardDialog.title);
+      expect(discardDialog).toHaveTextContent(settingsDialogCopy.discardDialog.description);
+
+      await user.click(screen.getByTestId(settingsDialogTestIds.discardDialogCancelButton));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId(settingsDialogTestIds.discardDialog)).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId(settingsDialogTestIds.content)).toBeInTheDocument();
+      expect(screen.getByTestId(themeSectionTestIds.option('dracula'))).toHaveAttribute('aria-pressed', 'true');
+      expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
+
+      await user.keyboard('{Escape}');
+      await user.click(await screen.findByTestId(settingsDialogTestIds.discardDialogActionButton));
+
+      await waitForSettingsDialogToClose();
+      expect(themeController.appliedThemes.at(-1)?.id).toBe(savedThemeId);
+      expect(updateSettings).not.toHaveBeenCalled();
+    });
+
+    it('closes without a warning when nothing changed', async () => {
+      renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      await user.keyboard('{Escape}');
+
+      await waitForSettingsDialogToClose();
+      expect(screen.queryByTestId(settingsDialogTestIds.discardDialog)).not.toBeInTheDocument();
     });
 
     it('shows a warning when a settings save does not persist and clears it on the next success', async () => {
@@ -1024,13 +1108,17 @@ Run \`${longCode}\` now.
       const user = userEvent.setup();
       updateSettings.mockResolvedValueOnce(false);
 
-      await user.click(screen.getByTestId(themePickerTestIds.trigger));
-      await user.click(await screen.findByTestId(themePickerTestIds.option('dracula')));
+      await openSettingsDialog(user);
+      await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
+      await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
 
       const warning = await screen.findByTestId(appTestIds.settingsSaveWarning);
       expect(warning).toHaveTextContent(appCopy.settingsSaveFailed);
 
-      await user.click(screen.getByTestId(themePickerTestIds.option('nord')));
+      await waitForSettingsDialogToClose();
+      await openSettingsDialog(user);
+      await user.click(screen.getByTestId(themeSectionTestIds.option('nord')));
+      await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
 
       await waitFor(() => {
         expect(screen.queryByTestId(appTestIds.settingsSaveWarning)).not.toBeInTheDocument();
@@ -1061,6 +1149,17 @@ Run \`${longCode}\` now.
     });
   });
 });
+
+async function openSettingsDialog(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByTestId(settingsDialogTestIds.trigger));
+  await screen.findByTestId(settingsDialogTestIds.content);
+}
+
+async function waitForSettingsDialogToClose(): Promise<void> {
+  await waitFor(() => {
+    expect(screen.queryByTestId(settingsDialogTestIds.content)).not.toBeInTheDocument();
+  });
+}
 
 function getCodeToken(text: string): HTMLElement {
   const token = Array.from(
