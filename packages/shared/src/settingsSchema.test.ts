@@ -4,21 +4,30 @@ import { describe, expect, it } from 'bun:test';
 import {
   CURRENT_SETTINGS_VERSION,
   PersistedSettingsSchema,
+  type Settings,
   SettingsPatchSchema,
   resolveSettings,
 } from './settingsSchema.ts';
 
 const fixturesDirectory = resolve(import.meta.dir, 'settingsFixtures');
 
-describe('settings schema', () => {
-  it('parses and resolves every frozen v1 fixture', async () => {
-    const fixtures = (await readdir(fixturesDirectory)).filter((name) => name.endsWith('.json')).sort();
-    expect(fixtures.length).toBeGreaterThan(0);
+// Frozen on-disk documents from released binaries. Deliberately not built
+// from the live schema: a breaking schema change must fail these strict
+// parses and force a migration story before it can merge.
+const frozenFixtures: ReadonlyArray<[fixture: string, expected: Settings]> = [
+  ['v1.full.json', { ui: { theme: 'dracula' }, harnesses: {} }],
+  ['v1.minimal.json', { ui: { theme: 'system' }, harnesses: {} }],
+];
 
-    for (const fixture of fixtures) {
-      const input = JSON.parse(await readFile(resolve(fixturesDirectory, fixture), 'utf8')) as unknown;
-      expect(resolveSettings(PersistedSettingsSchema.parse(input))).toMatchSnapshot(fixture);
-    }
+describe('settings schema', () => {
+  it.each(frozenFixtures)('parses and resolves the frozen fixture %s', async (fixture, expected) => {
+    const input = JSON.parse(await readFile(resolve(fixturesDirectory, fixture), 'utf8')) as unknown;
+    expect(resolveSettings(PersistedSettingsSchema.parse(input))).toEqual(expected);
+  });
+
+  it('covers every fixture on disk', async () => {
+    const onDisk = (await readdir(fixturesDirectory)).filter((name) => name.endsWith('.json')).sort();
+    expect(onDisk).toEqual(frozenFixtures.map(([fixture]) => fixture));
   });
 
   it('rejects unknown keys in patches and persisted documents', () => {

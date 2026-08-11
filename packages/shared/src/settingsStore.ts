@@ -14,11 +14,11 @@ export class SettingsStoreError extends Error {
 }
 
 /**
- * Reads and writes the user's persisted settings. `read` falls back to
- * defaults instead of failing; `patch` refuses to rewrite a file it does
- * not understand.
+ * Reads and writes the user's persisted settings. A missing file reads as
+ * defaults — that is the normal first-run state — but both methods refuse
+ * a file they do not understand.
  */
 export interface SettingsStore {
-  read(): Promise<Settings>;
+  read(): Promise<Result<Settings, SettingsStoreError>>;
   patch(patch: SettingsPatch): Promise<Result<Settings, SettingsStoreError>>;
 }
