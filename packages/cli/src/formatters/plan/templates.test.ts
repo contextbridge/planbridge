@@ -1,5 +1,6 @@
 import {
   annotationAnchor,
+  annotationSubmission,
   annotationThread,
   commentMessage,
   globalThread,
@@ -11,7 +12,11 @@ import { PLAN_TEMPLATES } from './templates.ts';
 
 describe('PLAN_TEMPLATES (plan-flavored formatAgentResponse output)', () => {
   it('renders approved submissions as a short markdown confirmation', () => {
-    const output = formatAgentResponse(PLAN_TEMPLATES, { status: 'approved', threads: [] }, 'unused plan source');
+    const output = formatAgentResponse(
+      PLAN_TEMPLATES,
+      annotationSubmission.build({ status: 'approved', threads: [] }),
+      'unused plan source',
+    );
 
     expect(output).toMatchInlineSnapshot(`
 "# Plan review: approved
@@ -39,7 +44,7 @@ The user reviewed this plan and approved it with no changes. Proceed to implemen
 
     const output = formatAgentResponse(
       PLAN_TEMPLATES,
-      {
+      annotationSubmission.build({
         status: 'changes_requested',
         threads: [
           annotationThread.build({
@@ -89,7 +94,7 @@ The user reviewed this plan and approved it with no changes. Proceed to implemen
             ],
           }),
         ],
-      },
+      }),
       planContent,
     );
 
@@ -138,7 +143,7 @@ The comment below applies to the following section of the plan:
 
     const output = formatAgentResponse(
       PLAN_TEMPLATES,
-      {
+      annotationSubmission.build({
         status: 'changes_requested',
         threads: [
           annotationThread.build({
@@ -160,7 +165,7 @@ The comment below applies to the following section of the plan:
             ],
           }),
         ],
-      },
+      }),
       planContent,
     );
 
@@ -176,7 +181,7 @@ The comment below applies to the following section of the plan:
 
     const output = formatAgentResponse(
       PLAN_TEMPLATES,
-      {
+      annotationSubmission.build({
         status: 'changes_requested',
         threads: [
           annotationThread.build({
@@ -198,7 +203,7 @@ The comment below applies to the following section of the plan:
             ],
           }),
         ],
-      },
+      }),
       planContent,
     );
 
