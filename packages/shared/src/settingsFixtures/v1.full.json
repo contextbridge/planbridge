@@ -2,5 +2,10 @@
   "version": 1,
   "ui": {
     "theme": "dracula"
+  },
+  "harnesses": {
+    "claude": {
+      "planApprovalMode": "acceptEdits"
+    }
   }
 }

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./claudeSettingsSchema": "./src/claudeSettingsSchema.ts",
     "./errors": "./src/errors.ts",
     "./frontendConfigSchema": "./src/frontendConfigSchema.ts",
     "./json": "./src/json.ts",
