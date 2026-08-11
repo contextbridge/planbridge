@@ -19,6 +19,18 @@ If you have the PlanBridge Claude Code plugin installed (via `contextbridge inst
 
 If you have no feedback on a plan and you want Claude to start implementing, click "Approve Plan". This will tell Claude to start implementing.
 
+## Permission mode after approval
+
+Approving a plan takes the session out of plan mode. Pick the mode it lands in from the gear icon in the review UI, under Settings, "Claude Code":
+
+- **Auto** (the default, matching Claude Code's): a model classifier decides each permission prompt.
+- **Accept Edits**: Claude edits files without asking. Other tools still prompt.
+- **Manual**: Claude asks for anything your settings don't already allow.
+
+PlanBridge saves the choice to `~/.config/contextbridge/settings.json` (or under `$XDG_CONFIG_HOME`) and applies it to every session. It reads the value when you approve, so a mid-review change still counts.
+
+If a session looks stuck in plan mode after you approve, your Claude Code likely predates the mode you picked. Update it.
+
 ## Iterating on a Plan
 
 If you have feedback on a plan, select the relevant text and comment. When you click "Request Changes", Claude will adjust the plan per your feedback. Once the changes are made, you'll be re-presented the updated plan.
@@ -38,7 +50,7 @@ Claude has written up a plan and is ready to execute. Would you like to proceed?
   4. Tell Claude what to change
 ```
 
-Leave it alone. Once you approve or request changes in the browser, PlanBridge dismisses the prompt for you.
+Leave it alone. Once you approve or request changes in the browser, PlanBridge dismisses the prompt for you. Approval lands the session in the mode you picked under Settings, "Claude Code" (Auto by default).
 
 ## Verify
 
