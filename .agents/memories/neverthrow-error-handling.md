@@ -1,8 +1,3 @@
----
-paths:
-  - packages/**/*.ts
-  - packages/**/*.tsx
----
 # Neverthrow error handling
 
 Fallible operations return `Result<T, E>` (from `neverthrow`) instead of throwing. Callers

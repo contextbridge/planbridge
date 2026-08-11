@@ -1,7 +1,10 @@
 ---
-paths:
-  - packages/website/src/**/*.mdx
-  - packages/website/src/**/*.astro
+root: false
+targets: ["*"]
+description: "Human-sounding prose for the docs and marketing site"
+globs:
+  - "packages/website/src/**/*.mdx"
+  - "packages/website/src/**/*.astro"
 ---
 # Website writing style
 

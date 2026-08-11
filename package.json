@@ -44,7 +44,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,mdx,json,astro}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,mdx,json,astro}\"",
     "skills:generate": "bun run --cwd packages/skills skills:generate",
-    "skills:check": "bun run --cwd packages/skills skills:check"
+    "skills:check": "bun run --cwd packages/skills skills:check",
+    "rulesync": "rulesync generate",
+    "rulesync:check": "rulesync generate --check"
   },
   "prettier": "@contextbridge-ai/prettier-config",
   "devDependencies": {
@@ -61,6 +63,7 @@
     "globals": "^17.6.0",
     "prettier": "^3.8.2",
     "prettier-plugin-astro": "^0.14.1",
+    "rulesync": "^16.9.1",
     "semver": "^7.7.4",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.60.1"

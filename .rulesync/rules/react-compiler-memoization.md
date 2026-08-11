@@ -1,7 +1,10 @@
 ---
-paths:
-  - packages/**/*.tsx
-  - packages/**/src/**/*.ts
+root: false
+targets: ["*"]
+description: "React Compiler auto-memoizes — the narrow cases where useCallback / useMemo still earn their keep"
+globs:
+  - "packages/**/*.tsx"
+  - "packages/**/src/**/*.ts"
 ---
 # React Compiler memoization
 

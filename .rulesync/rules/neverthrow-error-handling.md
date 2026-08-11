@@ -1,7 +1,10 @@
 ---
-paths:
-  - packages/**/*.ts
-  - packages/**/*.tsx
+root: false
+targets: ["*"]
+description: "neverthrow Result types for fallible I/O instead of scattered try/catch"
+globs:
+  - "packages/**/*.ts"
+  - "packages/**/*.tsx"
 ---
 # Neverthrow error handling
 

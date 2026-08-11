@@ -1,0 +1,20 @@
+{
+  "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/config-schema.json",
+  // Single source of truth lives in .rulesync/. Regenerate with `just generated rulesync`.
+  // Tool + feature support matrix: https://rulesync.dyoshikawa.com/reference/supported-tools.html
+  //
+  // `agentsmd` emits the shared, cross-tool AGENTS.md (+ .agents/memories/) that Codex and
+  // other AGENTS-aware tools read, so `codexcli` only generates MCP here. Enabling `rules`
+  // on both would make each rewrite AGENTS.md to its own detail-rule dir — it never
+  // converges and `rulesync generate --check` can never pass.
+  "targets": {
+    "claudecode": { "rules": true, "mcp": true },
+    "agentsmd": { "rules": true },
+    "codexcli": { "mcp": true },
+  },
+  "outputRoots": ["."],
+  "delete": true,
+  // Generated files are committed (never gitignored) and marked linguist-generated in the
+  // hand-maintained .gitattributes. Keep any git entry rulesync emits out of .gitignore.
+  "gitignoreDestination": "gitattributes",
+}

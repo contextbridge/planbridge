@@ -1,12 +1,3 @@
----
-paths:
-  - packages/cli/**/*.test.ts
-  - packages/context/**/*.test.ts
-  - packages/instrumentation/**/*.test.ts
-  - packages/server/**/*.test.ts
-  - packages/shared/**/*.test.ts
-  - packages/ui/**/*.test.ts
----
 # Bun testing conventions
 
 Conventions specific to `bun:test` that are non-obvious and have bitten us. Scoped to packages that use Bun's test runner — the browser-UI packages (`@contextbridge/annotation`, `@contextbridge/review`) use vitest and these rules don't apply there.

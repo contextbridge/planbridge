@@ -1,10 +1,13 @@
 ---
-paths:
-  - packages/skills/sources/**/SKILL.md
-  - packages/skills/src/codex.ts
-  - packages/harness/src/registry.ts
-  - harnessIntegrations/claude/skills/**/SKILL.md
-  - harnessIntegrations/codex/skills/**/SKILL.md
+root: false
+targets: ["*"]
+description: "Authoring a PlanBridge skill and regenerating the per-harness SKILL.md output"
+globs:
+  - "packages/skills/sources/**/SKILL.md"
+  - "packages/skills/src/codex.ts"
+  - "packages/harness/src/registry.ts"
+  - "harnessIntegrations/claude/skills/**/SKILL.md"
+  - "harnessIntegrations/codex/skills/**/SKILL.md"
 ---
 # Adding a PlanBridge skill
 

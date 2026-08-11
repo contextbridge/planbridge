@@ -1,12 +1,3 @@
----
-paths:
-  - packages/**/*.test.ts
-  - packages/**/*.test.tsx
-  - packages/**/*TestIds*
-  - packages/**/testFactories.ts
-  - packages/**/*.tsx
-  - packages/**/src/**/*.ts
----
 # Testing patterns
 
 - **Test factories use Fishery with .build() invocations.** Test data is constructed via Fishery `Factory.define<T>()` factories, never hand-rolled `createXxx()` helpers with inline object literals. Shared factories live in `@contextbridge/shared/testFactories`; package-specific factories live in `packages/<pkg>/src/testFactories.ts`. Tests call `.build({ overrides })` to get fixture data.

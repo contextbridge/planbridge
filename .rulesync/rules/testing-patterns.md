@@ -1,11 +1,14 @@
 ---
-paths:
-  - packages/**/*.test.ts
-  - packages/**/*.test.tsx
-  - packages/**/*TestIds*
-  - packages/**/testFactories.ts
-  - packages/**/*.tsx
-  - packages/**/src/**/*.ts
+root: false
+targets: ["*"]
+description: "Fishery factories, shared test helpers, colocated testIds, and exported copy constants"
+globs:
+  - "packages/**/*.test.ts"
+  - "packages/**/*.test.tsx"
+  - "packages/**/*TestIds*"
+  - "packages/**/testFactories.ts"
+  - "packages/**/*.tsx"
+  - "packages/**/src/**/*.ts"
 ---
 # Testing patterns
 

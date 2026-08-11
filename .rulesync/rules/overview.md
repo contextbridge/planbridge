@@ -1,3 +1,9 @@
+---
+root: true
+targets: ["*"]
+description: "ContextBridge CLI project overview, layout, verification, and conventions"
+globs: ["**/*"]
+---
 # ContextBridge CLI (`contextbridge`)
 
 > This file — and the other AI-tool config rulesync generates (`.claude/rules/`,

@@ -1,8 +1,3 @@
----
-paths:
-  - packages/website/src/**/*.mdx
-  - packages/website/src/**/*.astro
----
 # Website writing style
 
 Copy on the docs and marketing site has to read like a human staff engineer wrote it, not a model. AI-generated text has a recognizable cadence and vocabulary, and readers register it as low-trust the same way they register stock photography.

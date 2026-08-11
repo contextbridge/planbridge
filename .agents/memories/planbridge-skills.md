@@ -1,11 +1,3 @@
----
-paths:
-  - packages/skills/sources/**/SKILL.md
-  - packages/skills/src/codex.ts
-  - packages/harness/src/registry.ts
-  - harnessIntegrations/claude/skills/**/SKILL.md
-  - harnessIntegrations/codex/skills/**/SKILL.md
----
 # Adding a PlanBridge skill
 
 A skill is `packages/skills/sources/<name>/SKILL.md` following the [agentskills.io specification](https://agentskills.io/specification). `bun run skills:generate` renders it to one SKILL.md per skill-renderable harness in `@contextbridge/harness` (today: `harnessIntegrations/claude/skills/<name>/SKILL.md` and `harnessIntegrations/codex/skills/<name>/SKILL.md`) — all committed, drift-checked by `bun run skills:check`.

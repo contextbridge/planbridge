@@ -1,8 +1,3 @@
----
-paths:
-  - packages/**/*.tsx
-  - packages/**/src/**/use*.ts
----
 # React hook design
 
 Four recurring design decisions when writing or reviewing a custom React hook.

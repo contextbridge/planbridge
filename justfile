@@ -1,5 +1,6 @@
 # planbridge justfile
 
+mod generated 'just/generated.just'
 mod release 'just/release.just'
 
 # Default recipe - list available commands
@@ -16,11 +17,12 @@ build version="0.0.0-development":
     __CB_VERSION__={{ version }} bun run --cwd packages/review build
     bun run --cwd packages/cli build:compile {{ version }}
 
-# Full verification: format + typecheck + lint + test
+# Full verification: format + typecheck + lint + generated-file drift + test
 verify: install
     bun run format:check
     bun run typecheck
     bun run lint
+    bun run rulesync:check
     bun run skills:check
     bun run test
 
