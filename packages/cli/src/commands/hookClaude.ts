@@ -84,7 +84,7 @@ async function handleExitPlanMode(
   payload: ClaudeHookPayload,
   deps: HookClaudeDependencies,
 ): Promise<ClaudeHookResponse> {
-  const { logger } = ctx;
+  const { logger, settingsStore } = ctx;
   const { runReview = runAnnotation } = deps;
 
   if (!payload.tool_input?.plan) {
@@ -104,7 +104,13 @@ async function handleExitPlanMode(
     abort(ctx, 'runtime', getErrorMessage(err));
   }
 
-  return claudeHookResponse(submission, payload.tool_input);
+  // Read after the review returns so a settings change made mid-review takes effect.
+  const settings = await settingsStore.read();
+  if (settings.isErr()) {
+    abort(ctx, 'runtime', `could not read settings to resolve plan approval mode: ${settings.error.message}`);
+  }
+
+  return claudeHookResponse(submission, payload.tool_input, settings.value.harnesses.claude.planApprovalMode);
 }
 
 function abort(ctx: CliContext, kind: 'input' | 'runtime', message: string): never {

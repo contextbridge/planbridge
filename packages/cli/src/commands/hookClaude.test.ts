@@ -1,15 +1,16 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import { SettingsStoreError } from '@contextbridge/shared/settingsStore';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { type RunAnnotationArgs, runAnnotation } from '#src/annotation/runAnnotation.ts';
-import { claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
+import { type ClaudeHookResponse, claudeHookResponse } from '#src/formatters/plan/claudeHookResponse.ts';
 import { annotationArgs, claudeHookPayload } from '#src/testFactories.ts';
-import { createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
+import { type FakeIo, createAnnotationDependencies, createStubContext, readErrorLogs } from '#src/testHelpers/index.ts';
 import { type HookClaudeDependencies, runHookClaude } from './hookClaude.ts';
 
 describe('hookClaude handler', () => {
-  it('emits the approved envelope echoing tool_input when the review is approved', async () => {
+  it('emits the approved envelope echoing tool_input and the default auto mode when the review is approved', async () => {
     const { context, io } = createStubContext();
     const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const deps = createHookDependencies({ submission });
@@ -19,11 +20,62 @@ describe('hookClaude handler', () => {
 
     await runHookClaude(context, deps);
 
-    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, payload.tool_input))}\n`);
-    const parsed = JSON.parse(io.stdout.text().trim()) as ReturnType<typeof claudeHookResponse>;
-    if (parsed.hookSpecificOutput.decision.behavior !== 'allow') throw new Error('expected allow');
-    expect(parsed.hookSpecificOutput.decision.updatedInput).toEqual(payload.tool_input);
+    expect(io.stdout.text()).toBe(`${JSON.stringify(claudeHookResponse(submission, payload.tool_input, 'auto'))}\n`);
+    const decision = readAllowDecision(io);
+    expect(decision.updatedInput).toEqual(payload.tool_input);
+    expect(decision.updatedPermissions).toEqual([{ type: 'setMode', mode: 'auto', destination: 'session' }]);
     expect(deps.calls).toEqual([annotationArgs.build({ content: payload.tool_input.plan, entrypoint: 'hook_claude' })]);
+  });
+
+  it('exits into the plan approval mode configured in settings', async () => {
+    const { context, io, settingsStore } = createStubContext();
+    await settingsStore.patch({ harnesses: { claude: { planApprovalMode: 'default' } } });
+    const deps = createHookDependencies({
+      submission: annotationSubmission.build({ status: 'approved', threads: [] }),
+    });
+    io.stdin.write(JSON.stringify(claudeHookPayload.build()));
+    io.stdin.end();
+
+    await runHookClaude(context, deps);
+
+    expect(readAllowDecision(io).updatedPermissions).toEqual([
+      { type: 'setMode', mode: 'default', destination: 'session' },
+    ]);
+  });
+
+  it('resolves the plan approval mode after the review, so a mid-review change takes effect', async () => {
+    const { context, io, settingsStore } = createStubContext();
+    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
+    const deps: HookClaudeDependencies = {
+      runReview: async () => {
+        await settingsStore.patch({ harnesses: { claude: { planApprovalMode: 'acceptEdits' } } });
+        return submission;
+      },
+    };
+    io.stdin.write(JSON.stringify(claudeHookPayload.build()));
+    io.stdin.end();
+
+    await runHookClaude(context, deps);
+
+    expect(readAllowDecision(io).updatedPermissions).toEqual([
+      { type: 'setMode', mode: 'acceptEdits', destination: 'session' },
+    ]);
+  });
+
+  it('aborts when the settings store cannot resolve the plan approval mode', () => {
+    const { context, io, logs, settingsStore } = createStubContext();
+    settingsStore.readError = new SettingsStoreError('conflict', 'settings file is not a valid settings document');
+    const deps = createHookDependencies({
+      submission: annotationSubmission.build({ status: 'approved', threads: [] }),
+    });
+    io.stdin.write(JSON.stringify(claudeHookPayload.build()));
+    io.stdin.end();
+
+    expect(runHookClaude(context, deps)).rejects.toBeInstanceOf(CommanderError);
+    expect(io.stdout.text()).toBe('');
+    expect(
+      readErrorLogs(logs).some((r) => r.msg.includes('could not read settings to resolve plan approval mode')),
+    ).toBe(true);
   });
 
   it('emits a deny envelope with the markdown feedback when changes are requested', async () => {
@@ -36,7 +88,7 @@ describe('hookClaude handler', () => {
 
     await runHookClaude(context, deps);
 
-    const expected = claudeHookResponse(submission, payload.tool_input);
+    const expected = claudeHookResponse(submission, payload.tool_input, 'auto');
     expect(io.stdout.text()).toBe(`${JSON.stringify(expected)}\n`);
     const parsed = JSON.parse(io.stdout.text().trim()) as typeof expected;
     expect(parsed.hookSpecificOutput.decision.behavior).toBe('deny');
@@ -134,6 +186,15 @@ describe('hookClaude handler', () => {
     expect(readErrorLogs(logs).some((r) => r.msg.includes('invalid hook event payload'))).toBe(true);
   });
 });
+
+type AllowDecision = Extract<ClaudeHookResponse['hookSpecificOutput']['decision'], { behavior: 'allow' }>;
+
+function readAllowDecision(io: FakeIo): AllowDecision {
+  const parsed = JSON.parse(io.stdout.text().trim()) as ClaudeHookResponse;
+  const decision = parsed.hookSpecificOutput.decision;
+  if (decision.behavior !== 'allow') throw new Error('expected allow');
+  return decision;
+}
 
 interface RecordingHookDependencies extends HookClaudeDependencies {
   calls: RunAnnotationArgs[];

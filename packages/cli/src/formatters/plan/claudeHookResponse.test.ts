@@ -1,3 +1,4 @@
+import { CLAUDE_PLAN_APPROVAL_MODES } from '@contextbridge/shared/claudeSettingsSchema';
 import {
   annotationAnchor,
   annotationSubmission,
@@ -12,26 +13,29 @@ import { claudeHookResponse } from './claudeHookResponse.ts';
 import { PLAN_TEMPLATES } from './templates.ts';
 
 describe('claudeHookResponse', () => {
-  it('returns an allow envelope that echoes tool_input and switches the session to acceptEdits for approved submissions', () => {
-    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
-    const toolInput = {
-      plan: '# ignored by approved template\n',
-      planFilePath: '/home/user/.claude/plans/sample.md',
-    };
+  it.each([...CLAUDE_PLAN_APPROVAL_MODES])(
+    'returns an allow envelope that echoes tool_input and switches the session to %s for approved submissions',
+    (mode) => {
+      const submission = annotationSubmission.build({ status: 'approved', threads: [] });
+      const toolInput = {
+        plan: '# ignored by approved template\n',
+        planFilePath: '/home/user/.claude/plans/sample.md',
+      };
 
-    const response = claudeHookResponse(submission, toolInput);
+      const response = claudeHookResponse(submission, toolInput, mode);
 
-    expect(response).toEqual({
-      hookSpecificOutput: {
-        hookEventName: 'PermissionRequest',
-        decision: {
-          behavior: 'allow',
-          updatedInput: toolInput,
-          updatedPermissions: [{ type: 'setMode', mode: 'acceptEdits', destination: 'session' }],
+      expect(response).toEqual({
+        hookSpecificOutput: {
+          hookEventName: 'PermissionRequest',
+          decision: {
+            behavior: 'allow',
+            updatedInput: toolInput,
+            updatedPermissions: [{ type: 'setMode', mode, destination: 'session' }],
+          },
         },
-      },
-    });
-  });
+      });
+    },
+  );
 
   it('returns a deny envelope whose message matches formatAgentResponse for changes-requested submissions', () => {
     const planContent = ['# Plan', '', '## Step one', '', '- do the thing', '- then the next thing'].join('\n');
@@ -65,7 +69,7 @@ describe('claudeHookResponse', () => {
       ],
     });
 
-    const response = claudeHookResponse(submission, { plan: planContent });
+    const response = claudeHookResponse(submission, { plan: planContent }, 'auto');
     const decision = response.hookSpecificOutput.decision;
 
     expect(response.hookSpecificOutput.hookEventName).toBe('PermissionRequest');
@@ -112,7 +116,7 @@ describe('claudeHookResponse', () => {
       ],
     });
 
-    const response = claudeHookResponse(submission, { plan: planContent });
+    const response = claudeHookResponse(submission, { plan: planContent }, 'auto');
     const decision = response.hookSpecificOutput.decision;
     if (decision.behavior !== 'deny') throw new Error('expected deny');
 
