@@ -1,41 +1,31 @@
 # Groups minor/patch updates, isolates major versions, and lets security updates through immediately
 version: 2
-# Dependabot doesn't support GITHUB_TOKEN for private registry auth
-# (https://github.com/dependabot/dependabot-core/issues/8411), so we use a
-# fine-grained PAT (blimmer's account) with Packages: Read permission.
-registries:
-  github-packages:
-    type: npm-registry
-    url: https://npm.pkg.github.com
-    token: ${{secrets.GH_PACKAGES_TOKEN}}
 updates:
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: 'github-actions'
     directories:
-      - "/"
-      - "/.github/actions/*"
+      - '/'
+      - '/.github/actions/*'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 3 # zizmor: ignore[dependabot-cooldown]
     groups:
       github-actions:
-        patterns: ["*"]
+        patterns: ['*']
 
-  - package-ecosystem: "bun"
-    directory: "/"
-    registries:
-      - github-packages
+  - package-ecosystem: 'bun'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 3 # zizmor: ignore[dependabot-cooldown]
     ignore:
-      - dependency-name: "@types/bun"
+      - dependency-name: '@types/bun'
     groups:
       # drizzle-orm and drizzle-kit must stay in lockstep on the same beta version.
       # Once Drizzle 1.x is released from beta, we can remove this group.
       drizzle:
-        patterns: ["drizzle-orm", "drizzle-kit"]
+        patterns: ['drizzle-orm', 'drizzle-kit']
       npm-minor-patch:
-        update-types: ["minor", "patch"]
-        exclude-patterns: ["drizzle-orm", "drizzle-kit"]
+        update-types: ['minor', 'patch']
+        exclude-patterns: ['drizzle-orm', 'drizzle-kit']
