@@ -1,26 +1,14 @@
 import type { ThemeController } from '#src/ThemeController.ts';
-import type { ColorScheme, ThemeDefinition, ThemePreference } from '#src/themes.ts';
+import type { ColorScheme, ThemeDefinition } from '#src/themes.ts';
 
 export class FakeThemeController implements ThemeController {
   readonly appliedThemes: ThemeDefinition[] = [];
-  readonly savedPreferences: ThemePreference[] = [];
 
-  preference: ThemePreference;
   systemColorScheme: ColorScheme;
   #listeners = new Set<(colorScheme: ColorScheme) => void>();
 
-  constructor(preference: ThemePreference = 'system', systemColorScheme: ColorScheme = 'light') {
-    this.preference = preference;
+  constructor(systemColorScheme: ColorScheme = 'light') {
     this.systemColorScheme = systemColorScheme;
-  }
-
-  loadPreference(): ThemePreference {
-    return this.preference;
-  }
-
-  savePreference(preference: ThemePreference): void {
-    this.preference = preference;
-    this.savedPreferences.push(preference);
   }
 
   getSystemColorScheme(): ColorScheme {

@@ -1,4 +1,5 @@
 import { FakeFrontendBrowser, fakeFrontendContext } from '@contextbridge/context/testHelpers';
+import { settings } from '@contextbridge/shared/testFactories';
 import type { ComponentType, ReactElement } from 'react';
 import { ThemeControllerImpl } from '#src/ThemeController.ts';
 import type { AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
@@ -12,8 +13,10 @@ export function createStoryAppContext(overrides?: Partial<AnnotationAppContextVa
     fetchPayload: () => Promise.resolve({ content: '', contentKind: 'plan' }),
     fetchUpdateNotice: () => Promise.resolve(null),
     submitAnnotation: () => Promise.resolve(),
+    settings: settings.build(),
+    updateSettings: () => Promise.resolve(true),
     autoCloseDelaySeconds: 3,
-    themeController: new ThemeControllerImpl({ storage: new StoryThemeStorage() }),
+    themeController: new ThemeControllerImpl(),
     ...overrides,
   };
 }
@@ -27,32 +30,4 @@ export function withAppContext(overrides?: Partial<AnnotationAppContextValue>) {
       </AnnotationAppContext.Provider>
     );
   };
-}
-
-class StoryThemeStorage implements Storage {
-  readonly #values = new Map<string, string>();
-
-  get length(): number {
-    return this.#values.size;
-  }
-
-  clear(): void {
-    this.#values.clear();
-  }
-
-  getItem(key: string): string | null {
-    return this.#values.get(key) ?? null;
-  }
-
-  key(index: number): string | null {
-    return [...this.#values.keys()][index] ?? null;
-  }
-
-  removeItem(key: string): void {
-    this.#values.delete(key);
-  }
-
-  setItem(key: string, value: string): void {
-    this.#values.set(key, value);
-  }
 }

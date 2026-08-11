@@ -26,7 +26,7 @@ Demo-only code lives under `src/demo/` (TerminalWindow, DemoStage, terminalScrip
 
 Consumes `@contextbridge/ui` — `styles.css` import in the entry, `cn()` helper, shared components under `@contextbridge/ui/components/*` (e.g. `Header`, `BrandMark`), and shadcn primitives under `@contextbridge/ui/components/ui/*`. See `packages/ui/AGENTS.md` for the wiring steps and the "do not remove" notes on the `@source` directive.
 
-The annotation experience owns the curated Shiki theme catalog in `src/themes.ts`. `ThemeController` keeps localStorage, system-color-scheme observation, and root-element mutation behind the injected app context; components consume only semantic CSS properties. Shiki themes provide both the application palette and fenced-code token colors. Preserve the `System` default and keep explicit selections persistent across review sessions.
+The annotation experience owns the curated Shiki theme catalog in `src/themes.ts`, whose themes supply both the application palette and the fenced-code token colors. The preference persists through the user settings file rather than localStorage — the review server binds a fresh ephemeral origin every run, so browser storage never survives a session.
 
 ## Design language: utilitarian, not SaaS
 

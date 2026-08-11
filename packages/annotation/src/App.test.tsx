@@ -1,6 +1,6 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
-import { annotationThread } from '@contextbridge/shared/testFactories';
+import { annotationThread, settings } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { headerTestIds } from '@contextbridge/ui/components/Header';
@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
-import { appTestIds } from './App.tsx';
+import { appCopy, appTestIds } from './App.tsx';
 import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
@@ -999,8 +999,10 @@ Run \`${longCode}\` now.
   });
 
   describe('theme picker', () => {
-    it('renders the curated theme grid and persists the selected theme', async () => {
-      const { themeController } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+    it('renders the curated theme grid and persists the selected theme through settings', async () => {
+      const { themeController, updateSettings } = renderApp({
+        initialPayload: { contentKind: 'plan', content: '# Ready' },
+      });
       const user = userEvent.setup();
 
       await user.click(screen.getByTestId(themePickerTestIds.trigger));
@@ -1010,10 +1012,39 @@ Run \`${longCode}\` now.
 
       await user.click(screen.getByTestId(themePickerTestIds.option('dracula')));
 
-      expect(themeController.savedPreferences).toEqual(['dracula']);
+      expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ ui: { theme: 'dracula' } });
       expect(screen.getByTestId(themePickerTestIds.option('dracula'))).toHaveAttribute('aria-pressed', 'true');
       await waitFor(() => {
         expect(themeController.appliedThemes.at(-1)?.id).toBe('dracula');
+      });
+    });
+
+    it('shows a warning when a settings save does not persist and clears it on the next success', async () => {
+      const { updateSettings } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+      updateSettings.mockResolvedValueOnce(false);
+
+      await user.click(screen.getByTestId(themePickerTestIds.trigger));
+      await user.click(await screen.findByTestId(themePickerTestIds.option('dracula')));
+
+      const warning = await screen.findByTestId(appTestIds.settingsSaveWarning);
+      expect(warning).toHaveTextContent(appCopy.settingsSaveFailed);
+
+      await user.click(screen.getByTestId(themePickerTestIds.option('nord')));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId(appTestIds.settingsSaveWarning)).not.toBeInTheDocument();
+      });
+    });
+
+    it('starts from the theme preference in the CLI-provided settings', async () => {
+      const { themeController } = renderApp(
+        { initialPayload: { contentKind: 'plan', content: '# Ready' } },
+        { settings: settings.build({ ui: { theme: 'nord' } }) },
+      );
+
+      await waitFor(() => {
+        expect(themeController.appliedThemes.at(-1)?.id).toBe('nord');
       });
     });
 

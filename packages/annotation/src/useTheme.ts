@@ -3,8 +3,13 @@ import type { ThemeController } from './ThemeController.ts';
 import type { ThemePreference } from './themes.ts';
 import { resolveTheme } from './themes.ts';
 
-export function useTheme(controller: ThemeController) {
-  const [preference, setPreference] = useState<ThemePreference>(() => controller.loadPreference());
+export interface UseThemeOptions {
+  readonly initialPreference: ThemePreference;
+}
+
+export function useTheme(controller: ThemeController, options: UseThemeOptions) {
+  const { initialPreference } = options;
+  const [preference, setPreference] = useState<ThemePreference>(initialPreference);
   const [systemColorScheme, setSystemColorScheme] = useState(() => controller.getSystemColorScheme());
   const theme = resolveTheme(preference, systemColorScheme);
 
@@ -18,7 +23,6 @@ export function useTheme(controller: ThemeController) {
   }, [controller, preference]);
 
   const selectTheme = (nextPreference: ThemePreference) => {
-    controller.savePreference(nextPreference);
     if (nextPreference === 'system') {
       setSystemColorScheme(controller.getSystemColorScheme());
     }

@@ -1,5 +1,6 @@
 import type { AnnotationPayload, CommentThread } from '@contextbridge/shared/annotationSchema';
 import { DOCS_URL, FEEDBACK_URL, GITHUB_REPO_URL, SLACK_COMMUNITY_URL } from '@contextbridge/shared/links';
+import type { SettingsPatch } from '@contextbridge/shared/settingsSchema';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { Header } from '@contextbridge/ui/components/Header';
 import {
@@ -20,17 +21,20 @@ import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
 import { ThemePicker } from './ThemePicker.tsx';
+import type { ThemePreference } from './themes.ts';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
 import { useAnnotationState } from './useAnnotationState.ts';
 import { useAnnotationAppContext } from './useAppContext.ts';
 import { useTheme } from './useTheme.ts';
+import { WarningNotice } from './WarningNotice.tsx';
 
 export const appTestIds = {
   container: 'plan-review-app',
   loading: 'plan-review-loading',
   highlightWarning: 'plan-review-highlight-warning',
   emptyState: 'plan-review-empty-state',
+  settingsSaveWarning: 'plan-review-settings-save-warning',
   removeDialog: 'plan-review-remove-dialog',
   discardDraftDialog: 'plan-review-discard-draft-dialog',
   discardDraftDialogCancelButton: 'plan-review-discard-draft-dialog-cancel',
@@ -42,6 +46,7 @@ export const appTestIds = {
 
 export const appCopy = {
   emptyState: 'No content was provided.',
+  settingsSaveFailed: 'Your settings could not be saved. Changes apply to this session only.',
 } as const;
 
 export interface AppProps {
@@ -51,12 +56,21 @@ export interface AppProps {
 }
 
 export function App({ initialPayload, initialThreads, initialGlobalComment }: AppProps = {}) {
-  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo, themeController } = useAnnotationAppContext();
+  const { fetchPayload, fetchUpdateNotice, analytics, buildInfo, settings, updateSettings, themeController } =
+    useAnnotationAppContext();
   const [payload, setPayload] = useState<AnnotationPayload | null>(initialPayload ?? null);
   const [updateNotice, setUpdateNotice] = useState<UpdateNotice | null>(null);
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false);
   const reviewState = useAnnotationState({ initialThreads, initialGlobalComment });
-  const themeState = useTheme(themeController);
+  const [settingsSaveFailed, setSettingsSaveFailed] = useState(false);
+  const saveSettings = (patch: SettingsPatch) => {
+    void updateSettings(patch).then((persisted) => setSettingsSaveFailed(!persisted));
+  };
+  const themeState = useTheme(themeController, { initialPreference: settings.ui.theme });
+  const handleThemeSelect = (preference: ThemePreference) => {
+    themeState.selectTheme(preference);
+    saveSettings({ ui: { theme: preference } });
+  };
   const annotationInteractions = useAnnotationInteractions({
     threads: reviewState.threads,
     submitted: reviewState.submission.submitted,
@@ -67,7 +81,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
   const highlightWarning = getAnnotationHighlightWarning();
   const showCommentNavigation = annotationInteractions.navigation.total > 0;
   const commentNavigationDisabled = reviewState.draft.active !== null;
-  const themePicker = <ThemePicker preference={themeState.preference} onSelect={themeState.selectTheme} />;
+  const themePicker = <ThemePicker preference={themeState.preference} onSelect={handleThemeSelect} />;
 
   useEffect(() => {
     if (initialPayload) {
@@ -108,13 +122,12 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
           />
           <div className="w-full px-4 py-4 sm:px-6 sm:py-6">
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,52rem)_minmax(0,1fr)_minmax(15rem,28rem)]">
+              {settingsSaveFailed ? (
+                <WarningNotice testId={appTestIds.settingsSaveWarning}>{appCopy.settingsSaveFailed}</WarningNotice>
+              ) : null}
+
               {highlightWarning ? (
-                <div
-                  className="border-l-2 border-chart-1 px-3 py-2 text-sm leading-6 text-muted-foreground xl:col-start-2"
-                  data-testid={appTestIds.highlightWarning}
-                >
-                  {highlightWarning}
-                </div>
+                <WarningNotice testId={appTestIds.highlightWarning}>{highlightWarning}</WarningNotice>
               ) : null}
 
               <section className="min-w-0 xl:col-start-2">
