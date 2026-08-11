@@ -1,12 +1,3 @@
----
-paths:
-  - packages/annotation/**/*.tsx
-  - packages/annotation/**/*.ts
-  - packages/annotation/**/*.css
-  - packages/review/**/*.tsx
-  - packages/review/**/*.ts
-  - packages/review/**/*.css
----
 # Plan review UI design language
 
 Constraints for the plan review UI (and sibling review UIs that will

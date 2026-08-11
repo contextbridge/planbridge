@@ -1,8 +1,3 @@
----
-paths:
-  - packages/**/*.tsx
-  - packages/**/src/**/*.ts
----
 # React Compiler memoization
 
 This repo has `babel-plugin-react-compiler` enabled via `@vitejs/plugin-react` in every browser-UI package (see `packages/annotation/vite.config.ts`, `packages/review/vite.config.ts`). The compiler auto-memoizes; **do not write `useCallback` or `useMemo` manually** unless one of the narrow cases below applies. Manual memos are noise — more code, no behavior change.

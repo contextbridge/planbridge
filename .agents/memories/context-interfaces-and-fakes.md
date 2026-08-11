@@ -1,9 +1,3 @@
----
-paths:
-  - packages/context/**/*.ts
-  - packages/*/src/context.ts
-  - packages/*/src/**/*Context*.ts
----
 # Context Interfaces and Fakes
 
 - **Context dependencies should have a public contract and separate implementations.** When adding an injectable dependency to a context (`BaseContext`, `CliContext`, `ServerContext`, `FrontendContext`, or a package-specific context), define a narrow public interface for the behavior the context exposes.

@@ -1,26 +1,25 @@
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
-[mcp_servers.chrome-devtools]
-args = [
-    "-y",
-    "chrome-devtools-mcp@latest",
-    "--isolated",
-]
-command = "npx"
-
-[mcp_servers.chrome-devtools.tools.lighthouse_audit]
-approval_mode = "approve"
-
 [mcp_servers.linear]
 url = "https://mcp.linear.app/mcp"
-
-[mcp_servers.outline]
-url = "https://contextbridge.getoutline.com/mcp"
 
 [mcp_servers.sentry]
 url = "https://mcp.sentry.dev/mcp"
 
+[mcp_servers.outline]
+url = "https://contextbridge.getoutline.com/mcp"
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = [ "-y", "chrome-devtools-mcp@latest", "--isolated" ]
+
+[mcp_servers.chrome-devtools.tools.lighthouse_audit]
+approval_mode = "approve"
+
+[mcp_servers.astro-docs]
+url = "https://mcp.docs.astro.build/mcp"
+
 [sandbox_workspace_write]
 network_access = true
-writable_roots = ["~/.bun/install/cache"]
+writable_roots = [ "~/.bun/install/cache" ]

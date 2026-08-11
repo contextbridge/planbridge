@@ -25,6 +25,16 @@ repos:
         pass_filenames: true
         types_or: [ts, tsx]
 
+      # Regenerate AI-tool config from .rulesync/. If outputs change, prek aborts the
+      # commit so the regenerated files get staged alongside their source.
+      - id: rulesync
+        name: rulesync generate
+        entry: bun run rulesync
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
+        files: '^(\.rulesync/|rulesync\.jsonc$)'
+
       # Pre-push stage (comprehensive checks)
       - id: eslint
         name: ESLint

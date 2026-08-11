@@ -1,8 +1,11 @@
 ---
-paths:
-  - packages/context/**/*.ts
-  - packages/*/src/context.ts
-  - packages/*/src/**/*Context*.ts
+root: false
+targets: ["*"]
+description: "Public interfaces, XxxImpl production classes, and FakeXxx test doubles for context dependencies"
+globs:
+  - "packages/context/**/*.ts"
+  - "packages/*/src/context.ts"
+  - "packages/*/src/**/*Context*.ts"
 ---
 # Context Interfaces and Fakes
 

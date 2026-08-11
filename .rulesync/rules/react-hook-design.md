@@ -1,7 +1,10 @@
 ---
-paths:
-  - packages/**/*.tsx
-  - packages/**/src/**/use*.ts
+root: false
+targets: ["*"]
+description: "Recurring design decisions when writing or reviewing a custom React hook"
+globs:
+  - "packages/**/*.tsx"
+  - "packages/**/src/**/use*.ts"
 ---
 # React hook design
 

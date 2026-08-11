@@ -1,13 +1,3 @@
----
-paths:
-  - packages/cli/**/*.ts
-  - packages/server/**/*.ts
-  - packages/skills/**/*.ts
-  - packages/storage/**/*.ts
-  - packages/harness/**/*.ts
-  - packages/instrumentation/src/node/**/*.ts
-  - packages/*/scripts/**/*.ts
----
 # Bun-native APIs
 
 This monorepo runs on Bun. In code that's only ever executed by Bun — the `contextbridge` binary, the local HTTP server, codegen and build scripts, the SQLite layer — reach for `Bun.*` globals before the Node equivalent. Training-data bias makes the Node API the default suggestion; this rule lists the cases where the Bun shape is materially shorter or more idiomatic and should win.

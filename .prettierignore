@@ -17,6 +17,11 @@ packages/storage/generated/
 CHANGELOG.md
 harnessIntegrations/claude/.claude-plugin/plugin.json
 
-# ContextBot owns formatting of agents and its own rules
+# rulesync source and the AI-tool config it generates — rulesync owns their formatting,
+# and reformatting the generated files would break `rulesync generate --check`.
+# `.claude/` (which holds the generated rules) is already ignored above.
+.rulesync/
 AGENTS.md
-.contextbridge/rules
+CLAUDE.md
+.mcp.json
+.agents/

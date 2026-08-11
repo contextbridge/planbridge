@@ -1,11 +1,14 @@
 ---
-paths:
-  - packages/cli/**/*.test.ts
-  - packages/context/**/*.test.ts
-  - packages/instrumentation/**/*.test.ts
-  - packages/server/**/*.test.ts
-  - packages/shared/**/*.test.ts
-  - packages/ui/**/*.test.ts
+root: false
+targets: ["*"]
+description: "bun:test matcher and lifecycle gotchas that have bitten us"
+globs:
+  - "packages/cli/**/*.test.ts"
+  - "packages/context/**/*.test.ts"
+  - "packages/instrumentation/**/*.test.ts"
+  - "packages/server/**/*.test.ts"
+  - "packages/shared/**/*.test.ts"
+  - "packages/ui/**/*.test.ts"
 ---
 # Bun testing conventions
 

@@ -1,12 +1,15 @@
 ---
-paths:
-  - packages/cli/**/*.ts
-  - packages/server/**/*.ts
-  - packages/skills/**/*.ts
-  - packages/storage/**/*.ts
-  - packages/harness/**/*.ts
-  - packages/instrumentation/src/node/**/*.ts
-  - packages/*/scripts/**/*.ts
+root: false
+targets: ["*"]
+description: "Prefer Bun.* globals over their Node equivalents in Bun-only code"
+globs:
+  - "packages/cli/**/*.ts"
+  - "packages/server/**/*.ts"
+  - "packages/skills/**/*.ts"
+  - "packages/storage/**/*.ts"
+  - "packages/harness/**/*.ts"
+  - "packages/instrumentation/src/node/**/*.ts"
+  - "packages/*/scripts/**/*.ts"
 ---
 # Bun-native APIs
 

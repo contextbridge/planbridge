@@ -1,11 +1,14 @@
 ---
-paths:
-  - packages/annotation/**/*.tsx
-  - packages/annotation/**/*.ts
-  - packages/annotation/**/*.css
-  - packages/review/**/*.tsx
-  - packages/review/**/*.ts
-  - packages/review/**/*.css
+root: false
+targets: ["*"]
+description: "Utilitarian design language for the annotation and review browser UIs"
+globs:
+  - "packages/annotation/**/*.tsx"
+  - "packages/annotation/**/*.ts"
+  - "packages/annotation/**/*.css"
+  - "packages/review/**/*.tsx"
+  - "packages/review/**/*.ts"
+  - "packages/review/**/*.css"
 ---
 # Plan review UI design language
 
