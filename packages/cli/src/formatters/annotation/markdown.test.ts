@@ -1,6 +1,6 @@
-import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import {
   annotationAnchor,
+  annotationSubmission,
   annotationThread,
   commentMessage,
   elementAnnotationAnchor,
@@ -14,19 +14,19 @@ import type { AnnotationTemplates } from './templates.ts';
 
 describe('formatAgentResponse (annotation engine)', () => {
   it('renders the approved template when status is approved', () => {
-    const submission: AnnotationSubmission = { status: 'approved', threads: [] };
+    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const result = formatAgentResponse(buildFakeTemplates(), submission, '# anything');
     expect(result).toBe('APPROVED-MARKER');
   });
 
   it('uses the changes-requested template when status is changes_requested', () => {
-    const submission: AnnotationSubmission = { status: 'changes_requested', threads: [] };
+    const submission = annotationSubmission.build({ status: 'changes_requested', threads: [] });
     const result = formatAgentResponse(buildFakeTemplates(), submission, '# anything');
     expect(result).toContain('CHANGES-MARKER');
   });
 
   it('reads kind-specific copy entirely from the templates argument (no hardcoded plan strings)', () => {
-    const submission: AnnotationSubmission = { status: 'approved', threads: [] };
+    const submission = annotationSubmission.build({ status: 'approved', threads: [] });
     const result = formatAgentResponse(buildFakeTemplates(), submission, '# anything');
     expect(result).not.toContain('Plan');
     expect(result).not.toContain('plan');
@@ -34,7 +34,7 @@ describe('formatAgentResponse (annotation engine)', () => {
 
   it('renders mixed global and annotation threads using their respective section templates', () => {
     const content = ['line 1', 'line 2', 'line 3', 'line 4'].join('\n');
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         globalThread.build({
@@ -67,7 +67,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildFakeTemplates(), submission, content);
 
@@ -81,7 +81,7 @@ describe('formatAgentResponse (annotation engine)', () => {
 
   it('slices the source by 1-indexed line range for multi-line annotations', () => {
     const content = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta'].join('\n');
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -103,7 +103,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildSourceSliceTemplates(), submission, content);
 
@@ -115,7 +115,7 @@ describe('formatAgentResponse (annotation engine)', () => {
 
   it('slices a single source line for single-line annotations', () => {
     const content = ['alpha', 'beta', 'gamma'].join('\n');
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -137,7 +137,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildSourceSliceTemplates(), submission, content);
 
@@ -147,7 +147,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('formats single-line ranges as "line N"', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -169,7 +169,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildRangeTemplates(), submission, padToLine('only', 7));
 
@@ -178,7 +178,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('formats multi-line ranges as "lines N–M" using an en-dash', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -200,7 +200,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildRangeTemplates(), submission, padToLine('content', 9));
 
@@ -211,7 +211,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('describes a single-line text selection as "the highlighted text: <code>"', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -233,7 +233,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildHighlightedTemplates(), submission, 'highlight-me here');
 
@@ -242,7 +242,7 @@ describe('formatAgentResponse (annotation engine)', () => {
 
   it('omits the focus call-out (empty value) when the exact selection spans multiple lines', () => {
     const content = ['first line', 'second line'].join('\n');
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -264,7 +264,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildHighlightedTemplates(), submission, content);
 
@@ -273,7 +273,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('describes an element-anchored node by its descriptor and label', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -281,7 +281,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           subject: { kind: 'annotation', anchor: elementAnnotationAnchor.build() },
         }),
       ],
-    };
+    });
 
     expect(formatAgentResponse(buildHighlightedTemplates(), submission, 'unused')).toContain(
       'HIGHLIGHTED<the diagram node: `Login`>',
@@ -289,7 +289,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('describes an element-anchored edge by its descriptor and label', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -302,7 +302,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           },
         }),
       ],
-    };
+    });
 
     expect(formatAgentResponse(buildHighlightedTemplates(), submission, 'unused')).toContain(
       'HIGHLIGHTED<the diagram edge: `submits`>',
@@ -310,7 +310,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('describes a whole-block element annotation by descriptor alone (no label)', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         annotationThread.build({
@@ -327,7 +327,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           },
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildHighlightedTemplates(), submission, 'unused');
     expect(result).toContain('HIGHLIGHTED<the diagram>');
@@ -350,7 +350,9 @@ describe('formatAgentResponse (annotation engine)', () => {
       generalFeedbackSection: recordingTemplate('generalFeedbackSection'),
     };
 
-    formatAgentResponse(stubTemplates, { status: 'approved', threads: [] }, '# doc', { sourcePath: '/abs/doc.md' });
+    formatAgentResponse(stubTemplates, annotationSubmission.build({ status: 'approved', threads: [] }), '# doc', {
+      sourcePath: '/abs/doc.md',
+    });
 
     expect(captured).toHaveLength(1);
     expect(captured[0]?.name).toBe('approved');
@@ -358,7 +360,7 @@ describe('formatAgentResponse (annotation engine)', () => {
   });
 
   it('renders thread messages in chronological order regardless of input order', () => {
-    const submission: AnnotationSubmission = {
+    const submission = annotationSubmission.build({
       status: 'changes_requested',
       threads: [
         globalThread.build({
@@ -379,7 +381,7 @@ describe('formatAgentResponse (annotation engine)', () => {
           ],
         }),
       ],
-    };
+    });
 
     const result = formatAgentResponse(buildThreadEchoTemplates(), submission, 'unused');
 

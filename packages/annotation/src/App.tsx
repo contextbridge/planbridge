@@ -17,11 +17,12 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import './annotationStyles.css';
 import './codeHighlightStyles.css';
+import { SettingsDialog } from '#src/settings/SettingsDialog.tsx';
+import type { SettingsDraft } from '#src/settings/settingsDraft.ts';
+import { diffSettingsDraft, draftFromSettings } from '#src/settings/settingsDraft.ts';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
-import { SettingsDialog } from './SettingsDialog.tsx';
-import type { ThemePreference } from './themes.ts';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
 import { useAnnotationState } from './useAnnotationState.ts';
@@ -67,10 +68,10 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     void updateSettings(patch).then((persisted) => setSettingsSaveFailed(!persisted));
   };
   const themeState = useTheme(themeController, { initialPreference: settings.ui.theme });
-  const [savedTheme, setSavedTheme] = useState<ThemePreference>(settings.ui.theme);
-  const handleSettingsSave = (preference: ThemePreference) => {
-    setSavedTheme(preference);
-    saveSettings({ ui: { theme: preference } });
+  const [savedSettings, setSavedSettings] = useState<SettingsDraft>(() => draftFromSettings(settings));
+  const handleSettingsSave = (draft: SettingsDraft) => {
+    setSavedSettings(draft);
+    saveSettings(diffSettingsDraft(savedSettings, draft));
   };
   const annotationInteractions = useAnnotationInteractions({
     threads: reviewState.threads,
@@ -83,11 +84,7 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
   const showCommentNavigation = annotationInteractions.navigation.total > 0;
   const commentNavigationDisabled = reviewState.draft.active !== null;
   const settingsDialog = (
-    <SettingsDialog
-      savedThemePreference={savedTheme}
-      onPreviewTheme={themeState.selectTheme}
-      onSave={handleSettingsSave}
-    />
+    <SettingsDialog savedSettings={savedSettings} onPreviewTheme={themeState.selectTheme} onSave={handleSettingsSave} />
   );
 
   useEffect(() => {

@@ -7,6 +7,9 @@ import { headerTestIds } from '@contextbridge/ui/components/Header';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { claudeCodeSectionTestIds } from '#src/settings/ClaudeCodeSection.tsx';
+import { settingsDialogCopy, settingsDialogTestIds } from '#src/settings/SettingsDialog.tsx';
+import { themeSectionTestIds } from '#src/settings/ThemeSection.tsx';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
@@ -14,10 +17,8 @@ import { appCopy, appTestIds } from './App.tsx';
 import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
-import { settingsDialogCopy, settingsDialogTestIds } from './SettingsDialog.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
 import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
-import { themeSectionTestIds } from './ThemeSection.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {
@@ -1136,6 +1137,56 @@ Run \`${longCode}\` now.
       });
     });
 
+    it('persists only the plan approval mode when the theme was left alone', async () => {
+      const { updateSettings } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      await openClaudeCodeSection(user);
+      await user.click(screen.getByTestId(claudeCodeSectionTestIds.option('default')));
+      await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
+
+      expect(updateSettings).toHaveBeenCalledExactlyOnceWith({
+        harnesses: { claude: { planApprovalMode: 'default' } },
+      });
+      expect(updateSettings.mock.calls[0]?.[0]).not.toHaveProperty('ui');
+      await waitForSettingsDialogToClose();
+    });
+
+    it('persists both sections when the theme and the plan approval mode both change', async () => {
+      const { updateSettings } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      await user.click(screen.getByTestId(themeSectionTestIds.option('nord')));
+      await openClaudeCodeSection(user);
+      await user.click(screen.getByTestId(claudeCodeSectionTestIds.option('default')));
+      await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
+
+      expect(updateSettings).toHaveBeenCalledExactlyOnceWith({
+        ui: { theme: 'nord' },
+        harnesses: { claude: { planApprovalMode: 'default' } },
+      });
+      await waitForSettingsDialogToClose();
+    });
+
+    it('starts from the plan approval mode in the CLI-provided settings', async () => {
+      renderApp(
+        { initialPayload: { contentKind: 'plan', content: '# Ready' } },
+        { settings: settings.build({ harnesses: { claude: { planApprovalMode: 'acceptEdits' } } }) },
+      );
+      const user = userEvent.setup();
+
+      await openSettingsDialog(user);
+      await openClaudeCodeSection(user);
+
+      expect(screen.getByTestId(claudeCodeSectionTestIds.option('acceptEdits'))).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      expect(screen.getByTestId(claudeCodeSectionTestIds.option('auto'))).toHaveAttribute('aria-pressed', 'false');
+    });
+
     it('tracks system color-scheme changes while System is selected', async () => {
       const { themeController } = renderApp({ initialPayload: { contentKind: 'plan', content: '# Ready' } });
 
@@ -1153,6 +1204,11 @@ Run \`${longCode}\` now.
 async function openSettingsDialog(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   await user.click(screen.getByTestId(settingsDialogTestIds.trigger));
   await screen.findByTestId(settingsDialogTestIds.content);
+}
+
+async function openClaudeCodeSection(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByTestId(settingsDialogTestIds.sectionNav('claude')));
+  await screen.findByTestId(claudeCodeSectionTestIds.option('auto'));
 }
 
 async function waitForSettingsDialogToClose(): Promise<void> {

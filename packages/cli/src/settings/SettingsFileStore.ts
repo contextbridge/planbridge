@@ -104,8 +104,8 @@ function applyPatch(current: PersistedSettings, patch: SettingsPatch): Persisted
   const updated = { ...current };
   const ui = definedValues(patch.ui);
   if (ui) updated.ui = { ...updated.ui, ...ui };
-  const harnesses = definedValues(patch.harnesses);
-  if (harnesses) updated.harnesses = { ...updated.harnesses, ...harnesses };
+  const claude = definedValues(patch.harnesses?.claude);
+  if (claude) updated.harnesses = { ...updated.harnesses, claude: { ...updated.harnesses?.claude, ...claude } };
   return updated;
 }
 

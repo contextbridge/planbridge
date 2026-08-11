@@ -15,8 +15,9 @@ const fixturesDirectory = resolve(import.meta.dir, 'settingsFixtures');
 // from the live schema: a breaking schema change must fail these strict
 // parses and force a migration story before it can merge.
 const frozenFixtures: ReadonlyArray<[fixture: string, expected: Settings]> = [
-  ['v1.full.json', { ui: { theme: 'dracula' }, harnesses: {} }],
-  ['v1.minimal.json', { ui: { theme: 'system' }, harnesses: {} }],
+  ['v1.full.json', { ui: { theme: 'dracula' }, harnesses: { claude: { planApprovalMode: 'acceptEdits' } } }],
+  ['v1.minimal.json', { ui: { theme: 'system' }, harnesses: { claude: { planApprovalMode: 'auto' } } }],
+  ['v1.ui-only.json', { ui: { theme: 'dracula' }, harnesses: { claude: { planApprovalMode: 'auto' } } }],
 ];
 
 describe('settings schema', () => {
@@ -33,13 +34,28 @@ describe('settings schema', () => {
   it('rejects unknown keys in patches and persisted documents', () => {
     expect(SettingsPatchSchema.safeParse({ ui: { future: true } }).success).toBe(false);
     expect(PersistedSettingsSchema.safeParse({ version: CURRENT_SETTINGS_VERSION, future: true }).success).toBe(false);
+    expect(
+      PersistedSettingsSchema.safeParse({ version: CURRENT_SETTINGS_VERSION, harnesses: { codex: {} } }).success,
+    ).toBe(false);
+  });
+
+  it.each(['plan', 'dontAsk', 'bypassPermissions'])('rejects the unsupported plan approval mode %s', (mode) => {
+    expect(
+      PersistedSettingsSchema.safeParse({
+        version: CURRENT_SETTINGS_VERSION,
+        harnesses: { claude: { planApprovalMode: mode } },
+      }).success,
+    ).toBe(false);
   });
 
   it('applies defaults for keys the persisted document does not set', () => {
-    expect(resolveSettings()).toEqual({ ui: { theme: 'system' }, harnesses: {} });
+    expect(resolveSettings()).toEqual({
+      ui: { theme: 'system' },
+      harnesses: { claude: { planApprovalMode: 'auto' } },
+    });
     expect(resolveSettings({ version: CURRENT_SETTINGS_VERSION, ui: { theme: 'dracula' } })).toEqual({
       ui: { theme: 'dracula' },
-      harnesses: {},
+      harnesses: { claude: { planApprovalMode: 'auto' } },
     });
   });
 });

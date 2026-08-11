@@ -16,6 +16,13 @@ export class FakeSettingsStore implements SettingsStore {
     if (patch.ui?.theme !== undefined) {
       this.settings = { ...this.settings, ui: { ...this.settings.ui, theme: patch.ui.theme } };
     }
+    const planApprovalMode = patch.harnesses?.claude?.planApprovalMode;
+    if (planApprovalMode !== undefined) {
+      this.settings = {
+        ...this.settings,
+        harnesses: { ...this.settings.harnesses, claude: { ...this.settings.harnesses.claude, planApprovalMode } },
+      };
+    }
     return Promise.resolve(ok(this.settings));
   }
 }

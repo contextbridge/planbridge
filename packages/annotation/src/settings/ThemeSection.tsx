@@ -1,7 +1,7 @@
+import type { ThemePreference } from '#src/themes.ts';
+import { systemThemeIds, themeById, themes } from '#src/themes.ts';
 import { SettingsSection } from './SettingsSection.tsx';
 import { ThemeOption } from './ThemeOption.tsx';
-import type { ThemePreference } from './themes.ts';
-import { systemThemeIds, themeById, themes } from './themes.ts';
 
 export const themeSectionTestIds = {
   option: (preference: ThemePreference) => `theme-section-option-${preference}`,

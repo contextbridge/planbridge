@@ -1,5 +1,6 @@
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
 import { SettingsStoreError } from '@contextbridge/shared/settingsStore';
+import { settings } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
 import { err, ok } from 'neverthrow';
 import { withServer } from '#src/testHelpers.ts';
@@ -9,19 +10,41 @@ describe('POST /settings', () => {
 
   it('forwards the parsed patch to the store and returns newly resolved settings', async () => {
     const received: unknown[] = [];
+    const resolved = settings.build({ ui: { theme: 'nord' } });
     await withServer(
       ctx,
       {
         updateSettings: (patch) => {
           received.push(patch);
-          return Promise.resolve(ok({ ui: { theme: 'nord' }, harnesses: {} }));
+          return Promise.resolve(ok(resolved));
         },
       },
       async (running) => {
         const response = await fetch(`${running.url}/settings`, request({ ui: { theme: 'nord' } }));
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ui: { theme: 'nord' }, harnesses: {} });
+        expect(await response.json()).toEqual(resolved);
         expect(received).toEqual([{ ui: { theme: 'nord' } }]);
+      },
+    );
+  });
+
+  it('forwards a harness patch to the store and returns newly resolved settings', async () => {
+    const received: unknown[] = [];
+    const resolved = settings.build({ harnesses: { claude: { planApprovalMode: 'default' } } });
+    await withServer(
+      ctx,
+      {
+        updateSettings: (patch) => {
+          received.push(patch);
+          return Promise.resolve(ok(resolved));
+        },
+      },
+      async (running) => {
+        const patch = { harnesses: { claude: { planApprovalMode: 'default' } } };
+        const response = await fetch(`${running.url}/settings`, request(patch));
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(resolved);
+        expect(received).toEqual([patch]);
       },
     );
   });

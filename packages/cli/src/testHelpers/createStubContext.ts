@@ -16,6 +16,7 @@ export interface TestContext {
   io: FakeIo;
   logs: MemoryStream;
   commandRunner: FakeCommandRunner;
+  settingsStore: FakeSettingsStore;
   prompter: FakePrompter;
   updater: FakeUpdater;
   analytics: FakeAnalytics;
@@ -52,6 +53,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     io,
     logs,
     commandRunner: context.commandRunner instanceof FakeCommandRunner ? context.commandRunner : commandRunner,
+    settingsStore: context.settingsStore instanceof FakeSettingsStore ? context.settingsStore : settingsStore,
     prompter: context.prompter instanceof FakePrompter ? context.prompter : prompter,
     updater: context.updater instanceof FakeUpdater ? context.updater : updater,
     analytics: context.analytics as FakeAnalytics,

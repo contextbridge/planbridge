@@ -107,10 +107,59 @@ describe('SettingsFileStore', () => {
     }
   });
 
+  it('writes a formatted sparse document for a harness patch', async () => {
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    const result = await store.patch({ harnesses: { claude: { planApprovalMode: 'acceptEdits' } } });
+    assert(result.isOk());
+    expect(result.value.harnesses.claude.planApprovalMode).toBe('acceptEdits');
+    expect(readFileSync(store.path, 'utf8')).toBe(
+      '{\n  "version": 1,\n  "harnesses": {\n    "claude": {\n      "planApprovalMode": "acceptEdits"\n    }\n  }\n}\n',
+    );
+  });
+
+  it('merges each section independently regardless of patch order', async () => {
+    const patches = [
+      [{ ui: { theme: 'nord' } }, { harnesses: { claude: { planApprovalMode: 'default' } } }],
+      [{ harnesses: { claude: { planApprovalMode: 'default' } } }, { ui: { theme: 'nord' } }],
+    ] as const;
+    for (const [first, second] of patches) {
+      await using root = tempConfigDir();
+      const store = createStore(root.path);
+      await store.patch(first);
+      const result = await store.patch(second);
+      assert(result.isOk());
+      expect(JSON.parse(readFileSync(store.path, 'utf8'))).toEqual({
+        version: 1,
+        ui: { theme: 'nord' },
+        harnesses: { claude: { planApprovalMode: 'default' } },
+      });
+    }
+  });
+
+  it('retains other harness settings when a different section is patched', async () => {
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    await seedSettingsFile(store, '{"version":1,"harnesses":{"claude":{"planApprovalMode":"default"}}}');
+    const result = await store.patch({ ui: { theme: 'nord' } });
+    assert(result.isOk());
+    expect(JSON.parse(readFileSync(store.path, 'utf8'))).toEqual({
+      version: 1,
+      ui: { theme: 'nord' },
+      harnesses: { claude: { planApprovalMode: 'default' } },
+    });
+  });
+
   it('does not create or touch the file for a patch that changes nothing', async () => {
     await using root = tempConfigDir();
     const store = createStore(root.path);
-    for (const patch of [{}, { ui: {} }]) {
+    for (const patch of [
+      {},
+      { ui: {} },
+      { harnesses: {} },
+      { harnesses: { claude: {} } },
+      { harnesses: { claude: { planApprovalMode: undefined } } },
+    ]) {
       const result = await store.patch(patch);
       assert(result.isOk());
       expect(result.value).toEqual(resolveSettings());
@@ -118,8 +167,10 @@ describe('SettingsFileStore', () => {
     expect(existsSync(store.path)).toBe(false);
 
     await store.patch({ ui: { theme: 'dracula' } });
+    await store.patch({ harnesses: { claude: { planApprovalMode: 'default' } } });
     const written = statSync(store.path);
     await store.patch({ ui: { theme: 'dracula' } });
+    await store.patch({ harnesses: { claude: { planApprovalMode: 'default' } } });
     expect(statSync(store.path).mtimeMs).toBe(written.mtimeMs);
   });
 

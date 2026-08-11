@@ -1,7 +1,13 @@
 import { annotationThread } from '@contextbridge/shared/testFactories';
 import { Factory } from 'fishery';
+import type { SettingsDraft } from '#src/settings/settingsDraft.ts';
 import type { ResolvedAnnotationThread } from './annotationTypes.ts';
 import { isAnnotationCommentThread } from './annotationTypes.ts';
+
+export const settingsDraft = Factory.define<SettingsDraft>(() => ({
+  theme: 'system',
+  claudePlanApprovalMode: 'auto',
+}));
 
 export const resolvedAnnotationThread = Factory.define<ResolvedAnnotationThread>(({ params }) => {
   const seed = annotationThread.build(params.id ? { id: params.id } : {});
