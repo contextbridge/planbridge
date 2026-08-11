@@ -20,7 +20,7 @@ import './codeHighlightStyles.css';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';
-import { ThemePicker } from './ThemePicker.tsx';
+import { SettingsDialog } from './SettingsDialog.tsx';
 import type { ThemePreference } from './themes.ts';
 import { UpdateNoticeCard } from './UpdateNoticeCard.tsx';
 import { useAnnotationInteractions } from './useAnnotationInteractions.ts';
@@ -67,8 +67,9 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     void updateSettings(patch).then((persisted) => setSettingsSaveFailed(!persisted));
   };
   const themeState = useTheme(themeController, { initialPreference: settings.ui.theme });
-  const handleThemeSelect = (preference: ThemePreference) => {
-    themeState.selectTheme(preference);
+  const [savedTheme, setSavedTheme] = useState<ThemePreference>(settings.ui.theme);
+  const handleSettingsSave = (preference: ThemePreference) => {
+    setSavedTheme(preference);
     saveSettings({ ui: { theme: preference } });
   };
   const annotationInteractions = useAnnotationInteractions({
@@ -81,7 +82,13 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
   const highlightWarning = getAnnotationHighlightWarning();
   const showCommentNavigation = annotationInteractions.navigation.total > 0;
   const commentNavigationDisabled = reviewState.draft.active !== null;
-  const themePicker = <ThemePicker preference={themeState.preference} onSelect={handleThemeSelect} />;
+  const settingsDialog = (
+    <SettingsDialog
+      savedThemePreference={savedTheme}
+      onPreviewTheme={themeState.selectTheme}
+      onSave={handleSettingsSave}
+    />
+  );
 
   useEffect(() => {
     if (initialPayload) {
@@ -109,14 +116,14 @@ export function App({ initialPayload, initialThreads, initialGlobalComment }: Ap
     <>
       <title>{documentTitle}</title>
       {!payload ? (
-        <Loading buildInfo={buildInfo} settings={themePicker} />
+        <Loading buildInfo={buildInfo} settings={settingsDialog} />
       ) : (
         <main className="min-h-screen bg-background text-foreground" data-testid={appTestIds.container}>
           <Header
             docsHref={DOCS_URL}
             feedbackHref={FEEDBACK_URL}
             githubRepoHref={GITHUB_REPO_URL}
-            settings={themePicker}
+            settings={settingsDialog}
             slackHelpHref={SLACK_COMMUNITY_URL}
             version={buildInfo.version}
           />
