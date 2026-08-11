@@ -6,12 +6,11 @@ import {
   getHarness,
   getInstallableHarness,
 } from './registry.ts';
-import type { HarnessId } from './types.ts';
+import { HARNESS_IDS, type HarnessId } from './types.ts';
 
 describe('HARNESSES', () => {
   it('lists every HarnessId exactly once', () => {
-    const ids: HarnessId[] = ['claude', 'codex', 'gemini', 'cursor', 'aider', 'opencode', 'aether'];
-    expect(HARNESSES.map((h) => h.id).sort()).toEqual([...ids].sort());
+    expect(HARNESSES.map((h) => h.id).sort()).toEqual([...HARNESS_IDS].sort());
   });
 });
 

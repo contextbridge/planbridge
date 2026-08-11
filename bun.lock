@@ -177,6 +177,7 @@
       "name": "@contextbridge/shared",
       "version": "0.0.0-development",
       "dependencies": {
+        "@contextbridge/harness": "workspace:*",
         "@js-temporal/polyfill": "^0.5.1",
         "fishery": "catalog:",
         "neverthrow": "catalog:",

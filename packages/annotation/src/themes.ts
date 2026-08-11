@@ -1,3 +1,4 @@
+import type { ThemePreference } from '@contextbridge/shared/themeSchema';
 import ayuDark from '@shikijs/themes/ayu-dark';
 import ayuLight from '@shikijs/themes/ayu-light';
 import catppuccinLatte from '@shikijs/themes/catppuccin-latte';
@@ -14,6 +15,8 @@ import tokyoNight from '@shikijs/themes/tokyo-night';
 import type { ThemeRegistrationAny } from 'shiki/types';
 
 export type ColorScheme = 'light' | 'dark';
+export type ThemeId = Exclude<ThemePreference, 'system'>;
+export type { ThemePreference };
 
 export interface ThemeDefinition {
   readonly id: ThemeId;
@@ -24,28 +27,25 @@ export interface ThemeDefinition {
   readonly shikiTheme: ThemeRegistrationAny;
 }
 
-const themeSources = [
-  { id: 'github-light-default', label: 'GitHub Light', shikiTheme: githubLightDefault },
-  { id: 'ayu-light', label: 'Ayu Light', shikiTheme: ayuLight },
-  { id: 'everforest-light', label: 'Everforest Light', shikiTheme: everforestLight },
-  { id: 'catppuccin-latte', label: 'Catppuccin Latte', shikiTheme: catppuccinLatte },
-  { id: 'github-dark-default', label: 'GitHub Dark', shikiTheme: githubDarkDefault },
-  { id: 'ayu-dark', label: 'Ayu Dark', shikiTheme: ayuDark },
-  { id: 'everforest-dark', label: 'Everforest Dark', shikiTheme: everforestDark },
-  { id: 'dracula', label: 'Dracula', shikiTheme: dracula },
-  { id: 'catppuccin-mocha', label: 'Catppuccin Mocha', shikiTheme: catppuccinMocha },
-  { id: 'gruvbox-dark-medium', label: 'Gruvbox Dark', shikiTheme: gruvboxDarkMedium },
-  { id: 'nord', label: 'Nord', shikiTheme: nord },
-  { id: 'rose-pine', label: 'Rosé Pine', shikiTheme: rosePine },
-  { id: 'tokyo-night', label: 'Tokyo Night', shikiTheme: tokyoNight },
-] as const;
+const themeSources = {
+  'github-light-default': { label: 'GitHub Light', shikiTheme: githubLightDefault },
+  'ayu-light': { label: 'Ayu Light', shikiTheme: ayuLight },
+  'everforest-light': { label: 'Everforest Light', shikiTheme: everforestLight },
+  'catppuccin-latte': { label: 'Catppuccin Latte', shikiTheme: catppuccinLatte },
+  'github-dark-default': { label: 'GitHub Dark', shikiTheme: githubDarkDefault },
+  'ayu-dark': { label: 'Ayu Dark', shikiTheme: ayuDark },
+  'everforest-dark': { label: 'Everforest Dark', shikiTheme: everforestDark },
+  dracula: { label: 'Dracula', shikiTheme: dracula },
+  'catppuccin-mocha': { label: 'Catppuccin Mocha', shikiTheme: catppuccinMocha },
+  'gruvbox-dark-medium': { label: 'Gruvbox Dark', shikiTheme: gruvboxDarkMedium },
+  nord: { label: 'Nord', shikiTheme: nord },
+  'rose-pine': { label: 'Rosé Pine', shikiTheme: rosePine },
+  'tokyo-night': { label: 'Tokyo Night', shikiTheme: tokyoNight },
+} satisfies Record<ThemeId, { label: string; shikiTheme: ThemeRegistrationAny }>;
 
-export type ThemeId = (typeof themeSources)[number]['id'];
-export type ThemePreference = ThemeId | 'system';
-
-export const themes: readonly ThemeDefinition[] = themeSources.map(({ id, label, shikiTheme }) =>
-  createThemeDefinition(id, label, shikiTheme),
-);
+export const themes: readonly ThemeDefinition[] = (
+  Object.entries(themeSources) as [ThemeId, (typeof themeSources)[ThemeId]][]
+).map(([id, { label, shikiTheme }]) => createThemeDefinition(id, label, shikiTheme));
 
 export const shikiThemes: readonly ThemeRegistrationAny[] = themes.map(({ shikiTheme }) => shikiTheme);
 

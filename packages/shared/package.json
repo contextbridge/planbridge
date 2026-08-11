@@ -8,6 +8,9 @@
     "./frontendConfigSchema": "./src/frontendConfigSchema.ts",
     "./json": "./src/json.ts",
     "./links": "./src/links.ts",
+    "./settingsSchema": "./src/settingsSchema.ts",
+    "./settingsStore": "./src/settingsStore.ts",
+    "./themeSchema": "./src/themeSchema.ts",
     "./annotationSchema": "./src/annotationSchema.ts",
     "./testFactories": "./src/testFactories.ts",
     "./testHelpers": "./src/testHelpers.ts",
@@ -24,6 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@contextbridge/harness": "workspace:*",
     "@js-temporal/polyfill": "^0.5.1",
     "fishery": "catalog:",
     "neverthrow": "catalog:",

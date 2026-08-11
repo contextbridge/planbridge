@@ -1,4 +1,5 @@
-export type HarnessId = 'claude' | 'codex' | 'gemini' | 'cursor' | 'aider' | 'opencode' | 'aether';
+export const HARNESS_IDS = ['claude', 'codex', 'gemini', 'cursor', 'aider', 'opencode', 'aether'] as const;
+export type HarnessId = (typeof HARNESS_IDS)[number];
 
 export interface HarnessDescriptor {
   readonly id: HarnessId;

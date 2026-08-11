@@ -1,3 +1,4 @@
+export { HARNESS_IDS } from './types.ts';
 export type { HarnessDescriptor, HarnessId, InstallableHarness, SkillRenderableHarness } from './types.ts';
 export {
   HARNESSES,
