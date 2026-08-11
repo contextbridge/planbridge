@@ -17,7 +17,7 @@ import { type CommandRunner, CommandRunnerImpl } from '#src/CommandRunnerImpl.ts
 import { type Environment, getEnvironment } from '#src/environment.ts';
 import { type Io, IoImpl } from '#src/IoImpl.ts';
 import { type Prompter, createClackPrompter } from '#src/prompter.ts';
-import { SettingsStoreImpl } from '#src/settings/SettingsStoreImpl.ts';
+import { SettingsFileStore } from '#src/settings/SettingsFileStore.ts';
 import { type Updater, UpdaterImpl } from '#src/updater/UpdaterImpl.ts';
 
 export interface CliContext extends BaseContext {
@@ -51,7 +51,7 @@ export function createContext(): CliContext {
     level: env.LOG_LEVEL,
     destination: io.stderr,
   });
-  const settingsStore = new SettingsStoreImpl({ env, logger });
+  const settingsStore = new SettingsFileStore({ env, logger });
 
   const fetcher = new FetcherImpl();
   const commandRunner = new CommandRunnerImpl({ out: io.stdout, err: io.stderr });

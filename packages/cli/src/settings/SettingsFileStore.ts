@@ -16,30 +16,24 @@ import type { Environment } from '#src/environment.ts';
 
 const SETTINGS_FILE = 'settings.json';
 
-interface SettingsStoreImplOptions {
+interface SettingsFileStoreOptions {
   readonly env: Pick<Environment, 'HOME' | 'XDG_CONFIG_HOME'>;
   readonly logger: Logger;
 }
 
-export class SettingsStoreImpl implements SettingsStore {
+export class SettingsFileStore implements SettingsStore {
   readonly path: string;
   private readonly logger: Logger;
 
-  constructor(options: SettingsStoreImplOptions) {
+  constructor(options: SettingsFileStoreOptions) {
     const { env, logger } = options;
 
     this.path = resolveSettingsPath(env);
     this.logger = logger;
   }
 
-  async read(): Promise<Settings> {
-    return this.readPersisted().match(
-      (persisted) => resolveSettings(persisted),
-      (error) => {
-        this.logger.warn({ err: error, path: this.path }, 'could not read settings; using defaults');
-        return resolveSettings();
-      },
-    );
+  async read(): Promise<Result<Settings, SettingsStoreError>> {
+    return this.readPersisted().map((persisted) => resolveSettings(persisted));
   }
 
   async patch(patch: SettingsPatch): Promise<Result<Settings, SettingsStoreError>> {
@@ -65,11 +59,11 @@ export class SettingsStoreImpl implements SettingsStore {
   /** Resolves to `undefined` when no settings file exists. */
   private readPersisted(): ResultAsync<PersistedSettings | undefined, SettingsStoreError> {
     return ResultAsync.fromPromise(Bun.file(this.path).text(), (cause) => cause)
-      .andThen(parsePersisted)
+      .andThen((contents) => parsePersisted(this.path, contents))
       .orElse((cause) => {
         if (hasCode(cause, 'ENOENT')) return ok(undefined);
         if (cause instanceof SettingsStoreError) return err(cause);
-        return err(new SettingsStoreError('filesystem', 'could not read settings file', { cause }));
+        return err(new SettingsStoreError('filesystem', `could not read settings file at ${this.path}`, { cause }));
       });
   }
 
@@ -77,7 +71,7 @@ export class SettingsStoreImpl implements SettingsStore {
     const contents = `${JSON.stringify(persisted, null, 2)}\n`;
     return ResultAsync.fromPromise(
       Bun.write(this.path, contents),
-      (cause) => new SettingsStoreError('filesystem', 'could not write settings file', { cause }),
+      (cause) => new SettingsStoreError('filesystem', `could not write settings file at ${this.path}`, { cause }),
     ).map(() => undefined);
   }
 }
@@ -89,15 +83,17 @@ export function resolveSettingsPath(
   return join(configDir(env, options), SETTINGS_FILE);
 }
 
-function parsePersisted(contents: string): Result<PersistedSettings, SettingsStoreError> {
+function parsePersisted(path: string, contents: string): Result<PersistedSettings, SettingsStoreError> {
   return Result.fromThrowable(
     () => JSON.parse(contents) as unknown,
-    (cause) => new SettingsStoreError('conflict', 'settings file contains malformed JSON', { cause }),
+    (cause) => new SettingsStoreError('conflict', `settings file at ${path} contains malformed JSON`, { cause }),
   )().andThen((raw) => {
     const parsed = PersistedSettingsSchema.safeParse(raw);
     if (!parsed.success) {
       return err(
-        new SettingsStoreError('conflict', 'settings file is not a valid settings document', { cause: parsed.error }),
+        new SettingsStoreError('conflict', `settings file at ${path} is not a valid settings document`, {
+          cause: parsed.error,
+        }),
       );
     }
     return ok(parsed.data);

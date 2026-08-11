@@ -4,21 +4,10 @@ import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resolveSettings } from '@contextbridge/shared/settingsSchema';
-import { afterEach, describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import pino from 'pino';
 import { environment } from '#src/testFactories.ts';
-import { SettingsStoreImpl, resolveSettingsPath } from './SettingsStoreImpl.ts';
-
-const temporaryDirectories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(
-    temporaryDirectories.splice(0).map(async (path) => {
-      await chmod(path, 0o700).catch(() => {});
-      await rm(path, { recursive: true, force: true });
-    }),
-  );
-});
+import { SettingsFileStore, resolveSettingsPath } from './SettingsFileStore.ts';
 
 describe('resolveSettingsPath', () => {
   it('uses XDG_CONFIG_HOME when set to an absolute path', () => {
@@ -49,29 +38,41 @@ describe('resolveSettingsPath', () => {
   });
 });
 
-describe('SettingsStoreImpl', () => {
+describe('SettingsFileStore', () => {
   it('reads a missing file as defaults without creating it', async () => {
-    const store = createStore();
-    expect(await store.read()).toEqual(resolveSettings());
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    const result = await store.read();
+    assert(result.isOk());
+    expect(result.value).toEqual(resolveSettings());
     expect(existsSync(store.path)).toBe(false);
   });
 
-  it('reads a file with malformed JSON as defaults without rewriting it', async () => {
-    const store = createStore();
-    await writeSettings(store, '{"version":');
-    expect(await store.read()).toEqual(resolveSettings());
+  it('refuses to read a file with malformed JSON without rewriting it', async () => {
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    await seedSettingsFile(store, '{"version":');
+    const result = await store.read();
+    assert(result.isErr());
+    expect(result.error.kind).toBe('conflict');
+    expect(result.error.message).toContain(store.path);
     expect(readFileSync(store.path, 'utf8')).toBe('{"version":');
   });
 
-  it('reads an invalid settings document as defaults without rewriting it', async () => {
-    const store = createStore();
-    await writeSettings(store, '{"version":1,"ui":{"theme":"not-a-theme"}}');
-    expect(await store.read()).toEqual(resolveSettings());
+  it('refuses to read an invalid settings document without rewriting it', async () => {
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    await seedSettingsFile(store, '{"version":1,"ui":{"theme":"not-a-theme"}}');
+    const result = await store.read();
+    assert(result.isErr());
+    expect(result.error.kind).toBe('conflict');
+    expect(result.error.message).toContain(store.path);
     expect(JSON.parse(readFileSync(store.path, 'utf8'))).toEqual({ version: 1, ui: { theme: 'not-a-theme' } });
   });
 
   it('writes a formatted sparse document', async () => {
-    const store = createStore();
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
     const result = await store.patch({ ui: { theme: 'dracula' } });
     assert(result.isOk());
     expect(result.value.ui.theme).toBe('dracula');
@@ -79,8 +80,9 @@ describe('SettingsStoreImpl', () => {
   });
 
   it('updates an existing file in place', async () => {
-    const store = createStore();
-    await writeSettings(store, '{"version":1,"ui":{"theme":"dracula"}}');
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    await seedSettingsFile(store, '{"version":1,"ui":{"theme":"dracula"}}');
     const result = await store.patch({ ui: { theme: 'nord' } });
     assert(result.isOk());
     expect(result.value.ui.theme).toBe('nord');
@@ -95,8 +97,9 @@ describe('SettingsStoreImpl', () => {
       '{"version":1,"ui":["not-an-object"]}',
     ];
     for (const contents of invalidContents) {
-      const store = createStore();
-      await writeSettings(store, contents);
+      await using root = tempConfigDir();
+      const store = createStore(root.path);
+      await seedSettingsFile(store, contents);
       const result = await store.patch({ ui: { theme: 'nord' } });
       assert(result.isErr());
       expect(result.error.kind).toBe('conflict');
@@ -105,7 +108,8 @@ describe('SettingsStoreImpl', () => {
   });
 
   it('does not create or touch the file for a patch that changes nothing', async () => {
-    const store = createStore();
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
     for (const patch of [{}, { ui: {} }]) {
       const result = await store.patch(patch);
       assert(result.isOk());
@@ -120,27 +124,37 @@ describe('SettingsStoreImpl', () => {
   });
 
   it('returns a filesystem error when the config root is unwritable', async () => {
-    const store = createStore();
-    const root = join(store.path, '..', '..');
-    await chmod(root, 0o500);
+    await using root = tempConfigDir();
+    const store = createStore(root.path);
+    await chmod(root.path, 0o500);
     const result = await store.patch({ ui: { theme: 'nord' } });
-    await chmod(root, 0o700);
+    await chmod(root.path, 0o700);
     assert(result.isErr());
     expect(result.error.kind).toBe('filesystem');
-    expect(readdirSync(root)).toEqual([]);
+    expect(readdirSync(root.path)).toEqual([]);
   });
 });
 
-function createStore(): SettingsStoreImpl {
-  const root = mkdtempSync(join(tmpdir(), 'contextbridge-settings-'));
-  temporaryDirectories.push(root);
-  return new SettingsStoreImpl({
+function tempConfigDir(): AsyncDisposable & { path: string } {
+  const path = mkdtempSync(join(tmpdir(), 'contextbridge-settings-'));
+  return {
+    path,
+    async [Symbol.asyncDispose]() {
+      await chmod(path, 0o700).catch(() => {});
+      await rm(path, { recursive: true, force: true });
+    },
+  };
+}
+
+function createStore(root: string): SettingsFileStore {
+  return new SettingsFileStore({
     env: environment.build({ XDG_CONFIG_HOME: root }),
     logger: pino({ level: 'silent' }),
   });
 }
 
-async function writeSettings(store: SettingsStoreImpl, contents: string): Promise<void> {
+/** Seeds raw pre-existing on-disk state, including states the store refuses to write. */
+async function seedSettingsFile(store: SettingsFileStore, contents: string): Promise<void> {
   await mkdir(join(store.path, '..'), { recursive: true });
   await writeFile(store.path, contents);
 }

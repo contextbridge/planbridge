@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import { SettingsStoreError } from '@contextbridge/shared/settingsStore';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { describe, expect, it } from 'bun:test';
 import { annotationArgs, environment } from '#src/testFactories.ts';
@@ -44,18 +45,14 @@ describe('runAnnotation', () => {
     expect(deps.port).toBe(3000);
   });
 
-  it('reads fresh settings for each session', async () => {
+  it('fails fast when the settings file cannot be read', () => {
     const settingsStore = new FakeSettingsStore();
+    settingsStore.readError = new SettingsStoreError('conflict', 'settings file is not a valid settings document');
     const { context } = createStubContext({ settingsStore });
-    const first = createAnnotationDependencies();
-    await runAnnotation(context, annotationArgs.build(), first);
+    const deps = createAnnotationDependencies();
 
-    settingsStore.settings = { ui: { theme: 'nord' }, harnesses: {} };
-    const second = createAnnotationDependencies();
-    await runAnnotation(context, annotationArgs.build(), second);
-
-    expect(first.configs[0]?.settings).toEqual({ ui: { theme: 'system' }, harnesses: {} });
-    expect(second.configs[0]?.settings).toEqual({ ui: { theme: 'nord' }, harnesses: {} });
+    expect(runAnnotation(context, annotationArgs.build(), deps)).rejects.toBe(settingsStore.readError);
+    expect(deps.payloads).toEqual([]);
   });
 
   it('captures plan-review lifecycle analytics around a successful review', async () => {

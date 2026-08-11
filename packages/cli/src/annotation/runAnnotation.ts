@@ -77,9 +77,14 @@ export async function runAnnotation(
   };
   analytics.capture('plan_review_started', { source: args.entrypoint });
 
+  const settings = await settingsStore.read();
+  if (settings.isErr()) {
+    throw settings.error;
+  }
+
   const config: FrontendConfig = {
     ...frontendConfig,
-    settings: await settingsStore.read(),
+    settings: settings.value,
   };
 
   const assets = await extractAssets(ctx, {
