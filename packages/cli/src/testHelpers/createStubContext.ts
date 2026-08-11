@@ -8,6 +8,7 @@ import {
 import pino from 'pino';
 import type { CliContext } from '#src/context.ts';
 import { environment } from '#src/testFactories.ts';
+import { FakeSettingsStore } from './FakeSettingsStore.ts';
 import { FakeCommandRunner, FakeIo, FakePrompter, FakeUpdater, MemoryStream } from './index.ts';
 
 export interface TestContext {
@@ -30,6 +31,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
   const commandRunner = new FakeCommandRunner();
   const prompter = new FakePrompter();
   const updater = new FakeUpdater();
+  const settingsStore = new FakeSettingsStore();
 
   const context: CliContext = {
     ...fakeBaseContext({ logger, analytics, telemetry }),
@@ -37,6 +39,7 @@ export function createStubContext(overrides: Partial<CliContext> = {}): TestCont
     projectRoot: '/work',
     io,
     frontendConfig: { distinctId: 'fake-distinct-id', telemetryDisabled: true },
+    settingsStore,
     openUrl: () => Promise.resolve(),
     commandRunner,
     prompter,

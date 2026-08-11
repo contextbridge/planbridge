@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SettingsSchema } from './settingsSchema.ts';
 
 /**
  * Wire contract between the CLI and the plan-review browser UI.
@@ -11,6 +12,7 @@ import { z } from 'zod';
 export const FrontendConfigSchema = z.object({
   distinctId: z.string().nonempty(),
   telemetryDisabled: z.boolean(),
+  settings: SettingsSchema,
 });
 
 export type FrontendConfig = z.infer<typeof FrontendConfigSchema>;

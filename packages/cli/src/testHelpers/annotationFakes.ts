@@ -1,4 +1,5 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
+import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { annotationSubmission } from '@contextbridge/shared/testFactories';
 import { createDeferred } from '@contextbridge/shared/testHelpers';
 import type { AnnotationDependencies } from '#src/annotation/runAnnotation.ts';
@@ -6,6 +7,8 @@ import type { AnnotationDependencies } from '#src/annotation/runAnnotation.ts';
 export interface TrackedAnnotationDependencies extends AnnotationDependencies {
   /** Payloads passed to startReviewServer in invocation order. */
   payloads: AnnotationPayload[];
+  /** Frontend configs passed to startReviewServer in invocation order. */
+  configs: FrontendConfig[];
   /** Submission the fake server resolves with (unless `result` overrides it). */
   submission: AnnotationSubmission;
   /** Port passed to startReviewServer, if any. */
@@ -35,6 +38,7 @@ export function createAnnotationDependencies(
 ): TrackedAnnotationDependencies {
   const { submission = annotationSubmission.build(), result = Promise.resolve(submission) } = options;
   const payloads: AnnotationPayload[] = [];
+  const configs: FrontendConfig[] = [];
   const sigintRegistration = createDeferred<void>();
   let closeCount = 0;
   let observedPort: number | undefined;
@@ -43,6 +47,7 @@ export function createAnnotationDependencies(
 
   return {
     payloads,
+    configs,
     submission,
     sigintHandlerRegistered: sigintRegistration.promise,
     get port() {
@@ -65,8 +70,9 @@ export function createAnnotationDependencies(
       sigintHandler();
     },
     loadHtml: () => Promise.resolve('<html><body>annotation</body></html>'),
-    startReviewServer: (_ctx, { payload, port }) => {
+    startReviewServer: (_ctx, { payload, config, port }) => {
       payloads.push(payload);
+      configs.push(config);
       observedPort = port;
       return {
         port: 4312,

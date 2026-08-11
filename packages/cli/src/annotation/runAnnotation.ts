@@ -9,6 +9,7 @@ import type {
 } from '@contextbridge/shared/annotationSchema';
 import { getErrorMessage, hasErrorCode } from '@contextbridge/shared/errors';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
+import type { SettingsStore } from '@contextbridge/shared/settingsStore';
 import { nowInstant } from '@contextbridge/shared/time';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import type { CliContext } from '#src/context.ts';
@@ -50,6 +51,7 @@ export interface AnnotationDependencies {
       config: FrontendConfig;
       port?: number;
       checkForUpdate?: () => Promise<UpdateNotice | null>;
+      updateSettings: SettingsStore['patch'];
     },
   ): RunningServer;
   registerSigintHandler(handler: () => void): () => void;
@@ -60,7 +62,7 @@ export async function runAnnotation(
   args: RunAnnotationArgs,
   deps: AnnotationDependencies = defaultAnnotationDependencies,
 ): Promise<AnnotationSubmission> {
-  const { analytics, logger, openUrl, frontendConfig, updater, env } = ctx;
+  const { analytics, logger, openUrl, frontendConfig, settingsStore, updater, env } = ctx;
   const { port = env.CONTEXTBRIDGE_PORT } = args;
   const startedAt = nowInstant();
 
@@ -74,6 +76,16 @@ export async function runAnnotation(
     },
   };
   analytics.capture('plan_review_started', { source: args.entrypoint });
+
+  const settings = await settingsStore.read();
+  if (settings.isErr()) {
+    throw settings.error;
+  }
+
+  const config: FrontendConfig = {
+    ...frontendConfig,
+    settings: settings.value,
+  };
 
   const assets = await extractAssets(ctx, {
     content: args.content,
@@ -104,9 +116,10 @@ export async function runAnnotation(
       server = deps.startReviewServer(ctx, {
         html: htmlPromise,
         payload,
-        config: frontendConfig,
+        config,
         port,
         checkForUpdate: () => updater.checkForUpdate().catch(() => null),
+        updateSettings: (patch) => settingsStore.patch(patch),
       });
     } catch (err) {
       if (isLikelyLocalServerNetworkSandboxError(err, port ?? 0)) {
@@ -159,8 +172,8 @@ export function isLikelyLocalServerNetworkSandboxError(err: unknown, port: numbe
 
 const defaultAnnotationDependencies: AnnotationDependencies = {
   loadHtml: () => import('./bundledAnnotationHtml.ts').then((m) => m.bundledAnnotationHtml),
-  startReviewServer: (ctx, { html, payload, config, port, checkForUpdate }) =>
-    startServer(ctx, { html, payload, config, port, checkForUpdate }),
+  startReviewServer: (ctx, { html, payload, config, port, checkForUpdate, updateSettings }) =>
+    startServer(ctx, { html, payload, config, port, checkForUpdate, updateSettings }),
   registerSigintHandler: (handler) => {
     process.on('SIGINT', handler);
     return () => {

@@ -110,4 +110,5 @@ export const settings = Factory.define<Settings>(() => resolveSettings());
 export const frontendConfig = Factory.define<FrontendConfig>(() => ({
   distinctId: 'test-distinct-id',
   telemetryDisabled: false,
+  settings: settings.build(),
 }));

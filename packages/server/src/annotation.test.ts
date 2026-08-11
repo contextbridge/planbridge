@@ -1,6 +1,7 @@
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
 import { annotationPayload, frontendConfig } from '@contextbridge/shared/testFactories';
 import { describe, expect, it } from 'bun:test';
+import { ok } from 'neverthrow';
 import { resolveListenPort, startServer } from './annotation.ts';
 import { withServer } from './testHelpers.ts';
 
@@ -22,6 +23,25 @@ describe('startServer', () => {
     });
   });
 
+  it('serves the latest saved settings from /config after a patch', async () => {
+    const config = frontendConfig.build();
+    const saved = { ...config.settings, ui: { theme: 'nord' as const } };
+    await withServer(ctx, { config, updateSettings: () => Promise.resolve(ok(saved)) }, async (running) => {
+      const before = (await (await fetch(`${running.url}/config`)).json()) as unknown;
+      expect(before).toEqual(config);
+
+      const patch = await fetch(`${running.url}/settings`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ui: { theme: 'nord' } }),
+      });
+      expect(patch.status).toBe(200);
+
+      const after = (await (await fetch(`${running.url}/config`)).json()) as unknown;
+      expect(after).toEqual({ ...config, settings: saved });
+    });
+  });
+
   // Regression test for the submit→close race: the /submit response must be
   // fully delivered to the client even though the CLI tears the server down
   // immediately after `running.result` resolves. Pre-fix, this failed with a
@@ -32,6 +52,7 @@ describe('startServer', () => {
       html: Promise.resolve('<html><body>ui</body></html>'),
       payload: annotationPayload.build(),
       config: frontendConfig.build(),
+      updateSettings: () => Promise.resolve(ok(frontendConfig.build().settings)),
     });
     const submission = {
       status: 'approved' as const,

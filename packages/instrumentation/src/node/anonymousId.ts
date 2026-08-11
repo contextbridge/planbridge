@@ -1,15 +1,11 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fromThrowable } from 'neverthrow';
+import { type ConfigDirEnv, configDir } from './configDir.ts';
 
-const APP_DIR_NAME = 'contextbridge';
 const FILE_NAME = 'anonymous_id';
 
-export interface AnonymousIdEnv {
-  readonly XDG_CONFIG_HOME?: string;
-  readonly HOME?: string;
-}
+export type AnonymousIdEnv = ConfigDirEnv;
 
 const safeRead = fromThrowable((path: string) => readFileSync(path, 'utf8').trim());
 const safeWrite = fromThrowable((dir: string, path: string, id: string) => {
@@ -31,12 +27,4 @@ export function getOrCreateAnonymousId(env: AnonymousIdEnv): string {
   // Result and return the generated id either way.
   safeWrite(dir, path, id);
   return id;
-}
-
-function configDir(env: AnonymousIdEnv): string {
-  if (env.XDG_CONFIG_HOME && env.XDG_CONFIG_HOME.length > 0) {
-    return join(env.XDG_CONFIG_HOME, APP_DIR_NAME);
-  }
-  const home = env.HOME && env.HOME.length > 0 ? env.HOME : homedir();
-  return join(home, '.config', APP_DIR_NAME);
 }
