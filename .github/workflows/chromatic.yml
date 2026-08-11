@@ -55,12 +55,18 @@ jobs:
         # user overrides. The CLI respects these env vars properly.
         # Issue: https://github.com/chromaui/chromatic-cli/issues/1230
         working-directory: packages/storybook
+        # TurboSnap can't trace bun.lock (it only parses npm/yarn lockfiles), so any
+        # package.json change bails to a full, quota-burning snapshot build. Untrace
+        # dependency files to keep TurboSnap active; source-level story changes are
+        # still traced through the build's module graph.
         run: |
           bun run chromatic -- \
             --project-token="${{ secrets.CHROMATIC_PROJECT_TOKEN }}" \
             --storybook-build-dir=storybook-static \
             --storybook-base-dir=packages/storybook \
             --only-changed \
+            --untraced "bun.lock" \
+            --untraced "**/package.json" \
             --exit-zero-on-changes \
             ${{ github.event.pull_request.merged && '--auto-accept-changes' || '' }}
         env:
