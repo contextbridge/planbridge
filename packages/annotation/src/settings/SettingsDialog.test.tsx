@@ -1,8 +1,12 @@
+import { CLAUDE_PLAN_APPROVAL_MODES } from '@contextbridge/shared/claudeSettingsSchema';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { settingsDraft } from '#src/testFactories.ts';
 import type { ThemePreference } from '#src/themes.ts';
+import { claudeCodeSectionCopy, claudeCodeSectionTestIds } from './ClaudeCodeSection.tsx';
 import { SettingsDialog, settingsDialogCopy, settingsDialogTestIds } from './SettingsDialog.tsx';
+import type { SettingsDraft } from './settingsDraft.ts';
 import { themeSectionTestIds } from './ThemeSection.tsx';
 
 describe('SettingsDialog', () => {
@@ -21,7 +25,7 @@ describe('SettingsDialog', () => {
   });
 
   it('previews every selected theme without saving any of them', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -32,19 +36,19 @@ describe('SettingsDialog', () => {
   });
 
   it('saves the final draft exactly once when Save is pressed', async () => {
-    const { onSave, user } = renderSettingsDialog('nord');
+    const { onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
     await user.click(screen.getByTestId(themeSectionTestIds.option('tokyo-night')));
     await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
 
-    expect(onSave).toHaveBeenCalledExactlyOnceWith('tokyo-night');
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(settingsDraft.build({ theme: 'tokyo-night' }));
     await waitForDialogToClose();
   });
 
   it('previews the saved preference again when Cancel is pressed', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -58,7 +62,7 @@ describe('SettingsDialog', () => {
   });
 
   it('raises the discard confirmation when the close button is used with unsaved changes', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -75,7 +79,7 @@ describe('SettingsDialog', () => {
   });
 
   it('closes on the close button without a confirmation when the draft is clean', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(getDialogCloseButton());
@@ -87,7 +91,7 @@ describe('SettingsDialog', () => {
   });
 
   it('raises the discard confirmation when the overlay is clicked with unsaved changes', async () => {
-    const { onSave, user } = renderSettingsDialog('nord');
+    const { onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -100,7 +104,7 @@ describe('SettingsDialog', () => {
   });
 
   it('keeps the draft intact when Keep Editing is chosen', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -122,7 +126,7 @@ describe('SettingsDialog', () => {
   });
 
   it('resets the draft to the saved preference when reopened after a discard', async () => {
-    const { onPreviewTheme, onSave, user } = renderSettingsDialog('nord');
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog({ theme: 'nord' });
 
     await openDialog(user);
     await user.click(screen.getByTestId(themeSectionTestIds.option('dracula')));
@@ -143,15 +147,66 @@ describe('SettingsDialog', () => {
     expect(onPreviewTheme).toHaveBeenCalledExactlyOnceWith('tokyo-night');
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it('lists every plan approval mode with the saved one pressed', async () => {
+    const { user } = renderSettingsDialog();
+
+    await openDialog(user);
+    await openClaudeCodeSection(user);
+
+    for (const mode of CLAUDE_PLAN_APPROVAL_MODES) {
+      const option = screen.getByTestId(claudeCodeSectionTestIds.option(mode));
+      expect(option).toHaveTextContent(claudeCodeSectionCopy.modes[mode].label);
+      expect(option).toHaveAttribute('aria-pressed', String(mode === 'auto'));
+    }
+  });
+
+  it('saves the selected plan approval mode without previewing a theme', async () => {
+    const { onPreviewTheme, onSave, user } = renderSettingsDialog();
+
+    await openDialog(user);
+    await openClaudeCodeSection(user);
+    expect(screen.getByTestId(settingsDialogTestIds.saveButton)).toBeDisabled();
+
+    await user.click(screen.getByTestId(claudeCodeSectionTestIds.option('default')));
+
+    expect(screen.getByTestId(settingsDialogTestIds.saveButton)).toBeEnabled();
+    expect(onPreviewTheme).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId(settingsDialogTestIds.saveButton));
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(settingsDraft.build({ claudePlanApprovalMode: 'default' }));
+    expect(onPreviewTheme).not.toHaveBeenCalled();
+    await waitForDialogToClose();
+  });
+
+  it('resets a mode-only draft when the discard flow runs', async () => {
+    const { onSave, user } = renderSettingsDialog({ claudePlanApprovalMode: 'acceptEdits' });
+
+    await openDialog(user);
+    await openClaudeCodeSection(user);
+    await user.click(screen.getByTestId(claudeCodeSectionTestIds.option('default')));
+
+    await user.keyboard('{Escape}');
+    await user.click(await screen.findByTestId(settingsDialogTestIds.discardDialogActionButton));
+    await waitForDialogToClose();
+
+    await openDialog(user);
+    await openClaudeCodeSection(user);
+
+    expect(screen.getByTestId(claudeCodeSectionTestIds.option('acceptEdits'))).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId(claudeCodeSectionTestIds.option('default'))).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId(settingsDialogTestIds.saveButton)).toBeDisabled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
 });
 
-function renderSettingsDialog(savedThemePreference: ThemePreference = 'system') {
+function renderSettingsDialog(savedSettings: Partial<SettingsDraft> = {}) {
+  const resolved = settingsDraft.build(savedSettings);
   const onPreviewTheme = vi.fn<(preference: ThemePreference) => void>();
-  const onSave = vi.fn<(preference: ThemePreference) => void>();
+  const onSave = vi.fn<(draft: SettingsDraft) => void>();
   const user = userEvent.setup();
-  const result = render(
-    <SettingsDialog onPreviewTheme={onPreviewTheme} onSave={onSave} savedThemePreference={savedThemePreference} />,
-  );
+  const result = render(<SettingsDialog onPreviewTheme={onPreviewTheme} onSave={onSave} savedSettings={resolved} />);
 
   return { onPreviewTheme, onSave, result, user };
 }
@@ -159,6 +214,11 @@ function renderSettingsDialog(savedThemePreference: ThemePreference = 'system') 
 async function openDialog(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   await user.click(screen.getByTestId(settingsDialogTestIds.trigger));
   await screen.findByTestId(settingsDialogTestIds.content);
+}
+
+async function openClaudeCodeSection(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByTestId(settingsDialogTestIds.sectionNav('claude')));
+  await screen.findByTestId(claudeCodeSectionTestIds.option('auto'));
 }
 
 async function waitForDialogToClose(): Promise<void> {

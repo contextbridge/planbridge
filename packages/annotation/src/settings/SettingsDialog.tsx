@@ -1,3 +1,4 @@
+import type { ClaudePlanApprovalMode } from '@contextbridge/shared/claudeSettingsSchema';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,9 @@ import {
 import { Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ThemePreference } from '#src/themes.ts';
+import { ClaudeCodeSection } from './ClaudeCodeSection.tsx';
+import type { SettingsDraft } from './settingsDraft.ts';
+import { diffSettingsDraft } from './settingsDraft.ts';
 import { SettingsNavItem } from './SettingsNavItem.tsx';
 import { ThemeSection } from './ThemeSection.tsx';
 
@@ -43,24 +47,24 @@ export const settingsDialogCopy = {
   },
 } as const;
 
-export type SettingsSectionId = 'theme';
+export type SettingsSectionId = 'theme' | 'claude';
 
 export interface SettingsDialogProps {
-  readonly savedThemePreference: ThemePreference;
+  readonly savedSettings: SettingsDraft;
   readonly onPreviewTheme: (preference: ThemePreference) => void;
-  readonly onSave: (preference: ThemePreference) => void;
+  readonly onSave: (draft: SettingsDraft) => void;
 }
 
-export function SettingsDialog({ savedThemePreference, onPreviewTheme, onSave }: SettingsDialogProps) {
+export function SettingsDialog({ savedSettings, onPreviewTheme, onSave }: SettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<SettingsSectionId>('theme');
-  const [draftTheme, setDraftTheme] = useState(savedThemePreference);
-  const dirty = draftTheme !== savedThemePreference;
+  const [draft, setDraft] = useState(savedSettings);
+  const dirty = Object.keys(diffSettingsDraft(savedSettings, draft)).length > 0;
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
-      setDraftTheme(savedThemePreference);
+      setDraft(savedSettings);
       setOpen(true);
       return;
     }
@@ -74,22 +78,26 @@ export function SettingsDialog({ savedThemePreference, onPreviewTheme, onSave }:
   };
 
   const handleSelectTheme = (preference: ThemePreference) => {
-    setDraftTheme(preference);
+    setDraft((current) => ({ ...current, theme: preference }));
     onPreviewTheme(preference);
   };
 
+  const handleSelectPlanApprovalMode = (mode: ClaudePlanApprovalMode) => {
+    setDraft((current) => ({ ...current, claudePlanApprovalMode: mode }));
+  };
+
   const handleSave = () => {
-    onSave(draftTheme);
+    onSave(draft);
     setOpen(false);
   };
 
   const handleCancel = () => {
-    onPreviewTheme(savedThemePreference);
+    onPreviewTheme(savedSettings.theme);
     setOpen(false);
   };
 
   const handleDiscard = () => {
-    onPreviewTheme(savedThemePreference);
+    onPreviewTheme(savedSettings.theme);
     setDiscardDialogOpen(false);
     setOpen(false);
   };
@@ -130,7 +138,11 @@ export function SettingsDialog({ savedThemePreference, onPreviewTheme, onSave }:
             ))}
           </nav>
           <div className="flex min-h-0 flex-1 flex-col">
-            {renderSection(activeSectionId, { draftTheme, onSelectTheme: handleSelectTheme })}
+            {renderSection(activeSectionId, {
+              draft,
+              onSelectPlanApprovalMode: handleSelectPlanApprovalMode,
+              onSelectTheme: handleSelectTheme,
+            })}
           </div>
         </div>
         <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
@@ -171,16 +183,25 @@ interface SettingsSectionEntry {
   readonly label: string;
 }
 
-const sections: readonly SettingsSectionEntry[] = [{ id: 'theme', label: 'Theme' }];
+const sections: readonly SettingsSectionEntry[] = [
+  { id: 'theme', label: 'Theme' },
+  { id: 'claude', label: 'Claude Code' },
+];
 
 interface SectionRenderArgs {
-  readonly draftTheme: ThemePreference;
+  readonly draft: SettingsDraft;
+  readonly onSelectPlanApprovalMode: (mode: ClaudePlanApprovalMode) => void;
   readonly onSelectTheme: (preference: ThemePreference) => void;
 }
 
-function renderSection(sectionId: SettingsSectionId, { draftTheme, onSelectTheme }: SectionRenderArgs) {
+function renderSection(
+  sectionId: SettingsSectionId,
+  { draft, onSelectPlanApprovalMode, onSelectTheme }: SectionRenderArgs,
+) {
   switch (sectionId) {
     case 'theme':
-      return <ThemeSection onSelect={onSelectTheme} preference={draftTheme} />;
+      return <ThemeSection onSelect={onSelectTheme} preference={draft.theme} />;
+    case 'claude':
+      return <ClaudeCodeSection mode={draft.claudePlanApprovalMode} onSelect={onSelectPlanApprovalMode} />;
   }
 }

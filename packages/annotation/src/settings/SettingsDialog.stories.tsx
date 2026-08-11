@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
-import type { ThemePreference } from '#src/themes.ts';
+import { claudeCodeSectionTestIds } from './ClaudeCodeSection.tsx';
 import { SettingsDialog, settingsDialogTestIds } from './SettingsDialog.tsx';
+import { StatefulSettingsDialog } from './StatefulSettingsDialog.tsx';
 import { themeSectionTestIds } from './ThemeSection.tsx';
 
 const meta = {
@@ -14,11 +14,11 @@ const meta = {
   },
   tags: ['autodocs'],
   args: {
-    savedThemePreference: 'system',
+    savedSettings: { theme: 'system', claudePlanApprovalMode: 'auto' },
     onPreviewTheme: () => {},
     onSave: () => {},
   },
-  render: ({ savedThemePreference }) => <StatefulSettingsDialog initialPreference={savedThemePreference} />,
+  render: ({ savedSettings }) => <StatefulSettingsDialog initialSettings={savedSettings} />,
 } satisfies Meta<typeof SettingsDialog>;
 
 export default meta;
@@ -61,12 +61,19 @@ export const UnsavedChangesWarning: Story = {
   },
 };
 
-interface StatefulSettingsDialogProps {
-  readonly initialPreference: ThemePreference;
-}
+export const ClaudeCodeSectionOpened: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'The Claude Code pane, listing every permission mode a plan approval can hand back to Claude Code.',
+      },
+    },
+  },
+  play: async () => {
+    const user = userEvent.setup();
 
-function StatefulSettingsDialog({ initialPreference }: StatefulSettingsDialogProps) {
-  const [preference, setPreference] = useState(initialPreference);
-
-  return <SettingsDialog onPreviewTheme={() => {}} onSave={setPreference} savedThemePreference={preference} />;
-}
+    await user.click(screen.getByTestId(settingsDialogTestIds.trigger));
+    await user.click(await screen.findByTestId(settingsDialogTestIds.sectionNav('claude')));
+    await screen.findByTestId(claudeCodeSectionTestIds.option('auto'));
+  },
+};
