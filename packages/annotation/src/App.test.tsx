@@ -18,7 +18,7 @@ import { commentNavigationBarTestIds } from './CommentNavigationBar.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
 import { globalCommentComposerTestIds } from './GlobalCommentComposer.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
-import { drag, pressSubmitShortcut, renderApp } from './testHelpers/index.tsx';
+import { drag, pressSubmitShortcut, renderApp } from '#src/testHelpers/index.tsx';
 import { updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 
 describe('App', () => {

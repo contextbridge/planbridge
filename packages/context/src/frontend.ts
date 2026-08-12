@@ -4,7 +4,7 @@ import type { FrontendTelemetry } from '@contextbridge/instrumentation/frontend'
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import { type BaseContext, createBaseContext } from './base.ts';
 import { BUILD_INFO, type BuildInfo } from './buildInfo.ts';
-import { type Logger, createLogger } from './frontend/logger.ts';
+import { type Logger, createLogger } from '#src/frontend/logger.ts';
 import { type FrontendBrowser, FrontendBrowserImpl } from './FrontendBrowserImpl.ts';
 
 export {
@@ -13,7 +13,7 @@ export {
   type BrowserLoggerOptions,
   type BrowserPinoTransmit,
   createLogger,
-} from './frontend/logger.ts';
+} from '#src/frontend/logger.ts';
 export { type BaseContext, isTelemetryDisabled } from './base.ts';
 export { type BuildInfo, BUILD_INFO } from './buildInfo.ts';
 export {

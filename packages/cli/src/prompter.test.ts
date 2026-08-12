@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { CommanderError } from 'commander';
 import { PROMPTER_NON_TTY_CODE, createClackPrompter } from './prompter.ts';
-import { FakeIo } from './testHelpers/index.ts';
+import { FakeIo } from '#src/testHelpers/index.ts';
 
 describe('createClackPrompter', () => {
   it('throws a CommanderError directing the user to --yes when stdin is not a TTY', async () => {

@@ -3,12 +3,12 @@ import { buildInfo as buildInfoFactory } from '@contextbridge/context/testFactor
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import userEvent from '@testing-library/user-event';
 import { screen, within } from '@testing-library/react';
-import { withAppContext } from './testHelpers/appContextDecorator.tsx';
+import { withAppContext } from '#src/testHelpers/appContextDecorator.tsx';
 import { App } from './App.tsx';
 import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentComposer.tsx';
 import { annotatedMarkdownTestIds } from './AnnotatedMarkdown.tsx';
 import { submitBarTestIds } from './SubmitBar.tsx';
-import { DemoStage } from './demo/DemoStage.tsx';
+import { DemoStage } from '#src/demo/DemoStage.tsx';
 import {
   banner,
   handoffLine,
@@ -18,9 +18,9 @@ import {
   reopenLine,
   successLine,
   userPrompt,
-} from './demo/claudeCodeFrames.ts';
-import { dumpLines, streamLines } from './demo/terminalScript.ts';
-import type { TerminalHandle } from './demo/TerminalWindow.tsx';
+} from '#src/demo/claudeCodeFrames.ts';
+import { dumpLines, streamLines } from '#src/demo/terminalScript.ts';
+import type { TerminalHandle } from '#src/demo/TerminalWindow.tsx';
 
 const meta = {
   title: 'Plan/App',

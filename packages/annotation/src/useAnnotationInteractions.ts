@@ -11,7 +11,7 @@ import {
 } from './annotationResolvers.ts';
 import type { ActiveCommentDraft, ResolvedAnnotationThread, SelectableTextIndex } from './annotationTypes.ts';
 import { snapRangeToTokenBoundaries } from './codeTokenSnap.ts';
-import { useElementTargets } from './element/useElementTargets.ts';
+import { useElementTargets } from '#src/element/useElementTargets.ts';
 import { buildSelectableTextIndex } from './selectableTextIndex.ts';
 import type { OpenAnnotationCommentDraftArgs } from './useAnnotationState.ts';
 import { useCommentNavigation } from './useCommentNavigation.ts';

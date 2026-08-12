@@ -1,13 +1,13 @@
 import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
 import type { FrontendConfig } from '@contextbridge/shared/frontendConfigSchema';
 import type { ServerContext } from './context.ts';
-import { handleAsset } from './routes/assets.ts';
-import { handleConfig } from './routes/config.ts';
-import { handleHtml } from './routes/html.ts';
-import { handlePayload } from './routes/payload.ts';
-import { type UpdateSettings, handleSettings } from './routes/settings.ts';
-import { handleSubmit } from './routes/submit.ts';
-import { type CheckForUpdate, handleUpdateNotice } from './routes/updateNotice.ts';
+import { handleAsset } from '#src/routes/assets.ts';
+import { handleConfig } from '#src/routes/config.ts';
+import { handleHtml } from '#src/routes/html.ts';
+import { handlePayload } from '#src/routes/payload.ts';
+import { type UpdateSettings, handleSettings } from '#src/routes/settings.ts';
+import { handleSubmit } from '#src/routes/submit.ts';
+import { type CheckForUpdate, handleUpdateNotice } from '#src/routes/updateNotice.ts';
 
 export interface StartServerOptions {
   /** Annotation UI bundle. Awaited lazily on the first GET /. */

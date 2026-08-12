@@ -2,7 +2,7 @@ import type { ElementAnnotationAnchor } from '@contextbridge/shared/annotationSc
 import type { ComponentType } from 'react';
 import type { ResolvedAnnotationThread } from '#src/annotationTypes.ts';
 import type { ElementBlockProps } from './elementBlock.ts';
-import { mermaidAdapter } from './mermaid/mermaidAdapter.ts';
+import { mermaidAdapter } from '#src/element/mermaid/mermaidAdapter.ts';
 
 /**
  * Adapts a non-text content type (e.g. a Mermaid diagram) into the annotation engine. Implement

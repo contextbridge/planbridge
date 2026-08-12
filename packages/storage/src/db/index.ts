@@ -5,7 +5,7 @@ import { Result } from 'neverthrow';
 import { ensureStorageDirectory } from '#src/paths.ts';
 import { StorageError, toStorageError } from '#src/storageError.ts';
 import { storageMigrationsJournal, storageMigrationsTable } from './migrations.ts';
-import * as schema from './schema/index.ts';
+import * as schema from '#src/schema/index.ts';
 
 export interface CreateDbOptions {
   readonly dbPath: string;

@@ -9,9 +9,9 @@ import { annotationDraftCommentComposerTestIds } from './AnnotationDraftCommentC
 import { annotationThreadCardTestIds } from './AnnotationThreadCard.tsx';
 import { appTestIds } from './App.tsx';
 import { commentsSidebarTestIds } from './CommentsSidebar.tsx';
-import { elementBlockAttrs } from './element/elementBlock.ts';
-import { mermaidAttrs } from './element/mermaid/MermaidBlock.tsx';
-import { annotateAndSubmit, drag, renderApp, saveAnnotation } from './testHelpers/index.tsx';
+import { elementBlockAttrs } from '#src/element/elementBlock.ts';
+import { mermaidAttrs } from '#src/element/mermaid/MermaidBlock.tsx';
+import { annotateAndSubmit, drag, renderApp, saveAnnotation } from '#src/testHelpers/index.tsx';
 
 // End-to-end through the real `mermaid` dependency: a plan with a fenced mermaid block flows through
 // AnnotatedMarkdown → MermaidBlock (renders the SVG and tags its nodes/edges)

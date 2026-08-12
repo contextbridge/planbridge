@@ -2,7 +2,7 @@ import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeAppContext } from './testHelpers/createFakeAppContext.ts';
+import { createFakeAppContext } from '#src/testHelpers/createFakeAppContext.ts';
 import { UpdateNoticeCard, updateNoticeCardCopy, updateNoticeCardTestIds } from './UpdateNoticeCard.tsx';
 import { AnnotationAppContext } from './useAppContext.ts';
 

@@ -1,8 +1,8 @@
 import { PassThrough } from 'node:stream';
 import { describe, expect, it } from 'bun:test';
 import { IoImpl } from './IoImpl.ts';
-import { FakeIo } from './testHelpers/FakeIo.ts';
-import { MemoryStream } from './testHelpers/MemoryStream.ts';
+import { FakeIo } from '#src/testHelpers/FakeIo.ts';
+import { MemoryStream } from '#src/testHelpers/MemoryStream.ts';
 
 describe('IoImpl', () => {
   it('with quiet=true suppresses convenience writes while preserving raw streams and stdin reads', async () => {

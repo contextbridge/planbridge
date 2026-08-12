@@ -1,8 +1,8 @@
 import { CircleHelp, MessageSquare } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BrandMark } from './BrandMark.tsx';
-import { Button } from './ui/button.tsx';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
+import { Button } from '#src/components/ui/button.tsx';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#src/components/ui/dropdown-menu.tsx';
 
 export const headerTestIds = {
   container: 'cb-header',

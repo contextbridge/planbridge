@@ -3,7 +3,7 @@ import type { AnnotationSubmission, CommentThread } from '@contextbridge/shared/
 import { annotationAnchor, annotationThread } from '@contextbridge/shared/testFactories';
 import { act, cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { type RenderAnnotationHookResult, renderAnnotationHook } from './testHelpers/renderAnnotationHook.tsx';
+import { type RenderAnnotationHookResult, renderAnnotationHook } from '#src/testHelpers/renderAnnotationHook.tsx';
 import { useAnnotationState } from './useAnnotationState.ts';
 
 afterEach(() => {

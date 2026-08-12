@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FakeThemeController } from './testHelpers/FakeThemeController.ts';
+import { FakeThemeController } from '#src/testHelpers/FakeThemeController.ts';
 import { ThemeControllerImpl, applyInitialTheme } from './ThemeController.ts';
 import { themeById } from './themes.ts';
 

@@ -6,7 +6,7 @@ import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from './element/ElementAdapter.ts';
+import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from '#src/element/ElementAdapter.ts';
 import { rehypeShiki } from './rehypeShiki.ts';
 import { shikiHighlighter } from './shikiHighlighter.ts';
 import type { ThemeId } from './themes.ts';
