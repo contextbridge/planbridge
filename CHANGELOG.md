@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.11.0](https://github.com/contextbridge/planbridge/compare/v0.10.0...v0.11.0) (2026-08-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Approving a plan now exits into Claude Code's `auto` permission mode instead of `acceptEdits`.** The mode is a persisted setting (`harnesses.claude.planApprovalMode`) with a picker under Settings → Claude Code in the review UI; `auto` is the new default, matching Claude Code's own default. Choose `acceptEdits` there to restore the old behavior. ([#267](https://github.com/contextbridge/planbridge/issues/267))
+
+### Features
+
+* allow using different Claude Code permission modes (e.g., auto) when accepting a plan ([#267](https://github.com/contextbridge/planbridge/issues/267)) ([e9a9d65](https://github.com/contextbridge/planbridge/commit/e9a9d65338ecb0bce2d3d21733a86f4392cdaea5))
+* **settings:** add versioned settings contracts ([#254](https://github.com/contextbridge/planbridge/issues/254)) ([669cd06](https://github.com/contextbridge/planbridge/commit/669cd0630753682cecb2726bb9d7dfe1708a5173))
+* **settings:** persist settings through the local server ([#255](https://github.com/contextbridge/planbridge/issues/255)) ([8f48993](https://github.com/contextbridge/planbridge/commit/8f48993e12e20bd03beb4e2b25b214d8275a0e8a))
+* **settings:** persist the theme preference through the settings store ([#256](https://github.com/contextbridge/planbridge/issues/256)) ([fe3f012](https://github.com/contextbridge/planbridge/commit/fe3f01266216f51fc63fc57e5d519bad6758df48))
+* **settings:** pull the theme picker into a settings dialog ([#259](https://github.com/contextbridge/planbridge/issues/259)) ([b64b666](https://github.com/contextbridge/planbridge/commit/b64b6661b03771e4762c647520a68d4c4d850526))
+
+
+### Bug Fixes
+
+* **annotation:** preserve line breaks in saved comment bodies ([#253](https://github.com/contextbridge/planbridge/issues/253)) ([8a53ff0](https://github.com/contextbridge/planbridge/commit/8a53ff03b3bf2d5fe5e45a039f4a2a652745c872))
+
 ## [0.10.0](https://github.com/contextbridge/planbridge/compare/v0.9.3...v0.10.0) (2026-07-13)
 
 
