@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* allow using different Claude Code permission modes (e.g., auto) when accepting a plan ([#267](https://github.com/contextbridge/planbridge/issues/267))
+* **Approving a plan now exits into Claude Code's `auto` permission mode instead of `acceptEdits`.** The mode is a persisted setting (`harnesses.claude.planApprovalMode`) with a picker under Settings → Claude Code in the review UI; `auto` is the new default, matching Claude Code's own default. Choose `acceptEdits` there to restore the old behavior. ([#267](https://github.com/contextbridge/planbridge/issues/267))
 
 ### Features
 
