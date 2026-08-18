@@ -22,7 +22,7 @@
     "front-matter": "^4.0.2",
     "handlebars": "catalog:",
     "neverthrow": "catalog:",
-    "prettier": "^3.8.2",
+    "prettier": "^3.9.6",
     "yaml": "^2.9.0",
     "zod": "catalog:"
   }
