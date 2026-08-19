@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import type { BaseContext } from '@contextbridge/context';
 import { buildInfo as buildInfoFactory } from '@contextbridge/context/testFactories';
 import { fakeBaseContext } from '@contextbridge/context/testHelpers';
+import { createDeferred } from '@contextbridge/shared/testHelpers';
 import { type Instant, Temporal } from '@contextbridge/shared/time';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { type FakeAnalytics, createFakeAnalytics } from '@contextbridge/instrumentation/testHelpers';
@@ -111,7 +112,7 @@ describe('reportHarnessDiscovery', () => {
   });
 
   it('defers detection and capture so CLI startup is not blocked', async () => {
-    const deferred = createDeferred();
+    const deferred = createDeferred<void>();
     let getHarnessDetectionsCalled = false;
     const { ctx, analytics, options } = createReportFixture(root, {
       clock: () => now,
@@ -180,12 +181,4 @@ function createReportFixture(
 function writeMarker(path: string, timestamp: Instant): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${timestamp.toString()}\n`, 'utf8');
-}
-
-function createDeferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
-  let resolve: () => void = () => {};
-  const promise = new Promise<void>((res) => {
-    resolve = res;
-  });
-  return { promise, resolve };
 }
