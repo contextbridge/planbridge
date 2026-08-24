@@ -1,3 +1,5 @@
+import { URL } from 'node:url';
+import { unified } from '@astrojs/markdown-remark';
 import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
@@ -21,7 +23,9 @@ export default defineConfig({
     layout: 'constrained',
   },
   markdown: {
-    rehypePlugins: [[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]],
+    processor: unified({
+      rehypePlugins: [[rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }]],
+    }),
   },
   fonts: [
     {
@@ -50,7 +54,7 @@ export default defineConfig({
     },
   ],
   integrations: [
-    icon(),
+    icon({ iconDir: new URL('./src/assets/brands', import.meta.url).pathname }),
     react(),
     expressiveCode({
       themes: ['github-dark', 'github-light'],
@@ -177,7 +181,7 @@ export default defineConfig({
         },
         {
           label: 'Reference',
-          autogenerate: { directory: 'cli' },
+          items: [{ autogenerate: { directory: 'cli' } }],
         },
       ],
     }),
