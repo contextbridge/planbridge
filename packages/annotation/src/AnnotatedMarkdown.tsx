@@ -1,6 +1,5 @@
 import type { AnnotationTargetKind, Asset } from '@contextbridge/shared/annotationSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
-import type { Element } from 'hast';
 import { toString as hastToString } from 'hast-util-to-string';
 import { createElement } from 'react';
 import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
@@ -73,6 +72,7 @@ const TARGET_STYLE =
   'cb-annotatable-target cursor-pointer transition-colors duration-150 data-[target-state=hovered]:bg-chart-3/15 data-[target-state=hovered]:text-foreground';
 
 type AnnotatableProps<Tag extends keyof JSX.IntrinsicElements> = ComponentPropsWithoutRef<Tag> & ExtraProps;
+type MarkdownElement = NonNullable<ExtraProps['node']>;
 
 function annotatable<Tag extends keyof JSX.IntrinsicElements>(
   tag: Tag,
@@ -222,15 +222,19 @@ const LANGUAGE_PREFIX = 'language-';
 // Reads the adapter + raw source of an adapter-claimed fenced code block. The children are
 // still plain text nodes because adapter languages are not loaded into the Shiki highlighter.
 // Returns undefined for ordinary code blocks, which render normally.
-function elementBlockFromPre(node: Element | undefined): { adapter: ElementAdapter; source: string } | undefined {
-  const code = node?.children.find((child): child is Element => child.type === 'element' && child.tagName === 'code');
+function elementBlockFromPre(
+  node: MarkdownElement | undefined,
+): { adapter: ElementAdapter; source: string } | undefined {
+  const code = node?.children.find(
+    (child): child is MarkdownElement => child.type === 'element' && child.tagName === 'code',
+  );
   if (!code) return undefined;
   const lang = languageOf(code);
   const adapter = lang === undefined ? undefined : elementAdapterForLanguage(lang);
   return adapter ? { adapter, source: hastToString(code) } : undefined;
 }
 
-function languageOf(code: Element): string | undefined {
+function languageOf(code: MarkdownElement): string | undefined {
   const className = code.properties.className;
   const classes = Array.isArray(className) ? className.map(String) : [];
   return classes.find((cls) => cls.startsWith(LANGUAGE_PREFIX))?.slice(LANGUAGE_PREFIX.length);
