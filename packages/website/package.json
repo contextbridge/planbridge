@@ -26,7 +26,7 @@
     "astro-expressive-code": "^0.44.1",
     "astro-icon": "^1.2.0",
     "lucide-react": "catalog:",
-    "motion": "^12.38.0",
+    "motion": "^13.1.1",
     "react": "catalog:",
     "react-dom": "catalog:",
     "rehype-external-links": "^3.0.0",
