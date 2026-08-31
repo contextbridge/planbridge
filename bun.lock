@@ -206,11 +206,11 @@
       "version": "0.0.0-development",
       "dependencies": {
         "@contextbridge/shared": "workspace:*",
-        "drizzle-orm": "1.0.0-rc.4-273829f",
+        "drizzle-orm": "rc",
         "neverthrow": "catalog:",
       },
       "devDependencies": {
-        "drizzle-kit": "1.0.0-rc.4-273829f",
+        "drizzle-kit": "rc",
         "fishery": "catalog:",
       },
     },
