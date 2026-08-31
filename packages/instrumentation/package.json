@@ -21,12 +21,12 @@
   "dependencies": {
     "@contextbridge/context": "workspace:*",
     "@contextbridge/shared": "workspace:*",
-    "@sentry/bun": "^10.71.0",
-    "@sentry/react": "^10.71.0",
+    "@sentry/bun": "^10.72.0",
+    "@sentry/react": "^10.72.0",
     "neverthrow": "catalog:",
     "pino": "catalog:",
-    "posthog-js": "^1.418.17",
-    "posthog-node": "^5.51.2"
+    "posthog-js": "^1.422.5",
+    "posthog-node": "^5.51.4"
   },
   "devDependencies": {
     "@types/react": "catalog:"
