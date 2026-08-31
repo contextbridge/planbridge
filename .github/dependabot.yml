@@ -21,6 +21,10 @@ updates:
       default-days: 3 # zizmor: ignore[dependabot-cooldown]
     ignore:
       - dependency-name: '@types/bun'
+      # @vercel/og 1.0.2 bundles a Satori release whose HarfBuzz dependency breaks Astro prerendering.
+      # Track https://github.com/vercel/satori/issues/794 and allow later @vercel/og releases.
+      - dependency-name: '@vercel/og'
+        versions: ['1.0.2']
     groups:
       # drizzle-orm and drizzle-kit must stay in lockstep on the same beta version.
       # Once Drizzle 1.x is released from beta, we can remove this group.

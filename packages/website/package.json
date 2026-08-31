@@ -21,7 +21,7 @@
     "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
     "@iconify-json/lucide": "^1.2.126",
     "@iconify-json/simple-icons": "^1.2.93",
-    "@vercel/og": "^1.0.2",
+    "@vercel/og": "1.0.1",
     "astro": "^7.2.6",
     "astro-expressive-code": "^0.44.1",
     "astro-icon": "^1.2.0",
