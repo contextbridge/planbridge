@@ -20,9 +20,7 @@ export interface UseAnnotationStateArgs {
 }
 
 type PendingDraftAction =
-  | { kind: 'close' }
-  | { kind: 'replace'; draft: OpenAnnotationCommentDraftArgs }
-  | { kind: 'remove'; threadId: string };
+  { kind: 'close' } | { kind: 'replace'; draft: OpenAnnotationCommentDraftArgs } | { kind: 'remove'; threadId: string };
 
 interface CloseReviewDialogContent {
   readonly title: string;
