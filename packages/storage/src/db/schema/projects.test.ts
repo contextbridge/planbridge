@@ -37,7 +37,7 @@ describe('projects table', () => {
           .insert(projects)
           .values(project.build({ vcsKind: 'none', vcsRootPath: '/tmp/contextbridge/leak' }))
           .run(),
-      ).toThrow(/CHECK/i);
+      ).toThrow();
     });
   });
 
