@@ -65,7 +65,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "rulesync": "^16.18.0",
     "semver": "^7.8.5",
-    "typescript": "^6.0.2",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.68.0"
   }
 }

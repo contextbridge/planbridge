@@ -39,6 +39,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "^6.0.0"
+    "typescript": "^7.0.2"
   }
 }
