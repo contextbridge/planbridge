@@ -10,7 +10,7 @@ permissions:
 jobs:
   test:
     name: Tests
-    uses: ./.github/workflows/test.yml
+    uses: $/.github/workflows/test.yml
     with:
       install_script_changed: false
     permissions:
@@ -33,10 +33,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: ./.github/actions/bootstrap
+      - uses: $/.github/actions/bootstrap
 
       - name: Fetch release secrets
-        uses: ./.github/actions/fetch-release-secrets
+        uses: $/.github/actions/fetch-release-secrets
         with:
           role-to-assume: ${{ secrets.RELEASE_ROLE_ARN }}
 
@@ -162,7 +162,7 @@ jobs:
     needs: release
     # Skip alpha releases so unreleased docs do not publish before stable CLI releases.
     if: ${{ !contains(github.ref_name, '-') }}
-    uses: ./.github/workflows/deploy-website.yml
+    uses: $/.github/workflows/deploy-website.yml
     with:
       cli_ref: ${{ github.ref_name }}
     secrets:
