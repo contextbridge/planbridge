@@ -29,7 +29,7 @@ jobs:
 
       - name: Detect changes
         id: changes
-        uses: ./.github/actions/detect-changes
+        uses: $/.github/actions/detect-changes
         with:
           mode: deploy
           workflow_name: Main Branch
@@ -52,7 +52,7 @@ jobs:
   test:
     name: Tests
     needs: detect-changes
-    uses: ./.github/workflows/test.yml
+    uses: $/.github/workflows/test.yml
     with:
       install_script_changed: ${{ needs.detect-changes.outputs.install_script_changed == 'true' }}
     permissions:
@@ -63,7 +63,7 @@ jobs:
     name: Deploy website
     needs: [detect-changes, test]
     if: ${{ needs.detect-changes.outputs.website_changed == 'true' }}
-    uses: ./.github/workflows/deploy-website.yml
+    uses: $/.github/workflows/deploy-website.yml
     with:
       cli_ref: ${{ needs.detect-changes.outputs.cli_ref }}
     secrets:
