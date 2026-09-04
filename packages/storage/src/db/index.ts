@@ -1,4 +1,5 @@
 import { Database as BunSqliteDatabase } from 'bun:sqlite';
+import { defineRelations } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { migrate as drizzleMigrate } from 'drizzle-orm/bun-sqlite/migrator';
 import { Result } from 'neverthrow';
@@ -7,12 +8,14 @@ import { StorageError, toStorageError } from '#src/storageError.ts';
 import { storageMigrationsJournal, storageMigrationsTable } from './migrations.ts';
 import * as schema from './schema/index.ts';
 
+const relations = defineRelations(schema);
+
 export interface CreateDbOptions {
   readonly dbPath: string;
 }
 
 export interface CreateDbResult {
-  readonly db: ReturnType<typeof drizzle<typeof schema>>;
+  readonly db: ReturnType<typeof drizzle<typeof relations>>;
   readonly sqlite: BunSqliteDatabase;
   close(): Result<void, StorageError>;
 }
@@ -31,7 +34,7 @@ export function createDb(options: CreateDbOptions): Result<CreateDbResult, Stora
         sqlite.run('PRAGMA journal_mode = WAL;');
         sqlite.run('PRAGMA busy_timeout = 5000;');
 
-        const db = drizzle({ client: sqlite, schema });
+        const db = drizzle<typeof relations>({ client: sqlite, relations });
         try {
           drizzleMigrate(db, { migrationsJournal: storageMigrationsJournal, migrationsTable: storageMigrationsTable });
         } catch (error) {
