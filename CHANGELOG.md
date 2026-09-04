@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/contextbridge/planbridge/compare/v0.11.0...v0.11.1) (2026-09-04)
+
+
+### Dependencies
+
+* upgrade website Astro stack ([#273](https://github.com/contextbridge/planbridge/issues/273)) ([f741cda](https://github.com/contextbridge/planbridge/commit/f741cdae8b29f5056c91c8f822c94f6bb8c2309c))
+
 ## [0.11.0](https://github.com/contextbridge/planbridge/compare/v0.10.0...v0.11.0) (2026-08-11)
 
 
