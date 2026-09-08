@@ -56,3 +56,11 @@ jobs:
         with:
           sarif_file: zizmor.sarif
           category: zizmor
+
+      # zizmor always exits 0 in SARIF mode, so fail here (after the upload
+      # so findings still reach code scanning) when the SARIF has results.
+      - name: Fail on findings
+        if: steps.changes.outputs.github == 'true'
+        run: |
+          jq -r '.runs[].results[] | "\(.level): \(.ruleId) — \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine // "?") \(.message.text)"' zizmor.sarif
+          jq -e '[.runs[].results[]] | length == 0' zizmor.sarif > /dev/null

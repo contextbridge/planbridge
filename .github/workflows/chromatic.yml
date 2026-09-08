@@ -42,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap
-        uses: ./.github/actions/bootstrap
+        uses: $/.github/actions/bootstrap
 
       - name: Build Storybook
         run: bun run --cwd packages/storybook build-storybook

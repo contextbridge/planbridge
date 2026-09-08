@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: ./.github/actions/bootstrap
+      - uses: $/.github/actions/bootstrap
 
       - name: Pin CLI reference source
         if: ${{ inputs.cli_ref != '' }}
