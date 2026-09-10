@@ -82,7 +82,6 @@ homebrew_casks:
     skip_upload: auto
     url:
       template: 'https://downloads.contextbridge.ai/cli/{{ .Version }}/{{ .ArtifactName }}'
-      verified: 'downloads.contextbridge.ai/cli/'
     repository:
       owner: contextbridge
       name: homebrew-tap
@@ -106,7 +105,6 @@ homebrew_casks:
     skip_upload: '{{ if .Prerelease }}false{{ else }}true{{ end }}'
     url:
       template: 'https://downloads.contextbridge.ai/cli/{{ .Version }}/{{ .ArtifactName }}'
-      verified: 'downloads.contextbridge.ai/cli/'
     repository:
       owner: contextbridge
       name: homebrew-tap
