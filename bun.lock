@@ -288,6 +288,16 @@
         "tailwindcss": "catalog:",
         "typescript": "^6.0.0",
       },
+      "optionalDependencies": {
+        "@bruits/satteri-darwin-arm64": "0.10.5",
+        "@bruits/satteri-darwin-x64": "0.10.5",
+        "@bruits/satteri-linux-arm64-gnu": "0.10.5",
+        "@bruits/satteri-linux-arm64-musl": "0.10.5",
+        "@bruits/satteri-linux-x64-gnu": "0.10.5",
+        "@bruits/satteri-linux-x64-musl": "0.10.5",
+        "@bruits/satteri-win32-arm64-msvc": "0.10.5",
+        "@bruits/satteri-win32-x64-msvc": "0.10.5",
+      },
     },
   },
   "catalog": {
