@@ -1,9 +1,4 @@
-import {
-  type Option as ClackOption,
-  confirm as clackConfirm,
-  isCancel as clackIsCancel,
-  select as clackSelect,
-} from '@clack/prompts';
+import { type Option as ClackOption, confirm as clackConfirm, select as clackSelect } from '@clack/prompts';
 import { CommanderError } from 'commander';
 import type { Io } from '#src/IoImpl.ts';
 
@@ -44,7 +39,7 @@ export function createClackPrompter(io: Io): Prompter {
         input: io.stdin,
         output: io.stderr,
       });
-      if (clackIsCancel(result)) {
+      if (typeof result === 'symbol') {
         throw new CommanderError(130, PROMPTER_CANCELLED_CODE, 'Cancelled.');
       }
       return result;
@@ -63,7 +58,7 @@ export function createClackPrompter(io: Io): Prompter {
         input: io.stdin,
         output: io.stderr,
       });
-      if (clackIsCancel(result)) {
+      if (typeof result === 'symbol') {
         throw new CommanderError(130, PROMPTER_CANCELLED_CODE, 'Cancelled.');
       }
       return result;
