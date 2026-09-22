@@ -49,22 +49,20 @@ const faqs = [
     </h2>
 
     <div class="mt-16 border-t border-foreground">
-      {
-        faqs.map((faq) => (
-          <details class="group border-b border-foreground">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-8 py-8 font-mono text-2xl font-bold tracking-tight text-foreground">
-              {faq.question}
-              <span
-                class="inline-block h-8 w-8 flex-shrink-0 text-[32px] leading-none transition-transform group-open:rotate-45"
-                aria-hidden="true"
-              >
-                +
-              </span>
-            </summary>
-            <p class="pb-8 font-sans text-base leading-relaxed text-foreground" set:html={faq.answer} />
-          </details>
-        ))
-      }
+      {faqs.map((faq) => (
+        <details class="group border-b border-foreground">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-8 py-8 font-mono text-2xl font-bold tracking-tight text-foreground">
+            {faq.question}
+            <span
+              class="inline-block h-8 w-8 flex-shrink-0 text-[32px] leading-none transition-transform group-open:rotate-45"
+              aria-hidden="true"
+            >
+              +
+            </span>
+          </summary>
+          <p class="pb-8 font-sans text-base leading-relaxed text-foreground" set:html={faq.answer} />
+        </details>
+      ))}
     </div>
   </div>
 </section>

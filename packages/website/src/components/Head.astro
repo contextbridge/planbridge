@@ -3,6 +3,8 @@ import Default from '@astrojs/starlight/components/Head.astro';
 import { Font } from 'astro:assets';
 ---
 
-<Default><slot /></Default>
+<Default>
+  <slot />
+</Default>
 <Font cssVariable="--cb-font-sans" />
 <Font cssVariable="--cb-font-heading" />

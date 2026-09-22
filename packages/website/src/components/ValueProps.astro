@@ -29,17 +29,15 @@ const valueProps = [
     <div class="mt-16 h-px w-full bg-foreground"></div>
 
     <ol class="mt-16 grid list-none grid-cols-1 gap-px bg-foreground pl-0 md:grid-cols-2">
-      {
-        valueProps.map((valueProp, index) => (
-          <li class="list-none bg-background p-8">
-            <div class="flex items-baseline gap-6">
-              <span class="font-mono text-2xl font-bold text-foreground">{String(index + 1).padStart(2, '0')}</span>
-              <h3 class="font-mono text-2xl font-bold leading-tight text-foreground">{valueProp.title}</h3>
-            </div>
-            <p class="mt-8 font-sans text-base leading-relaxed text-foreground">{valueProp.body}</p>
-          </li>
-        ))
-      }
+      {valueProps.map((valueProp, index) => (
+        <li class="list-none bg-background p-8">
+          <div class="flex items-baseline gap-6">
+            <span class="font-mono text-2xl font-bold text-foreground">{String(index + 1).padStart(2, '0')}</span>
+            <h3 class="font-mono text-2xl font-bold leading-tight text-foreground">{valueProp.title}</h3>
+          </div>
+          <p class="mt-8 font-sans text-base leading-relaxed text-foreground">{valueProp.body}</p>
+        </li>
+      ))}
     </ol>
   </div>
 </section>

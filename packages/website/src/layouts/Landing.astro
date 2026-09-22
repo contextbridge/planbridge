@@ -30,20 +30,16 @@ const { title, description } = Astro.props.frontmatter;
     <meta name="twitter:image" content={new URL('/og.png', Astro.site).toString()} />
     <Font cssVariable="--cb-font-sans" />
     <Font cssVariable="--cb-font-heading" />
-    {
-      import.meta.env.PROD && (
-        <script
-          is:inline
-          set:html={`!function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Mi Ri init Vi Gi Rr Wi Ji Bi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync un identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Xi createPersonProfile setInternalOrTestUser sn Hi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ki debug Lr rn getPageViewId captureTraceFeedback captureTraceMetric Di".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);posthog.init('phc_y9PBFEZPu8LVfeoxV47p7CfU5Ms8SY5q5fQGfisb34s3',{api_host:'https://phin.contextbridge.ai',ui_host:'https://us.posthog.com',defaults:'2026-01-30',person_profiles:'always'});`}
-        />
-      )
-    }
+    {import.meta.env.PROD && (
+      <script
+        is:inline
+        set:html={`!function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Mi Ri init Vi Gi Rr Wi Ji Bi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync un identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Xi createPersonProfile setInternalOrTestUser sn Hi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ki debug Lr rn getPageViewId captureTraceFeedback captureTraceMetric Di".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);posthog.init('phc_y9PBFEZPu8LVfeoxV47p7CfU5Ms8SY5q5fQGfisb34s3',{api_host:'https://phin.contextbridge.ai',ui_host:'https://us.posthog.com',defaults:'2026-01-30',person_profiles:'always'});`}
+      ></script>
+    )}
   </head>
   <body class="m-0 bg-background text-foreground font-sans antialiased">
     <!-- Sticky nav: Context____Bridge wordmark style -->
-    <header
-      class="section-dark sticky top-0 z-50 flex items-center gap-4 border-b border-border bg-background px-6 py-5 sm:px-8 sm:py-6"
-    >
+    <header class="section-dark sticky top-0 z-50 flex items-center gap-4 border-b border-border bg-background px-6 py-5 sm:px-8 sm:py-6">
       <a href="/" class="inline-flex flex-1 items-center gap-3 text-foreground no-underline">
         <svg
           aria-hidden="true"
@@ -61,17 +57,20 @@ const { title, description } = Astro.props.frontmatter;
         <a
           href="/#data-privacy"
           class="font-mono text-sm font-medium text-foreground no-underline hover:underline sm:text-base"
-          ><span class="hidden sm:inline">Data </span>Privacy</a
         >
-        <a href="/#faq" class="font-mono text-sm font-medium text-foreground no-underline hover:underline sm:text-base"
-          >FAQ</a
-        >
+          <span class="hidden sm:inline">Data </span>Privacy
+        </a>
+        <a href="/#faq" class="font-mono text-sm font-medium text-foreground no-underline hover:underline sm:text-base">
+          FAQ
+        </a>
         <a
           href="/quickstart/"
           target="_blank"
           rel="noopener noreferrer"
-          class="font-mono text-sm font-medium text-foreground no-underline hover:underline sm:text-base">Docs</a
+          class="font-mono text-sm font-medium text-foreground no-underline hover:underline sm:text-base"
         >
+          Docs
+        </a>
         <a
           href="https://github.com/contextbridge/planbridge"
           target="_blank"
@@ -95,9 +94,9 @@ const { title, description } = Astro.props.frontmatter;
           <div class="flex flex-col gap-2 font-sans text-base text-foreground">
             <p class="m-0 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span class="font-mono text-base font-bold">PlanBridge</span>
-              <a href="https://contextbridge.ai" class="text-foreground no-underline hover:underline"
-                >by ContextBridge</a
-              >
+              <a href="https://contextbridge.ai" class="text-foreground no-underline hover:underline">
+                by ContextBridge
+              </a>
             </p>
             <p class="m-0">
               Join the
@@ -106,7 +105,8 @@ const { title, description } = Astro.props.frontmatter;
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-foreground underline underline-offset-4"
-                ><Image
+              >
+                <Image
                   src={tasteInTheLoopBadge}
                   alt=""
                   aria-hidden="true"
@@ -114,22 +114,27 @@ const { title, description } = Astro.props.frontmatter;
                   height={16}
                   layout="none"
                   class="mr-1 inline-block h-[0.9em] w-[0.9em] rounded-[0.2em] align-[-0.14em]"
-                />Taste in the Loop</a
-              >
+                />
+                Taste in the Loop
+              </a>
               movement.
             </p>
           </div>
           <div class="flex items-center gap-8">
-            <a href="/#data-privacy" class="font-sans text-base text-foreground no-underline hover:underline"
-              >Data Privacy</a
-            >
-            <a href="/#faq" class="font-sans text-base text-foreground no-underline hover:underline">FAQ</a>
+            <a href="/#data-privacy" class="font-sans text-base text-foreground no-underline hover:underline">
+              Data Privacy
+            </a>
+            <a href="/#faq" class="font-sans text-base text-foreground no-underline hover:underline">
+              FAQ
+            </a>
             <a
               href="/quickstart/"
               target="_blank"
               rel="noopener noreferrer"
-              class="font-sans text-base text-foreground no-underline hover:underline">Docs</a
+              class="font-sans text-base text-foreground no-underline hover:underline"
             >
+              Docs
+            </a>
             <a
               href="https://github.com/contextbridge/planbridge"
               target="_blank"
@@ -143,10 +148,18 @@ const { title, description } = Astro.props.frontmatter;
         </div>
         <p class="m-0 pt-6 text-center font-sans text-base text-foreground">
           Made with
-          <span data-made-with-emoji aria-label="coffee" role="img">☕</span>
+          <span data-made-with-emoji aria-label="coffee" role="img">
+            ☕
+          </span>
           in
-          <span aria-label="mountains" role="img">🏔️</span> Denver and
-          <span aria-label="beach" role="img">🏖️</span> Santa Cruz.
+          <span aria-label="mountains" role="img">
+            🏔️
+          </span>{' '}
+          Denver and
+          <span aria-label="beach" role="img">
+            🏖️
+          </span>{' '}
+          Santa Cruz.
         </p>
       </div>
     </footer>
