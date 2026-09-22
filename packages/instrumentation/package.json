@@ -21,11 +21,11 @@
   "dependencies": {
     "@contextbridge/context": "workspace:*",
     "@contextbridge/shared": "workspace:*",
-    "@sentry/bun": "^10.74.0",
-    "@sentry/react": "^10.74.0",
+    "@sentry/bun": "^10.75.0",
+    "@sentry/react": "^10.75.0",
     "neverthrow": "catalog:",
     "pino": "catalog:",
-    "posthog-js": "^1.433.5",
+    "posthog-js": "^1.434.2",
     "posthog-node": "^5.52.4"
   },
   "devDependencies": {

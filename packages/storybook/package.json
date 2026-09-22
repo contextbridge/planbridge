@@ -23,7 +23,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
-    "chromatic": "^18.8.1",
+    "chromatic": "^18.9.4",
     "storybook": "^10.6.0",
     "tailwindcss": "catalog:",
     "vite": "catalog:"
