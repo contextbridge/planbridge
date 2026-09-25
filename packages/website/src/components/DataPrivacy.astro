@@ -68,39 +68,33 @@ const trustSignals = [
       <div class="bg-background p-8 md:p-12 lg:p-14">
         <p class="m-0 font-mono text-sm font-bold uppercase tracking-[0.16em] text-foreground">Local review path</p>
 
-        <ol
-          class="m-0 mt-8 grid list-none grid-cols-1 gap-6 p-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-stretch"
-        >
-          {
-            flowSteps.map((step, index) => (
-              <>
-                <li class="grid grid-cols-[3rem_minmax(0,1fr)] gap-5 lg:flex lg:min-h-40 lg:flex-col lg:justify-between lg:gap-6 lg:border lg:border-foreground lg:p-6">
-                  <div class="flex flex-col items-center lg:contents">
-                    <div class="flex h-12 w-12 items-center justify-center border border-foreground bg-background lg:border-0">
-                      <Icon name={step.icon} class="h-7 w-7 text-foreground" aria-hidden="true" />
-                    </div>
-                    {index < flowSteps.length - 1 && (
-                      <div class="h-12 border-l border-foreground lg:hidden" aria-hidden="true" />
-                    )}
+        <ol class="m-0 mt-8 grid list-none grid-cols-1 gap-6 p-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-stretch">
+          {flowSteps.map((step, index) => (
+            <>
+              <li class="grid grid-cols-[3rem_minmax(0,1fr)] gap-5 lg:flex lg:min-h-40 lg:flex-col lg:justify-between lg:gap-6 lg:border lg:border-foreground lg:p-6">
+                <div class="flex flex-col items-center lg:contents">
+                  <div class="flex h-12 w-12 items-center justify-center border border-foreground bg-background lg:border-0">
+                    <Icon name={step.icon} class="h-7 w-7 text-foreground" aria-hidden="true" />
                   </div>
-                  <div class={index < flowSteps.length - 1 ? 'pb-8 lg:pb-0' : ''}>
-                    <h3 class="m-0 font-mono text-lg font-bold leading-tight text-foreground sm:text-xl">
-                      {step.title}
-                    </h3>
-                    <p class="m-0 mt-2 font-sans text-base leading-relaxed text-foreground">{step.body}</p>
-                  </div>
+                  {index < flowSteps.length - 1 && (
+                    <div class="h-12 border-l border-foreground lg:hidden" aria-hidden="true" />
+                  )}
+                </div>
+                <div class={index < flowSteps.length - 1 ? 'pb-8 lg:pb-0' : ''}>
+                  <h3 class="m-0 font-mono text-lg font-bold leading-tight text-foreground sm:text-xl">{step.title}</h3>
+                  <p class="m-0 mt-2 font-sans text-base leading-relaxed text-foreground">{step.body}</p>
+                </div>
+              </li>
+              {index < flowSteps.length - 1 && (
+                <li
+                  class="hidden items-center justify-center font-mono text-2xl font-bold text-foreground lg:flex"
+                  aria-hidden="true"
+                >
+                  &rarr;
                 </li>
-                {index < flowSteps.length - 1 && (
-                  <li
-                    class="hidden items-center justify-center font-mono text-2xl font-bold text-foreground lg:flex"
-                    aria-hidden="true"
-                  >
-                    &rarr;
-                  </li>
-                )}
-              </>
-            ))
-          }
+              )}
+            </>
+          ))}
         </ol>
       </div>
 
@@ -111,9 +105,7 @@ const trustSignals = [
             If PlanBridge is not for you, uninstall removes the harness entries and returns your workflow to its
             previous state.
           </p>
-          <p
-            class="m-0 inline-flex max-w-full items-center gap-3 border border-foreground px-4 py-3 font-mono text-sm font-bold leading-none text-foreground"
-          >
+          <p class="m-0 inline-flex max-w-full items-center gap-3 border border-foreground px-4 py-3 font-mono text-sm font-bold leading-none text-foreground">
             <span aria-hidden="true">$</span>
             <code class="overflow-x-auto whitespace-nowrap font-mono">contextbridge uninstall</code>
           </p>
@@ -121,14 +113,12 @@ const trustSignals = [
       </div>
 
       <ul class="m-0 grid list-none grid-cols-2 gap-px bg-foreground p-0 md:grid-cols-3 lg:grid-cols-6">
-        {
-          trustSignals.map((signal) => (
-            <li class="flex min-h-32 flex-col justify-center gap-6 bg-background p-6">
-              <Icon name={signal.icon} class="h-9 w-9 text-foreground" aria-hidden="true" />
-              <span class="font-mono text-base font-bold leading-tight text-foreground">{signal.label}</span>
-            </li>
-          ))
-        }
+        {trustSignals.map((signal) => (
+          <li class="flex min-h-32 flex-col justify-center gap-6 bg-background p-6">
+            <Icon name={signal.icon} class="h-9 w-9 text-foreground" aria-hidden="true" />
+            <span class="font-mono text-base font-bold leading-tight text-foreground">{signal.label}</span>
+          </li>
+        ))}
       </ul>
     </div>
   </div>

@@ -39,22 +39,20 @@ const innerCy = 400 + (layers - 1) * offsetY;
     preserveAspectRatio="xMidYMid meet"
   >
     <g class="hero-artwork__rotor" style={`transform-origin: ${innerCx}px ${innerCy}px;`}>
-      {
-        squares.map(({ x, y, size, rx }) => (
-          <rect
-            x={x}
-            y={y}
-            width={size}
-            height={size}
-            rx={rx}
-            ry={rx}
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            vector-effect="non-scaling-stroke"
-          />
-        ))
-      }
+      {squares.map(({ x, y, size, rx }) => (
+        <rect
+          x={x}
+          y={y}
+          width={size}
+          height={size}
+          rx={rx}
+          ry={rx}
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          vector-effect="non-scaling-stroke"
+        />
+      ))}
     </g>
   </svg>
 </div>
