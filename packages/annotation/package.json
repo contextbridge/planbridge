@@ -22,7 +22,7 @@
     "@shikijs/themes": "^4.4.3",
     "hast-util-to-string": "^3.0.1",
     "lucide-react": "catalog:",
-    "mermaid": "11.17.2",
+    "mermaid": "12.0.0",
     "neverthrow": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
