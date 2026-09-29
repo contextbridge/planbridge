@@ -22,7 +22,7 @@
     "@contextbridge/context": "workspace:*",
     "@contextbridge/shared": "workspace:*",
     "@sentry/bun": "^10.75.2",
-    "@sentry/react": "^10.75.2",
+    "@sentry/react": "^11.0.0",
     "neverthrow": "catalog:",
     "pino": "catalog:",
     "posthog-js": "^1.434.7",

@@ -49,7 +49,7 @@ export function createSentryBrowserTelemetry(options: CreateSentryBrowserTelemet
     ErrorBoundary,
     pinoTransmit,
     setUser: (user: TelemetryUser | null) => {
-      Sentry.setUser(user);
+      Sentry.setUser(user ? { id: user.id } : null);
     },
     captureException: (err) => {
       Sentry.captureException(err);
