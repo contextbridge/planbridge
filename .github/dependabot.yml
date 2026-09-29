@@ -1,4 +1,4 @@
-# Groups minor/patch updates, isolates major versions, and lets security updates through immediately
+# Groups minor/patch updates and lockstep dependencies, isolates other major versions, and lets security updates through immediately
 version: 2
 updates:
   - package-ecosystem: 'github-actions'
@@ -26,10 +26,13 @@ updates:
       - dependency-name: '@vercel/og'
         versions: ['1.0.2']
     groups:
+      # @sentry/bun and @sentry/react must stay in lockstep on the same SDK version.
+      sentry:
+        patterns: ['@sentry/*']
       # drizzle-orm and drizzle-kit must stay in lockstep on the same beta version.
       # Once Drizzle 1.x is released from beta, we can remove this group.
       drizzle:
         patterns: ['drizzle-orm', 'drizzle-kit']
       npm-minor-patch:
         update-types: ['minor', 'patch']
-        exclude-patterns: ['drizzle-orm', 'drizzle-kit']
+        exclude-patterns: ['@sentry/*', 'drizzle-orm', 'drizzle-kit']
