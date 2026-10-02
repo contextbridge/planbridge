@@ -300,18 +300,15 @@ const LABEL_PREFIX_BY_KEY: Record<string, string> = {
 
 function prepareAnnotatableTargets(container: HTMLElement): Map<string, AnnotatableTarget> {
   const elements = Array.from(container.querySelectorAll<HTMLElement>('[data-target-kind]'));
-  const siblingCounters = new WeakMap<Element, Map<string, number>>();
+  const targetCounters = new Map<string, number>();
   const targets = new Map<string, AnnotatableTarget>();
 
   for (const element of elements) {
     const key = element.dataset.targetKey ?? element.tagName.toLowerCase();
     const kind = element.dataset.targetKind as AnnotatableTarget['kind'];
     const labelPrefix = LABEL_PREFIX_BY_KEY[key] ?? 'Selection';
-    const parent = element.parentElement ?? container;
-    const parentCounters = siblingCounters.get(parent) ?? new Map<string, number>();
-    const ordinal = parentCounters.get(key) ?? 0;
-    parentCounters.set(key, ordinal + 1);
-    siblingCounters.set(parent, parentCounters);
+    const ordinal = targetCounters.get(key) ?? 0;
+    targetCounters.set(key, ordinal + 1);
 
     const text = getTextFromRoot(element);
     const id = `${key}:${ordinal}:${createShortHash(normalizeText(text))}`;
