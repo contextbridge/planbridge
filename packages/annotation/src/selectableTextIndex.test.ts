@@ -28,6 +28,25 @@ describe('buildSelectableTextIndex', () => {
     const p = container.querySelector('p')!;
     expect(p.dataset.targetId).toMatch(/^p:0:[0-9a-f]{8}$/);
   });
+
+  it('keeps repeated blocks in separate parents distinct when rebuilding the index', () => {
+    const container = renderContainer(
+      `<blockquote data-target-kind="block" data-target-key="blockquote"><p data-target-kind="block" data-target-key="p">Repeated paragraph.</p></blockquote>` +
+        `<blockquote data-target-kind="block" data-target-key="blockquote"><p data-target-kind="block" data-target-key="p">Repeated paragraph.</p></blockquote>`,
+    );
+    const elements = [...container.querySelectorAll<HTMLElement>('[data-target-kind]')];
+    const index = buildSelectableTextIndex(container);
+    const targetIds = elements.map((element) => element.dataset.targetId!);
+
+    expect(index.targets.size).toBe(elements.length);
+    expect(new Set(targetIds).size).toBe(elements.length);
+    for (const element of elements) {
+      expect(index.resolveTarget(element.dataset.targetId!)?.element).toBe(element);
+    }
+
+    const rebuiltIndex = buildSelectableTextIndex(container);
+    expect([...rebuiltIndex.targets.keys()]).toEqual(targetIds);
+  });
 });
 
 describe('rangeToAnchor', () => {
@@ -80,6 +99,34 @@ describe('rangeToAnchor', () => {
 });
 
 describe('restoreAnchor', () => {
+  it.each(['strong', 'em', 'a'])(
+    'restores each occurrence of repeated %s text across blocks to its original node',
+    (key) => {
+      const container = renderContainer(
+        `<p data-target-kind="block" data-target-key="p" data-src-start-line="1" data-src-end-line="1"><${key} data-target-kind="inline" data-target-key="${key}" data-src-start-line="1" data-src-end-line="1">After</${key}></p>` +
+          `<p data-target-kind="block" data-target-key="p" data-src-start-line="3" data-src-end-line="3">Some context between them.</p>` +
+          `<p data-target-kind="block" data-target-key="p" data-src-start-line="5" data-src-end-line="5"><${key} data-target-kind="inline" data-target-key="${key}" data-src-start-line="5" data-src-end-line="5">After</${key}></p>`,
+      );
+      const index = buildSelectableTextIndex(container);
+
+      for (const element of container.querySelectorAll(key)) {
+        const textNode = element.firstChild as Text;
+        const source = document.createRange();
+        source.setStart(textNode, 0);
+        source.setEnd(textNode, textNode.data.length);
+
+        const anchor = index.rangeToAnchor(source, 'drag');
+        const restored = index.restoreAnchor(anchor);
+
+        expect(restored).not.toBeNull();
+        expect(restored!.toString()).toBe('After');
+        expect(restored!.startContainer).toBe(textNode);
+        expect(restored!.endContainer).toBe(textNode);
+        expect(index.resolveTarget(anchor.target!.id)?.element).toBe(element);
+      }
+    },
+  );
+
   it('round-trips a drag anchor back to the same range', () => {
     const container = renderContainer(
       `<p data-target-kind="block" data-target-key="p" data-src-start-line="3" data-src-end-line="3">Start by refactoring the parser before touching the API.</p>`,
