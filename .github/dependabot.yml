@@ -21,10 +21,10 @@ updates:
       default-days: 3 # zizmor: ignore[dependabot-cooldown]
     ignore:
       - dependency-name: '@types/bun'
-      # @vercel/og 1.0.2 bundles a Satori release whose HarfBuzz dependency breaks Astro prerendering.
+      # @vercel/og 1.0.2 and 1.0.3 bundle a Satori release whose HarfBuzz dependency breaks Astro prerendering.
       # Track https://github.com/vercel/satori/issues/794 and allow later @vercel/og releases.
       - dependency-name: '@vercel/og'
-        versions: ['1.0.2']
+        versions: ['1.0.2', '1.0.3']
     groups:
       # @sentry/bun and @sentry/react must stay in lockstep on the same SDK version.
       sentry:
