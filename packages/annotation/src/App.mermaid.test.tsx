@@ -174,7 +174,7 @@ describe('App — Mermaid diagram annotation', () => {
     // Comment on the prose below the diagram, then on a node in the diagram above it. The sidebar
     // must list the diagram comment first — it comes first in the document.
     const paragraph = await screen.findByText('Annotate a node or edge above.');
-    drag({ target: paragraph.firstChild as Text, from: 0, to: 'Annotate'.length });
+    drag({ node: paragraph.firstChild as Text, from: 0, to: 'Annotate'.length });
     await user.type(
       await screen.findByTestId(annotationDraftCommentComposerTestIds.textarea),
       'Text comment below the diagram',

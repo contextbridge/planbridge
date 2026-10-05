@@ -1,12 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { renderAnnotatedMarkdown, textRange } from '#src/testHelpers/index.tsx';
 import { buildSelectableTextIndex } from './selectableTextIndex.ts';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('buildSelectableTextIndex', () => {
   it('walks annotatable elements and assigns target ids', () => {
-    const container = renderContainer(
-      `<p data-target-kind="block" data-target-key="p">First paragraph.</p>` +
-        `<p data-target-kind="block" data-target-key="p">Second paragraph.</p>`,
-    );
+    const container = renderAnnotatedMarkdown('First paragraph.\n\nSecond paragraph.');
 
     const index = buildSelectableTextIndex(container);
 
@@ -21,7 +24,7 @@ describe('buildSelectableTextIndex', () => {
   });
 
   it('writes data-target-id on each annotatable element', () => {
-    const container = renderContainer(`<p data-target-kind="block" data-target-key="p">Hello world.</p>`);
+    const container = renderAnnotatedMarkdown('Hello world.');
 
     buildSelectableTextIndex(container);
 
@@ -30,14 +33,12 @@ describe('buildSelectableTextIndex', () => {
   });
 
   it('keeps repeated blocks in separate parents distinct when rebuilding the index', () => {
-    const container = renderContainer(
-      `<blockquote data-target-kind="block" data-target-key="blockquote"><p data-target-kind="block" data-target-key="p">Repeated paragraph.</p></blockquote>` +
-        `<blockquote data-target-kind="block" data-target-key="blockquote"><p data-target-kind="block" data-target-key="p">Repeated paragraph.</p></blockquote>`,
-    );
+    const container = renderAnnotatedMarkdown('> Repeated paragraph.\n\n> Repeated paragraph.');
     const elements = [...container.querySelectorAll<HTMLElement>('[data-target-kind]')];
     const index = buildSelectableTextIndex(container);
     const targetIds = elements.map((element) => element.dataset.targetId!);
 
+    expect(container.querySelectorAll('blockquote')).toHaveLength(2);
     expect(index.targets.size).toBe(elements.length);
     expect(new Set(targetIds).size).toBe(elements.length);
     for (const element of elements) {
@@ -51,21 +52,14 @@ describe('buildSelectableTextIndex', () => {
 
 describe('rangeToAnchor', () => {
   it('captures quote, position, endpoints, target, snapshot, and sourceLines for a drag in a paragraph', () => {
-    const container = renderContainer(
-      `<p data-target-kind="block" data-target-key="p" data-src-start-line="3" data-src-end-line="3">Start by refactoring the parser before touching the API.</p>`,
-    );
+    const container = renderAnnotatedMarkdown('Start by refactoring the parser before touching the API.');
     const index = buildSelectableTextIndex(container);
 
-    const paragraph = container.querySelector('p')!;
-    const textNode = paragraph.firstChild as Text;
-    const range = document.createRange();
-    range.setStart(textNode, 9);
-    range.setEnd(textNode, 31);
-
-    const anchor = index.rangeToAnchor(range, 'drag');
+    const textNode = container.querySelector('p')!.firstChild as Text;
+    const anchor = index.rangeToAnchor(textRange({ node: textNode, from: 9, to: 31 }), 'drag');
 
     expect(anchor.createdFrom).toBe('drag');
-    expect(anchor.sourceLines).toEqual({ start: 3, end: 3 });
+    expect(anchor.sourceLines).toEqual({ start: 1, end: 1 });
     expect(anchor.quote.exact).toBe('refactoring the parser');
     expect(anchor.quote.prefix.endsWith('Start by ')).toBe(true);
     expect(anchor.quote.suffix.startsWith(' before')).toBe(true);
@@ -78,18 +72,11 @@ describe('rangeToAnchor', () => {
   });
 
   it('populates snapshot.blockText for inline targets via the surrounding block', () => {
-    const container = renderContainer(
-      `<p data-target-kind="block" data-target-key="p" data-src-start-line="5" data-src-end-line="5">Keep the <strong data-target-kind="inline" data-target-key="strong" data-src-start-line="5" data-src-end-line="5">migration path</strong> clear.</p>`,
-    );
+    const container = renderAnnotatedMarkdown('Keep the **migration path** clear.');
     const index = buildSelectableTextIndex(container);
 
     const strong = container.querySelector('strong')!;
-    const textNode = strong.firstChild as Text;
-    const range = document.createRange();
-    range.setStart(textNode, 0);
-    range.setEnd(textNode, textNode.data.length);
-
-    const anchor = index.rangeToAnchor(range, 'element', strong);
+    const anchor = index.rangeToAnchor(textRange({ node: strong.firstChild as Text }), 'element', strong);
 
     expect(anchor.createdFrom).toBe('element');
     expect(anchor.target?.kind).toBe('inline');
@@ -99,46 +86,34 @@ describe('rangeToAnchor', () => {
 });
 
 describe('restoreAnchor', () => {
-  it.each(['strong', 'em', 'a'])(
-    'restores each occurrence of repeated %s text across blocks to its original node',
-    (key) => {
-      const container = renderContainer(
-        `<p data-target-kind="block" data-target-key="p" data-src-start-line="1" data-src-end-line="1"><${key} data-target-kind="inline" data-target-key="${key}" data-src-start-line="1" data-src-end-line="1">After</${key}></p>` +
-          `<p data-target-kind="block" data-target-key="p" data-src-start-line="3" data-src-end-line="3">Some context between them.</p>` +
-          `<p data-target-kind="block" data-target-key="p" data-src-start-line="5" data-src-end-line="5"><${key} data-target-kind="inline" data-target-key="${key}" data-src-start-line="5" data-src-end-line="5">After</${key}></p>`,
-      );
-      const index = buildSelectableTextIndex(container);
+  it.each([
+    { key: 'strong', markdown: '**After**' },
+    { key: 'em', markdown: '*After*' },
+    { key: 'a', markdown: '[After](https://example.com)' },
+  ])('restores each occurrence of repeated $key text across blocks to its original node', ({ key, markdown }) => {
+    const container = renderAnnotatedMarkdown(`${markdown}\n\nSome context between them.\n\n${markdown}`);
+    const index = buildSelectableTextIndex(container);
 
-      for (const element of container.querySelectorAll(key)) {
-        const textNode = element.firstChild as Text;
-        const source = document.createRange();
-        source.setStart(textNode, 0);
-        source.setEnd(textNode, textNode.data.length);
+    for (const element of container.querySelectorAll(key)) {
+      const textNode = element.firstChild as Text;
 
-        const anchor = index.rangeToAnchor(source, 'drag');
-        const restored = index.restoreAnchor(anchor);
+      const anchor = index.rangeToAnchor(textRange({ node: textNode }), 'drag');
+      const restored = index.restoreAnchor(anchor);
 
-        expect(restored).not.toBeNull();
-        expect(restored!.toString()).toBe('After');
-        expect(restored!.startContainer).toBe(textNode);
-        expect(restored!.endContainer).toBe(textNode);
-        expect(index.resolveTarget(anchor.target!.id)?.element).toBe(element);
-      }
-    },
-  );
+      expect(restored).not.toBeNull();
+      expect(restored!.toString()).toBe('After');
+      expect(restored!.startContainer).toBe(textNode);
+      expect(restored!.endContainer).toBe(textNode);
+      expect(index.resolveTarget(anchor.target!.id)?.element).toBe(element);
+    }
+  });
 
   it('round-trips a drag anchor back to the same range', () => {
-    const container = renderContainer(
-      `<p data-target-kind="block" data-target-key="p" data-src-start-line="3" data-src-end-line="3">Start by refactoring the parser before touching the API.</p>`,
-    );
+    const container = renderAnnotatedMarkdown('Start by refactoring the parser before touching the API.');
     const index = buildSelectableTextIndex(container);
 
     const textNode = container.querySelector('p')!.firstChild as Text;
-    const source = document.createRange();
-    source.setStart(textNode, 9);
-    source.setEnd(textNode, 31);
-
-    const anchor = index.rangeToAnchor(source, 'drag');
+    const anchor = index.rangeToAnchor(textRange({ node: textNode, from: 9, to: 31 }), 'drag');
     const restored = index.restoreAnchor(anchor);
 
     expect(restored).not.toBeNull();
@@ -146,9 +121,7 @@ describe('restoreAnchor', () => {
   });
 
   it('falls back to the quote selector when target ids and positions are stale', () => {
-    const container = renderContainer(
-      `<p data-target-kind="block" data-target-key="p">Start by refactoring the parser before touching the API.</p>`,
-    );
+    const container = renderAnnotatedMarkdown('Start by refactoring the parser before touching the API.');
     const index = buildSelectableTextIndex(container);
 
     const originalTargetId = [...index.targets.keys()][0]!;
@@ -172,7 +145,7 @@ describe('restoreAnchor', () => {
   });
 
   it('returns null when no selector can resolve', () => {
-    const container = renderContainer(`<p data-target-kind="block" data-target-key="p">Some other text here.</p>`);
+    const container = renderAnnotatedMarkdown('Some other text here.');
     const index = buildSelectableTextIndex(container);
 
     const anchor = {
@@ -191,11 +164,3 @@ describe('restoreAnchor', () => {
     expect(index.restoreAnchor(anchor)).toBeNull();
   });
 });
-
-function renderContainer(html: string): HTMLElement {
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  document.body.innerHTML = '';
-  document.body.appendChild(container);
-  return container;
-}
