@@ -2,8 +2,9 @@ import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchem
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 import { expect } from 'vitest';
-import { annotatedMarkdownTestIds } from '#src/AnnotatedMarkdown.tsx';
+import { AnnotatedMarkdown, annotatedMarkdownTestIds } from '#src/AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from '#src/AnnotationDraftCommentComposer.tsx';
 import type { AppProps } from '#src/App.tsx';
 import { App } from '#src/App.tsx';
@@ -31,6 +32,13 @@ export function renderApp(
   return { result, ...fake };
 }
 
+/** Render `markdown` through {@link AnnotatedMarkdown} and return its annotatable container. */
+export function renderAnnotatedMarkdown(markdown: string): HTMLDivElement {
+  const containerRef = createRef<HTMLDivElement>();
+  render(<AnnotatedMarkdown content={markdown} containerRef={containerRef} />);
+  return containerRef.current!;
+}
+
 export type SubmitShortcutModifier = 'meta' | 'ctrl';
 
 export function pressSubmitShortcut(element: Element, modifier: SubmitShortcutModifier): void {
@@ -40,24 +48,30 @@ export function pressSubmitShortcut(element: Element, modifier: SubmitShortcutMo
     ctrlKey: modifier === 'ctrl',
   });
 }
-type DragArgs = {
-  target: Text;
-  from: number;
-  to: number;
-};
+/** Text within `node` from `from` to `to`; omitted offsets select the whole node. */
+export interface TextSelection {
+  node: Text;
+  from?: number;
+  to?: number;
+}
 
-export function drag({ target, from, to }: DragArgs): void {
+export function textRange({ node, from = 0, to = node.data.length }: TextSelection): Range {
   const range = document.createRange();
-  range.setStart(target, from);
-  range.setEnd(target, to);
+  range.setStart(node, from);
+  range.setEnd(node, to);
+  return range;
+}
 
-  const selection = window.getSelection();
-  if (!selection) {
+export function drag(selection: TextSelection): void {
+  const range = textRange(selection);
+
+  const windowSelection = window.getSelection();
+  if (!windowSelection) {
     throw new Error('Expected browser selection API to be available.');
   }
 
-  selection.removeAllRanges();
-  selection.addRange(range);
+  windowSelection.removeAllRanges();
+  windowSelection.addRange(range);
   fireEvent.mouseUp(screen.getByTestId(annotatedMarkdownTestIds.container));
 }
 

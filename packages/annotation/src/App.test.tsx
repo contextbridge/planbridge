@@ -521,7 +521,7 @@ describe('App', () => {
     const stringToken = getCodeToken('"helloWorld"');
     const text = stringToken.firstChild as Text;
 
-    drag({ target: text, from: 3, to: 5 });
+    drag({ node: text, from: 3, to: 5 });
 
     await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
 
@@ -551,7 +551,7 @@ describe('App', () => {
     });
 
     const paragraph = await waitForMarkdownParagraph(0);
-    drag({ target: paragraph.firstChild as Text, from: 0, to: 'This paragraph'.length });
+    drag({ node: paragraph.firstChild as Text, from: 0, to: 'This paragraph'.length });
     await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
     await waitFor(() => {
       expect(setHighlight).toHaveBeenCalled();
@@ -639,7 +639,7 @@ describe('App', () => {
     const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     const text = link.firstChild as Text;
 
-    drag({ target: text, from: 0, to: text.length });
+    drag({ node: text });
 
     expect(await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).toBeInTheDocument();
   });
@@ -653,7 +653,7 @@ describe('App', () => {
     const link = await waitForMarkdownElement<HTMLAnchorElement>('a');
     const text = link.firstChild as Text;
 
-    drag({ target: text, from: 0, to: text.length });
+    drag({ node: text });
     await screen.findByTestId(annotationDraftCommentComposerTestIds.container);
 
     await user.type(screen.getByTestId(annotationDraftCommentComposerTestIds.textarea), 'Link comment');
@@ -717,7 +717,7 @@ describe('App', () => {
     expect(selectedCard).toHaveClass('border-chart-3/70');
 
     const thirdParagraph = getMarkdownParagraph(1);
-    drag({ target: thirdParagraph.firstChild as Text, from: 0, to: 'Third'.length });
+    drag({ node: thirdParagraph.firstChild as Text, from: 0, to: 'Third'.length });
 
     const draftCard = (await screen.findByTestId(annotationDraftCommentComposerTestIds.container)).closest(
       '[role="button"]',
