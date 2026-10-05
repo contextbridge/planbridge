@@ -24,7 +24,7 @@ export function createSentryTelemetry(options: CreateSentryTelemetryOptions): Te
 
   return {
     setUser: (user: TelemetryUser | null) => {
-      Sentry.setUser(user);
+      Sentry.setUser(user ? { id: user.id } : null);
     },
     captureException: (err) => {
       Sentry.captureException(err);
