@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.2](https://github.com/contextbridge/planbridge/compare/v0.11.1...v0.11.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* keep annotations on the selected repeated text ([#310](https://github.com/contextbridge/planbridge/issues/310)) ([97adf2d](https://github.com/contextbridge/planbridge/commit/97adf2dedaa680f8042510749d832d42f8c5c5f2))
+
+
+### Dependencies
+
+* upgrade Mermaid to v12, which lays out diagrams with ELK by default ([#297](https://github.com/contextbridge/planbridge/issues/297)) ([a47271b](https://github.com/contextbridge/planbridge/commit/a47271b3483d47c82cfd9090bacd6c4eff18ff9e))
+
 ## [0.11.1](https://github.com/contextbridge/planbridge/compare/v0.11.0...v0.11.1) (2026-09-10)
 
 
