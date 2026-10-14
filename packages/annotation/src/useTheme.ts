@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ThemeController } from './ThemeController.ts';
-import type { ThemePreference } from './themes.ts';
-import { resolveTheme } from './themes.ts';
+import { type ThemePreference, resolveTheme } from './themes.ts';
 
 export interface UseThemeOptions {
   readonly initialPreference: ThemePreference;

@@ -3,8 +3,12 @@ import type {
   ElementAnnotationAnchor,
   StoredAnnotationAnchor,
 } from '@contextbridge/shared/annotationSchema';
-import type { ActiveCommentDraft, ResolvedAnnotationThread, SelectableTextIndex } from './annotationTypes.ts';
-import { isAnnotationCommentThread } from './annotationTypes.ts';
+import {
+  type ActiveCommentDraft,
+  type ResolvedAnnotationThread,
+  type SelectableTextIndex,
+  isAnnotationCommentThread,
+} from './annotationTypes.ts';
 import { getPrimaryMessage } from './commentModel.ts';
 import { elementAdapterForContentType } from './element/ElementAdapter.ts';
 

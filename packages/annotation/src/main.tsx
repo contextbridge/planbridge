@@ -10,8 +10,7 @@ import { App } from './App.tsx';
 import { fetchUpdateNotice } from './fetchUpdateNotice.ts';
 import { ThemeControllerImpl, applyInitialTheme } from './ThemeController.ts';
 import { createUpdateSettings } from './updateSettings.ts';
-import type { AnnotationAppContext as AnnotationAppContextValue } from './useAppContext.ts';
-import { AnnotationAppContext } from './useAppContext.ts';
+import { AnnotationAppContext, type AnnotationAppContext as AnnotationAppContextValue } from './useAppContext.ts';
 
 const FALLBACK_CONFIG: FrontendConfig = {
   distinctId: 'local-development',

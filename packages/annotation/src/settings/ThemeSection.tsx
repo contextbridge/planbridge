@@ -1,5 +1,4 @@
-import type { ThemePreference } from '#src/themes.ts';
-import { systemThemeIds, themeById, themes } from '#src/themes.ts';
+import { type ThemePreference, systemThemeIds, themeById, themes } from '#src/themes.ts';
 import { SettingsSection } from './SettingsSection.tsx';
 import { ThemeOption } from './ThemeOption.tsx';
 
