@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { FrontendBrowserImpl } from './FrontendBrowserImpl.ts';
-import type { FrontendBrowserWindow } from './FrontendBrowserImpl.ts';
+import { FrontendBrowserImpl, type FrontendBrowserWindow } from './FrontendBrowserImpl.ts';
 
 describe('FrontendBrowserImpl', () => {
   it('closes the injected window', () => {

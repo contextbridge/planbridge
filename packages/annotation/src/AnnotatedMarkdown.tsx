@@ -1,8 +1,7 @@
 import type { AnnotationTargetKind, Asset } from '@contextbridge/shared/annotationSchema';
 import { cn } from '@contextbridge/ui/lib/utils';
 import { toString as hastToString } from 'hast-util-to-string';
-import { createElement } from 'react';
-import type { ComponentPropsWithoutRef, ComponentType, JSX, Ref } from 'react';
+import { type ComponentPropsWithoutRef, type ComponentType, type JSX, type Ref, createElement } from 'react';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { type ElementAdapter, elementAdapterForLanguage, elementAdapterLanguages } from './element/ElementAdapter.ts';

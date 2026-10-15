@@ -22,8 +22,7 @@ import { Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ThemePreference } from '#src/themes.ts';
 import { ClaudeCodeSection } from './ClaudeCodeSection.tsx';
-import type { SettingsDraft } from './settingsDraft.ts';
-import { diffSettingsDraft } from './settingsDraft.ts';
+import { type SettingsDraft, diffSettingsDraft } from './settingsDraft.ts';
 import { SettingsNavItem } from './SettingsNavItem.tsx';
 import { ThemeSection } from './ThemeSection.tsx';
 

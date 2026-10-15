@@ -2,8 +2,7 @@ import { FakeFrontendBrowser, fakeFrontendContext } from '@contextbridge/context
 import { settings } from '@contextbridge/shared/testFactories';
 import type { ComponentType, ReactElement } from 'react';
 import { ThemeControllerImpl } from '#src/ThemeController.ts';
-import type { AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
-import { AnnotationAppContext } from '#src/useAppContext.ts';
+import { AnnotationAppContext, type AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
 
 export function createStoryAppContext(overrides?: Partial<AnnotationAppContextValue>): AnnotationAppContextValue {
   return {

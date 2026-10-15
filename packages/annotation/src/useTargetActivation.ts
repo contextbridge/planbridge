@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import type { RefObject } from 'react';
+import { type RefObject, useEffect } from 'react';
 import type { AnnotatableTarget, SelectableTextIndex } from './annotationTypes.ts';
 import { findTokenSpan } from './codeTokenSnap.ts';
 
@@ -114,7 +113,10 @@ function getTargetFromNode(
   container: HTMLElement,
   node: EventTarget | null,
 ): AnnotatableTarget | null {
-  const element = node instanceof HTMLElement ? node : node instanceof Text ? node.parentElement : null;
+  if (!(node instanceof HTMLElement) && !(node instanceof Text)) {
+    return null;
+  }
+  const element = node instanceof HTMLElement ? node : node.parentElement;
   if (!element) {
     return null;
   }

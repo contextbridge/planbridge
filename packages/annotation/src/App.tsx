@@ -13,13 +13,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@contextbridge/ui/components/ui/alert-dialog';
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import './annotationStyles.css';
 import './codeHighlightStyles.css';
 import { SettingsDialog } from '#src/settings/SettingsDialog.tsx';
-import type { SettingsDraft } from '#src/settings/settingsDraft.ts';
-import { diffSettingsDraft, draftFromSettings } from '#src/settings/settingsDraft.ts';
+import { type SettingsDraft, diffSettingsDraft, draftFromSettings } from '#src/settings/settingsDraft.ts';
 import { AnnotatedMarkdown } from './AnnotatedMarkdown.tsx';
 import { getAnnotationHighlightWarning } from './annotationHighlights.ts';
 import { CommentsSidebar } from './CommentsSidebar.tsx';

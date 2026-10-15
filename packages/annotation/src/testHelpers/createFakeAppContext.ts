@@ -8,8 +8,7 @@ import type { AnnotationPayload, AnnotationSubmission } from '@contextbridge/sha
 import type { SettingsPatch } from '@contextbridge/shared/settingsSchema';
 import { settings } from '@contextbridge/shared/testFactories';
 import type { UpdateNotice } from '@contextbridge/shared/updateNoticeSchema';
-import type { Mock } from 'vitest';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 import type { AnnotationAppContext } from '#src/useAppContext.ts';
 import { FakeThemeController } from './FakeThemeController.ts';
 

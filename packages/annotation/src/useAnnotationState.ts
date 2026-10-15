@@ -47,7 +47,7 @@ export function useAnnotationState({ initialThreads, initialGlobalComment }: Use
   const trimmedGlobal = globalCommentBody.trim();
   const feedbackCount = getFeedbackCount(threads, trimmedGlobal);
   const closeReviewDialogContent = getCloseReviewDialogContent(feedbackCount);
-  const submitLabel = submitted ? 'Submitted' : feedbackCount === 0 ? 'Approve Plan' : 'Submit Feedback';
+  const submitLabel = getSubmitLabel(submitted, feedbackCount);
 
   const [pendingDraftAction, setPendingDraftAction] = useState<PendingDraftAction | null>(null);
 
@@ -321,6 +321,16 @@ export const closeReviewDialogCopy = {
 
 function getCloseReviewDialogContent(feedbackCount: number): CloseReviewDialogContent {
   return feedbackCount === 0 ? closeReviewDialogCopy.empty : closeReviewDialogCopy.feedback;
+}
+
+function getSubmitLabel(submitted: boolean, feedbackCount: number): string {
+  if (submitted) {
+    return 'Submitted';
+  }
+  if (feedbackCount === 0) {
+    return 'Approve Plan';
+  }
+  return 'Submit Feedback';
 }
 
 function getSubmitStatus(threads: CommentThread[], trimmedGlobal: string): AnnotationStatus {

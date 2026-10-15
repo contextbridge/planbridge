@@ -1,5 +1,4 @@
-import type { ClaudePlanApprovalMode } from '@contextbridge/shared/claudeSettingsSchema';
-import { CLAUDE_PLAN_APPROVAL_MODES } from '@contextbridge/shared/claudeSettingsSchema';
+import { CLAUDE_PLAN_APPROVAL_MODES, type ClaudePlanApprovalMode } from '@contextbridge/shared/claudeSettingsSchema';
 import { PlanApprovalModeOption } from './PlanApprovalModeOption.tsx';
 import { SettingsSection } from './SettingsSection.tsx';
 

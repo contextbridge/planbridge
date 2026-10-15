@@ -1,5 +1,4 @@
-import type { ColorScheme, ThemeDefinition, ThemePreference } from './themes.ts';
-import { resolveTheme } from './themes.ts';
+import { type ColorScheme, type ThemeDefinition, type ThemePreference, resolveTheme } from './themes.ts';
 
 const SYSTEM_DARK_QUERY = '(prefers-color-scheme: dark)';
 
