@@ -28,14 +28,70 @@ updates:
     groups:
       # @sentry/bun and @sentry/react must stay in lockstep on the same SDK version.
       sentry:
-        patterns: ['@sentry/*']
+        patterns:
+          - '@sentry/*'
       # drizzle-orm and drizzle-kit must stay in lockstep on the same beta version.
       # Once Drizzle 1.x is released from beta, we can remove this group.
       drizzle:
-        patterns: ['drizzle-orm', 'drizzle-kit']
+        patterns:
+          - drizzle-orm
+          - drizzle-kit
       # @vitest/* packages peer-depend on the exact vitest version.
       vitest:
-        patterns: ['vitest', '@vitest/*']
+        patterns:
+          - vitest
+          - '@vitest/*'
+      # Astro integrations and Starlight peer-depend on the Astro version.
+      astro:
+        patterns:
+          - astro
+          - '@astrojs/*'
+          - astro-expressive-code
+          - astro-icon
+          - 'starlight-*'
+      # Review React runtime, types, compiler, and compiler-aware lint updates together.
+      # Listed before eslint so it claims eslint-plugin-react-hooks.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+          - babel-plugin-react-compiler
+          - eslint-plugin-react-hooks
+      # tailwindcss and @tailwindcss/* release in lockstep. Listed before vite so it claims @tailwindcss/vite.
+      tailwind:
+        patterns:
+          - tailwindcss
+          - '@tailwindcss/*'
+      # Storybook requires every storybook and @storybook/* package on the same version.
+      storybook:
+        patterns:
+          - storybook
+          - '@storybook/*'
+      # shiki and @shikijs/* release in lockstep.
+      shiki:
+        patterns:
+          - shiki
+          - '@shikijs/*'
+      # Vite plugins peer-depend on the vite version.
+      vite:
+        patterns:
+          - vite
+          - '@vitejs/*'
+          - 'vite-plugin-*'
+      # ESLint plugins peer-depend on the eslint version, and typescript-eslint releases in lockstep.
+      eslint:
+        patterns:
+          - eslint
+          - 'eslint-plugin-*'
+          - astro-eslint-parser
+          - typescript-eslint
+          - '@typescript-eslint/*'
+          - '@contextbridge-ai/eslint-config'
       npm-minor-patch:
-        update-types: ['minor', 'patch']
-        exclude-patterns: ['@sentry/*', 'drizzle-orm', 'drizzle-kit', 'vitest', '@vitest/*']
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - '*'
