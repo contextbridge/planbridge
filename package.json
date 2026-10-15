@@ -8,6 +8,7 @@
       "packages/*"
     ],
     "catalog": {
+      "@babel/core": "^7.29.0",
       "@rolldown/plugin-babel": "^0.2.4",
       "@storybook/react-vite": "^10.6.2",
       "@tailwindcss/vite": "^4.3.3",

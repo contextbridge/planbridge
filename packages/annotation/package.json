@@ -32,6 +32,7 @@
     "shiki": "^4.5.0"
   },
   "devDependencies": {
+    "@babel/core": "catalog:",
     "@rolldown/plugin-babel": "catalog:",
     "@storybook/react-vite": "catalog:",
     "@types/hast": "^3.0.4",
