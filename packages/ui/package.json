@@ -22,7 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "catalog:",
-    "radix-ui": "^1.7.0",
+    "radix-ui": "^1.8.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwind-merge": "^3.7.0",
