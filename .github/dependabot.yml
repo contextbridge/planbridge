@@ -33,6 +33,9 @@ updates:
       # Once Drizzle 1.x is released from beta, we can remove this group.
       drizzle:
         patterns: ['drizzle-orm', 'drizzle-kit']
+      # @vitest/* packages peer-depend on the exact vitest version.
+      vitest:
+        patterns: ['vitest', '@vitest/*']
       npm-minor-patch:
         update-types: ['minor', 'patch']
-        exclude-patterns: ['@sentry/*', 'drizzle-orm', 'drizzle-kit']
+        exclude-patterns: ['@sentry/*', 'drizzle-orm', 'drizzle-kit', 'vitest', '@vitest/*']
