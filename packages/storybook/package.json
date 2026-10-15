@@ -17,6 +17,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@rolldown/plugin-babel": "catalog:",
     "@storybook/react-vite": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/react": "catalog:",
