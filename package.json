@@ -8,7 +8,7 @@
       "packages/*"
     ],
     "catalog": {
-      "@storybook/react-vite": "^10.6.1",
+      "@storybook/react-vite": "^10.6.2",
       "@tailwindcss/vite": "^4.3.3",
       "@testing-library/jest-dom": "^6.9.1",
       "@testing-library/react": "^16.3.3",
@@ -54,7 +54,7 @@
     "@contextbridge-ai/prettier-config": "^0.0.1",
     "@types/bun": "latest",
     "@types/semver": "^7.8.0",
-    "@typescript-eslint/parser": "^8.71.1",
+    "@typescript-eslint/parser": "^8.71.2",
     "astro-eslint-parser": "^3.2.0",
     "eslint": "^10.12.0",
     "eslint-plugin-astro": "^3.2.1",
@@ -66,6 +66,6 @@
     "rulesync": "^33.0.0",
     "semver": "^7.8.5",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.71.1"
+    "typescript-eslint": "^8.71.2"
   }
 }
