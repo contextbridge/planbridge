@@ -1,5 +1,4 @@
-import { startServer } from '@contextbridge/server/annotation';
-import type { RunningServer } from '@contextbridge/server/annotation';
+import { type RunningServer, startServer } from '@contextbridge/server/annotation';
 import type { ServerContext } from '@contextbridge/server/context';
 import type {
   AnnotationEntrypoint,

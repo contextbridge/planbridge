@@ -64,7 +64,7 @@ describe('createStableUrlRewriter', () => {
   });
 
   it('passes through null events', () => {
-    expect(rewriter(null)).toBeNull();
+    expect(rewriter(null as unknown as CaptureResult)).toBeNull();
   });
 
   it('uses the configured surface for the path prefix', () => {

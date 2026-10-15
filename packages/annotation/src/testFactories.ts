@@ -1,8 +1,7 @@
 import { annotationThread } from '@contextbridge/shared/testFactories';
 import { Factory } from 'fishery';
 import type { SettingsDraft } from '#src/settings/settingsDraft.ts';
-import type { ResolvedAnnotationThread } from './annotationTypes.ts';
-import { isAnnotationCommentThread } from './annotationTypes.ts';
+import { type ResolvedAnnotationThread, isAnnotationCommentThread } from './annotationTypes.ts';
 
 export const settingsDraft = Factory.define<SettingsDraft>(() => ({
   theme: 'system',

@@ -1,18 +1,14 @@
 import type { AnnotationSubmission } from '@contextbridge/shared/annotationSchema';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { RenderResult } from '@testing-library/react';
+import { type RenderResult, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef } from 'react';
 import { expect } from 'vitest';
 import { AnnotatedMarkdown, annotatedMarkdownTestIds } from '#src/AnnotatedMarkdown.tsx';
 import { annotationDraftCommentComposerTestIds } from '#src/AnnotationDraftCommentComposer.tsx';
-import type { AppProps } from '#src/App.tsx';
-import { App } from '#src/App.tsx';
+import { App, type AppProps } from '#src/App.tsx';
 import { submitBarTestIds } from '#src/SubmitBar.tsx';
-import type { AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
-import { AnnotationAppContext } from '#src/useAppContext.ts';
-import type { FakeAppContextResult } from './createFakeAppContext.ts';
-import { createFakeAppContext } from './createFakeAppContext.ts';
+import { AnnotationAppContext, type AnnotationAppContext as AnnotationAppContextValue } from '#src/useAppContext.ts';
+import { type FakeAppContextResult, createFakeAppContext } from './createFakeAppContext.ts';
 
 export type RenderAppResult = FakeAppContextResult & { result: RenderResult };
 
