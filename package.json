@@ -58,7 +58,7 @@
     "@types/semver": "^7.8.0",
     "@typescript-eslint/parser": "^8.71.2",
     "astro-eslint-parser": "^3.2.0",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
