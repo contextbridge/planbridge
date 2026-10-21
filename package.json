@@ -25,11 +25,11 @@
       "neverthrow": "^8.2.0",
       "pino": "^10.4.0",
       "playwright": "^1.64.0",
-      "react": "^19.3.0",
-      "react-dom": "^19.3.0",
+      "react": "^19.3.1",
+      "react-dom": "^19.3.1",
       "tailwindcss": "^4.3.0",
       "vite": "^8.3.4",
-      "vite-plugin-singlefile": "^2.0.3",
+      "vite-plugin-singlefile": "^2.3.4",
       "vitest": "^5.0.5",
       "zod": "^4.6.6"
     }
@@ -58,7 +58,7 @@
     "@types/semver": "^7.8.0",
     "@typescript-eslint/parser": "^8.71.2",
     "astro-eslint-parser": "^3.2.0",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
