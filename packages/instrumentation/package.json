@@ -25,8 +25,8 @@
     "@sentry/react": "^11.10.0",
     "neverthrow": "catalog:",
     "pino": "catalog:",
-    "posthog-js": "^1.438.9",
-    "posthog-node": "^5.55.3"
+    "posthog-js": "^1.444.0",
+    "posthog-node": "^5.61.1"
   },
   "devDependencies": {
     "@types/react": "catalog:"
