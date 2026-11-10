@@ -26,7 +26,7 @@
     "@vitejs/plugin-react": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "chromatic": "^18.13.6",
-    "storybook": "^10.6.5",
+    "storybook": "^10.6.6",
     "tailwindcss": "catalog:",
     "vite": "catalog:"
   }
