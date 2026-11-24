@@ -15,15 +15,15 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "^7.3.9",
+    "@astrojs/markdown-remark": "^7.3.10",
     "@astrojs/react": "^7.1.9",
     "@astrojs/starlight": "^0.43.1",
     "@fontsource/atkinson-hyperlegible-next": "^5.3.0",
     "@iconify-json/lucide": "^1.2.150",
     "@iconify-json/simple-icons": "^1.2.101",
     "@vercel/og": "1.0.1",
-    "astro": "^7.4.12",
-    "astro-expressive-code": "^0.44.3",
+    "astro": "^7.4.13",
+    "astro-expressive-code": "^0.44.4",
     "astro-icon": "^1.2.0",
     "lucide-react": "catalog:",
     "motion": "^14.9.0",
